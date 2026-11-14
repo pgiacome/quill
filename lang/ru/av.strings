@@ -111,6 +111,7 @@
 "qll_av_joining_voice_chat" = "Вход в голосовой чат…";
 "qll_av_left_the_voice_chat" = "Вы вышли из голосового чата.";
 "qll_av_left_the_voice_chat_local" = "Вы вышли из голосового чата (локально).";
+"qll_av_listening" = "слушает";
 "qll_av_live_pip_back_story" = "Назад к истории";
 "qll_av_live_pip_back_stream" = "Назад к трансляции";
 "qll_av_live_stream_ended" = "Трансляция завершена";
@@ -225,6 +226,7 @@
 "qll_av_show_in_folder_2" = "Показать в папке";
 "qll_av_show_less" = "Свернуть";
 "qll_av_show_more" = "Показать больше";
+"qll_av_speaking" = "говорит";
 "qll_av_speed" = "Скорость";
 "qll_av_start_now_needs_a_live" = "Для немедленного начала нужно активное подключение.";
 "qll_av_starting_camera" = "Запуск камеры…";

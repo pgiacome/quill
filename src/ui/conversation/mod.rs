@@ -209,7 +209,7 @@ impl QuillApp {
         };
         let (status_line, status_accent): (Option<String>, bool) = if typing {
             (
-                Some(activity_line.map_or_else(|| "typing".to_string(), |l| l.text)),
+                Some(activity_line.map_or_else(|| tr(keys::Q_CHAT_TYPING).to_string(), |l| l.text)),
                 true,
             )
         } else if let Some((_, line, _)) = thread_header.clone() {

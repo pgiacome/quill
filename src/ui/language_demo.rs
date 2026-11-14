@@ -1,11 +1,13 @@
 //! Screenshot demos and fixtures of the Language box: a short official
-//! list and a Brazilian Portuguese pack with the strings the box and the
-//! Settings list use, so a switch can be seen without Telegram.
+//! list, a Brazilian Portuguese pack with the strings the box and the
+//! Settings list use, and the real Russian overlay, so a switch can be
+//! seen without Telegram.
 
 use crate::ui::app::QuillApp;
 use crate::ui::screenshot_demo::{DemoSpec, register_demos};
 use gpui_kit::*;
 use quill::lang::PackValue;
+use quill::lang::prefs::LanguageChoice;
 use quill::state::LanguageReady;
 use quill::telegram::envelope::LanguagePackInfoData;
 
@@ -17,6 +19,8 @@ register_demos![
         "screenshot demo — Settings → Language after switching to Português (Brasil)"
     )
     .setup(QuillApp::demo_language_box_pt),
+    DemoSpec::chats("ready-language-ru", "screenshot demo — Russian interface")
+        .setup(QuillApp::demo_language_box_ru),
 ];
 
 fn pack(id: &str, name: &str, native: &str, plural: &str, rtl: bool) -> LanguagePackInfoData {
@@ -50,6 +54,7 @@ pub(super) fn demo_packs() -> Vec<LanguagePackInfoData> {
         pack("es", "Spanish", "Español", "es", false),
         pack("fr", "French", "Français", "fr", false),
         pack("it", "Italian", "Italiano", "it", false),
+        pack("ru", "Russian", "Русский", "ru", false),
     ]
 }
 
@@ -143,6 +148,21 @@ impl QuillApp {
         if let Some(info) = demo_packs().into_iter().find(|p| p.id == "pt-br") {
             self.choose_language(info, cx);
         }
+        self.open_language_box(window, cx);
+    }
+
+    /// The Russian demo: the real overlay (`lang/ru/*.strings`) becomes the
+    /// interface's strings, then the Language box opens on top of it.
+    fn demo_language_box_ru(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let choice = LanguageChoice {
+            pack_id: "ru".into(),
+            plural_code: "ru".into(),
+            name: "Russian".into(),
+            native_name: "Русский".into(),
+            ..Default::default()
+        };
+        let snapshot = quill::lang::prefs::build_snapshot(&choice, &[], &[]);
+        super::language_ui::install_pack(Some(snapshot));
         self.open_language_box(window, cx);
     }
 }

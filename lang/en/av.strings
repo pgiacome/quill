@@ -214,6 +214,7 @@
 "qll_av_joining_voice_chat" = "Joining voice chat…";
 "qll_av_left_the_voice_chat" = "Left the voice chat.";
 "qll_av_left_the_voice_chat_local" = "Left the voice chat (local).";
+"qll_av_listening" = "listening";
 "qll_av_live_pip_back_story" = "Back to the story";
 "qll_av_live_pip_back_stream" = "Back to the live stream";
 "qll_av_live_stream_ended" = "Live stream ended";
@@ -326,6 +327,7 @@
 "qll_av_show_in_folder_2" = "Show in folder";
 "qll_av_show_less" = "Show less";
 "qll_av_show_more" = "Show more";
+"qll_av_speaking" = "speaking";
 "qll_av_speed" = "Speed";
 "qll_av_start_now_needs_a_live" = "Start now needs a live connection.";
 "qll_av_starting_camera" = "Starting camera…";

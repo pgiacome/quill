@@ -21,7 +21,7 @@ use quill::telegram::envelope::{MessageSender, ParsedGroupCallParticipant};
 /// `speaking` is tgcalls' levels, TDLib's flag, or your own level tap.
 pub(super) fn member_status(p: &ParsedGroupCallParticipant, speaking: bool) -> (&'static str, u32) {
     if speaking {
-        ("speaking", MEMBER_ACTIVE)
+        (tr(keys::Q_AV_SPEAKING), MEMBER_ACTIVE)
     } else if p.is_hand_raised {
         (
             tr(keys::GROUP_CALL_RAISED_HAND_STATUS),
@@ -30,7 +30,7 @@ pub(super) fn member_status(p: &ParsedGroupCallParticipant, speaking: bool) -> (
     } else if p.is_muted_for_current_user {
         (tr(keys::GROUP_CALL_MUTED_BY_ME_STATUS), MEMBER_MUTED_ICON)
     } else {
-        ("listening", MEMBER_INACTIVE_STATUS)
+        (tr(keys::Q_AV_LISTENING), MEMBER_INACTIVE_STATUS)
     }
 }
 
@@ -67,10 +67,15 @@ pub(super) fn member_look(
                 MEMBER_INACTIVE_ICON,
             )
         } else if speaking {
-            ("speaking", MEMBER_ACTIVE, IconName::Mic, MEMBER_ACTIVE)
+            (
+                tr(keys::Q_AV_SPEAKING),
+                MEMBER_ACTIVE,
+                IconName::Mic,
+                MEMBER_ACTIVE,
+            )
         } else {
             (
-                "listening",
+                tr(keys::Q_AV_LISTENING),
                 MEMBER_INACTIVE_STATUS,
                 IconName::Mic,
                 MEMBER_INACTIVE_ICON,

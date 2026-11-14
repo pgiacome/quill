@@ -574,6 +574,7 @@
 "qll_chat_type_something_first_the_ai" = "Type something first — the AI works on the draft";
 "qll_chat_type_to_search_channels" = "Type to search channels.";
 "qll_chat_type_to_search_this_chat" = "Type to search this chat.";
+"qll_chat_typing" = "typing";
 "qll_chat_unarchive" = "Unarchive";
 "qll_chat_unarchive_chat" = "Unarchive chat";
 "qll_chat_unblock_user" = "Unblock user";

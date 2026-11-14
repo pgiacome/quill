@@ -460,6 +460,7 @@
 "qll_chat_type_something_first_the_ai" = "Сначала введите текст — ИИ работает с черновиком";
 "qll_chat_type_to_search_channels" = "Введите запрос для поиска каналов.";
 "qll_chat_type_to_search_this_chat" = "Введите запрос для поиска в этом чате.";
+"qll_chat_typing" = "печатает";
 "qll_chat_unarchive" = "Разархивировать";
 "qll_chat_unarchive_chat" = "Разархивировать чат";
 "qll_chat_unblock_user" = "Разблокировать пользователя";
