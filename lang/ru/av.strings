@@ -59,7 +59,7 @@
 "qll_av_couldnt_start_the_video_chat" = "Не удалось начать видеочат.";
 "qll_av_couldnt_stop_the_recording" = "Не удалось остановить запись.";
 "qll_av_couldnt_toggle_in_call_chat" = "Не удалось переключить чат во время звонка.";
-"qll_av_couldnt_toggle_mute_new" = "Не удалось переключить отключение звука у новых участников.";
+"qll_av_couldnt_toggle_mute_new" = "Не удалось изменить отключение звука для новых участников.";
 "qll_av_couldnt_toggle_screen_sharing" = "Не удалось переключить демонстрацию экрана.";
 "qll_av_couldnt_toggle_video" = "Не удалось переключить видео.";
 "qll_av_couldnt_unpin_album_item_s" = "Не удалось открепить элементы альбома ({failed})";
@@ -197,6 +197,8 @@
 "qll_av_revoke_key" = "Отозвать ключ";
 "qll_av_revoking_invite_link" = "Отзыв ссылки-приглашения…";
 "qll_av_rotate" = "Повернуть";
+"qll_av_rtmp_key_copied" = "Ключ трансляции скопирован";
+"qll_av_rtmp_url_copied" = "URL сервера скопирован";
 "qll_av_save_as" = "Сохранить как…";
 "qll_av_save_as_2" = "Сохранить как…";
 "qll_av_save_to" = "Сохранить в…";

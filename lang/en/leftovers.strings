@@ -129,6 +129,8 @@
 "qll_leftovers_terms_delete_warning" = "Warning, this will irreversibly delete your Telegram account and all the data you store in the Telegram cloud.\n\nImportant: You can Cancel now and export your data first instead of losing it. (To do this, open Settings › Data & Storage › Export Telegram data.)";
 "qll_leftovers_thinking" = "Thinking…";
 "qll_leftovers_timer_set" = "timer {time}";
+"qll_leftovers_type#one" = "type";
+"qll_leftovers_type#other" = "types";
 "qll_leftovers_unmuted" = "Unmuted";
 "qll_leftovers_unpinned" = "Unpinned";
 "qll_leftovers_video_name_size" = "Video {name} ({size})";

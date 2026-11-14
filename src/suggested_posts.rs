@@ -13,7 +13,7 @@
 //! `connect::suggested_posts`, the screens in `ui::suggested_posts_ui`.
 
 use crate::ids::{ChatId, MessageId, RequestId};
-use crate::lang::{keys, tr_with};
+use crate::lang::{keys, tr, tr_with};
 use crate::local_time::{CivilTime, hhmm, short_month_name};
 use serde_json::{Value, json};
 use std::collections::{HashMap, VecDeque};
@@ -201,7 +201,9 @@ impl SuggestTerms {
 }
 
 /// The suggest bar's title (`lng_suggest_bar_title`).
-pub const BAR_TITLE: &str = "Suggest a Post Below";
+pub fn bar_title() -> &'static str {
+    tr(keys::Q_MONEY_SUGGEST_A_POST_BELOW)
+}
 /// The bar's and the price box's title when changing an offer
 /// (`lng_suggest_options_change`).
 pub const CHANGE_TITLE: &str = "Suggest Changes";
@@ -222,13 +224,17 @@ pub enum BarLine {
 }
 
 /// `lng_suggest_bar_text`.
-pub const BAR_PROMPT: &str = "Click to offer a price for publishing.";
+pub fn bar_prompt() -> &'static str {
+    tr(keys::Q_MONEY_CLICK_TO_OFFER_A_PRICE_FOR)
+}
 /// What follows the amount in `lng_suggest_bar_priced`.
-pub const BAR_PRICED_TAIL: &str = " for publishing anytime.";
+pub fn bar_priced_tail() -> &'static str {
+    tr(keys::Q_MONEY_FOR_PUBLISHING_ANYTIME)
+}
 
 /// "Publish on {date}" (`lng_suggest_bar_dated`).
 pub fn bar_dated(date: &str) -> String {
-    format!("Publish on {date}")
+    tr_with(keys::Q_MONEY_PUBLISH_ON, &[("date", date)])
 }
 
 /// What follows the amount when both are set: three spaces, the calendar
@@ -277,7 +283,7 @@ pub fn block_time_label(date: &CivilTime, now: &CivilTime) -> String {
 /// with `civil_at` giving the local time of an instant.
 pub fn time_value(send_date: i32, now_unix: i64, civil_at: impl Fn(i64) -> CivilTime) -> String {
     if send_date <= 0 {
-        return "Anytime".into();
+        return tr(keys::Q_MONEY_ANYTIME).to_string();
     }
     date_time_label(&civil_at(i64::from(send_date)), &civil_at(now_unix))
 }
@@ -730,7 +736,7 @@ impl SuggestBar {
     pub fn title(&self) -> &'static str {
         match self.mode() {
             SuggestMode::Change => CHANGE_TITLE,
-            SuggestMode::New | SuggestMode::Publish => BAR_TITLE,
+            SuggestMode::New | SuggestMode::Publish => bar_title(),
         }
     }
 }

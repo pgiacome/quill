@@ -51,7 +51,7 @@
 "qll_chat_chat_selected" = "Чат выбран";
 "qll_chat_check" = "☑ Задача";
 "qll_chat_checking_the_video_send_again" = "Проверка видео… отправьте ещё раз чуть позже";
-"qll_chat_checklist" = "Список задач";
+"qll_chat_checklist" = "Чек-лист";
 "qll_chat_choose_a_conversation_from_the" = "Выберите чат на боковой панели, чтобы начать переписку.";
 "qll_chat_choose_a_topic" = "Выберите тему";
 "qll_chat_choose_file" = "Выбрать файл";
@@ -213,8 +213,8 @@
 "qll_chat_inline_code" = "Код в строке";
 "qll_chat_insert_link" = "Вставить ссылку";
 "qll_chat_instant_view" = "Мгновенный просмотр";
-"qll_chat_is_an_admin_of_a_channel" = "{name} — администратор {title}, канала, куда вы запросили вступление.";
-"qll_chat_is_an_admin_of_a_group" = "{name} — администратор {title}, группы, куда вы запросили вступление.";
+"qll_chat_is_an_admin_of_a_channel" = "{name} — администратор канала «{title}», куда вы запросили вступление.";
+"qll_chat_is_an_admin_of_a_group" = "{name} — администратор группы «{title}», куда вы запросили вступление.";
 "qll_chat_is_choosing_a_sticker" = "{name} выбирает стикер";
 "qll_chat_is_now_blocked" = "{user_id} заблокирован(а)";
 "qll_chat_is_playing_a_game" = "{name} играет в игру";
@@ -293,7 +293,7 @@
 "qll_chat_not_signed_in" = "Вы не вошли в аккаунт";
 "qll_chat_nothing_matches" = "Ничего не найдено по запросу «{query}».";
 "qll_chat_off" = "Выкл.";
-"qll_chat_offline_schedule" = "Вы не в сети — сообщение будет отправлено по расписанию, когда появится подключение";
+"qll_chat_offline_schedule" = "Вы не в сети — сообщение будет запланировано при подключении";
 "qll_chat_offline_send" = "Вы не в сети — сообщение отправится, когда появится подключение";
 "qll_chat_offline_when_online" = "Вы не в сети — сообщение отправится, когда собеседник будет в сети";
 "qll_chat_older_match" = "Более старое совпадение";

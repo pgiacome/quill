@@ -28,7 +28,6 @@
 "qll_notes_something_went_wrong" = "Что-то пошло не так. Повторите попытку.";
 "qll_notes_text_too_long" = "Слишком длинное сообщение (не более {limit} символов).";
 "qll_notes_agent_driving" = "Quill управлял агент, поэтому сообщение не отправлено. Агенты пишут через свои инструменты.";
-"qll_notes_value_copied" = "{label} скопировано";
 "qll_notes_voice_note_not_sent_window_closed" = "Голосовое сообщение не отправлено: окно чата закрылось.";
 "qll_notes_no_story_can_be_added" = "Ни одну из этих историй нельзя добавить в альбом.";
 "qll_notes_stories_skipped#one" = "Пропущена {count} история, которую нельзя добавить в альбом.";

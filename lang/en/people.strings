@@ -179,6 +179,8 @@
 "qll_people_1_more_boost" = "1 more boost";
 "qll_people_1_topic" = "1 topic";
 "qll_people_a_title_that_members_will" = "A title that members will see instead of 'Admin'. Empty removes it.";
+"qll_people_age_years#one" = "{count} year old";
+"qll_people_age_years#other" = "{count} years old";
 "qll_people_abort" = "Abort";
 "qll_people_about_copied" = "Description copied to clipboard";
 "qll_people_action_failed" = "action failed";
@@ -685,7 +687,7 @@
 "qll_people_welcome_messages_need_a_live" = "Welcome messages need a live connection (demo)";
 "qll_people_why_are_you_reporting_this" = "Why are you reporting this photo?";
 "qll_people_year" = "Year";
-"qll_people_years_old" = "{month} {day}, {year} ({age} years old)";
+"qll_people_years_old" = "{month} {day}, {year} ({age})";
 "qll_people_you_are_an_admin_but" = "You are an admin, but posting is disabled for you.";
 "qll_people_you_are_banned_from_this" = "You are banned from this channel.";
 "qll_people_you_cant_change_the_discussion" = "You can't change the discussion group here.";

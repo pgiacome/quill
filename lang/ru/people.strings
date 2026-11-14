@@ -2,6 +2,10 @@
 "qll_people_1_more_boost" = "ещё 1 буст";
 "qll_people_1_topic" = "1 тема";
 "qll_people_a_title_that_members_will" = "Титул, который участники видят вместо «Администратор». Если оставить пустым, он будет удалён.";
+"qll_people_age_years#one" = "{count} год";
+"qll_people_age_years#few" = "{count} года";
+"qll_people_age_years#many" = "{count} лет";
+"qll_people_age_years#other" = "{count} года";
 "qll_people_abort" = "Прервать";
 "qll_people_about_copied" = "Описание скопировано в буфер обмена";
 "qll_people_action_failed" = "Не удалось выполнить действие";
@@ -300,7 +304,7 @@
 "qll_people_member_search_needs_a_live" = "Для поиска участников нужно подключение (демо)";
 "qll_people_member_unbanned" = "Участник разблокирован";
 "qll_people_month" = "Месяц";
-"qll_people_more_boosts" = "ещё {left} бустов";
+"qll_people_more_boosts" = "Бустов ещё: {left}";
 "qll_people_name" = "Имя";
 "qll_people_name_and_profile_color" = "Имя и цвет профиля…";
 "qll_people_name_cannot_be_empty" = "Имя не может быть пустым";
@@ -514,7 +518,7 @@
 "qll_people_welcome_messages_need_a_live" = "Для приветственных сообщений нужно подключение (демо)";
 "qll_people_why_are_you_reporting_this" = "Почему вы жалуетесь на это фото?";
 "qll_people_year" = "Год";
-"qll_people_years_old" = "{day} {month} {year} ({age} л.)";
+"qll_people_years_old" = "{day} {month} {year} ({age})";
 "qll_people_you_are_an_admin_but" = "Вы администратор, но публикация для вас отключена.";
 "qll_people_you_are_banned_from_this" = "Вы заблокированы в этом канале.";
 "qll_people_you_cant_change_the_discussion" = "Здесь нельзя изменить группу обсуждения.";

@@ -56,12 +56,16 @@
 "qll_leftovers_saved_tag_label_about" = "Вы можете задать для тега {tag} текстовое название. Не более {max} символов.";
 "qll_leftovers_select_up_to_chats" = "Лимит чатов: {count}.";
 "qll_leftovers_sent_received" = "Отправлено {sent} · получено {received}";
-"qll_leftovers_share_contact_with" = "Поделиться контактом {name} с {chat}?";
+"qll_leftovers_share_contact_with" = "Поделиться контактом {name} с чатом «{chat}»?";
 "qll_leftovers_stars_balance_is" = "Ваш баланс: ★{amount}.";
 "qll_leftovers_stickers" = "Стикеры";
 "qll_leftovers_terms_delete_warning" = "Внимание: это безвозвратно удалит ваш аккаунт Telegram и все данные, которые вы храните в облаке Telegram.\n\nВажно: вы можете нажать «Отмена» и сначала экспортировать данные, чтобы не потерять их. (Для этого откройте «Настройки › Данные и память › Экспорт данных Telegram».)";
 "qll_leftovers_thinking" = "Думаю…";
 "qll_leftovers_timer_set" = "Таймер {time}";
+"qll_leftovers_type#one" = "тип";
+"qll_leftovers_type#few" = "типа";
+"qll_leftovers_type#many" = "типов";
+"qll_leftovers_type#other" = "типа";
 "qll_leftovers_unmuted" = "Со звуком";
 "qll_leftovers_unpinned" = "Откреплено";
 "qll_leftovers_video_name_size" = "Видео {name} ({size})";

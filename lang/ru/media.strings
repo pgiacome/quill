@@ -260,6 +260,7 @@
 "qll_media_game_data_missing_cant_launch" = "Нет данных игры — запустить нельзя.";
 "qll_media_game_sent" = "Игра отправлена";
 "qll_media_games" = "Игры";
+"qll_media_gif" = "GIF";
 "qll_media_grossing_apps" = "Приложения с наибольшей выручкой";
 "qll_media_groups_and_channels_i_manage" = "Группы и каналы, которыми я управляю";
 "qll_media_hiding_stories" = "Скрытие историй…";
@@ -351,6 +352,10 @@
 "qll_media_no_viewers_yet" = "Зрителей пока нет";
 "qll_media_no_vote_statistics_yet" = "Статистики голосования пока нет.";
 "qll_media_no_voters_yet" = "Проголосовавших пока нет.";
+"qll_media_noun_bot" = "бот";
+"qll_media_noun_channel" = "канал";
+"qll_media_noun_group" = "группа";
+"qll_media_noun_user" = "пользователь";
 "qll_media_not_downloaded_2" = "{kind_label} — не загружено";
 "qll_media_not_supported_in_this_slice" = "{kind_label} пока не поддерживается в Quill";
 "qll_media_only_a_bot_can_open" = "Открыть мини-приложение может только бот.";
@@ -510,6 +515,7 @@
 "qll_media_statistics" = "Статистика";
 "qll_media_sticker" = "Стикер";
 "qll_media_sticker_2" = "Стикер {emoji}";
+"qll_media_sticker_noun" = "стикер";
 "qll_media_sticker_set" = "Набор стикеров";
 "qll_media_sticker_set_added" = "Набор стикеров добавлен";
 "qll_media_sticker_set_removed" = "Набор стикеров удалён";
@@ -551,7 +557,7 @@
 "qll_media_suggest_stickers_by_emoji" = "Подсказывать стикеры по эмодзи";
 "qll_media_tasks" = "Задачи";
 "qll_media_tasks_added_demo" = "Задачи добавлены (демо)";
-"qll_media_tasks_list" = "Список задач";
+"qll_media_tasks_list" = "Чек-лист";
 "qll_media_the_bot" = "бот";
 "qll_media_the_bot_also_asks_for" = "Бот также запрашивает разрешение отправлять вам сообщения.";
 "qll_media_the_bot_wants_to_open" = "Бот хочет открыть ссылку для входа на {domain}. Открыть её в браузере?";
@@ -583,7 +589,13 @@
 "qll_media_user" = "Пользователь {user_id}";
 "qll_media_verification_description" = "Описание подтверждения";
 "qll_media_verified" = "{name} (подтверждён)";
-"qll_media_verifying_as_a" = "Подтверждение {name} в качестве {noun}…";
+"qll_media_verify_bot" = "Подтверждение бота";
+"qll_media_verify_channel" = "Подтверждение канала";
+"qll_media_verify_group" = "Подтверждение группы";
+"qll_media_verify_name_as_a_on_behalf" = "Подтвердить {name} как {noun} от имени {org}? Рядом с именем появится отметка о проверке.";
+"qll_media_verify_user" = "Подтверждение пользователя";
+"qll_media_verifying_as_a" = "Подтверждение: {name} — {noun}…";
+"qll_media_description_limit_shown_on" = "{typed}/{limit}. Показывается в профиле: {name}.";
 "qll_media_video_3" = "Видео · {duration} — {status}";
 "qll_media_video_message" = "видеосообщение";
 "qll_media_video_uploads_the_full_file" = "Видео — загружается весь файл";

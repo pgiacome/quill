@@ -16,7 +16,7 @@ use gpui_kit::component::*;
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::*;
 use quill::ids::ChatId;
-use quill::lang::{keys, tr, tr_with};
+use quill::lang::{keys, tr, tr_with, trn};
 use quill::local_path::sandboxed_display_path;
 use quill::state::{InfoPanelTarget, SupergroupMembersFetch};
 use quill::state::{ProfileChatsKind, Session};
@@ -578,17 +578,21 @@ pub(super) fn format_birthday(date: quill::telegram::envelope::Birthdate) -> Str
             if (today.month, today.day) < (date.month, date.day) {
                 age -= 1;
             }
+            let age = trn(keys::Q_PEOPLE_AGE_YEARS, age);
             tr_with(
                 keys::Q_PEOPLE_YEARS_OLD,
                 &[
                     ("month", month),
                     ("day", &date.day.to_string()),
                     ("year", &year.to_string()),
-                    ("age", &age.to_string()),
+                    ("age", &age),
                 ],
             )
         }
-        None => format!("{month} {}", date.day),
+        None => tr_with(
+            keys::MONTH_DAY,
+            &[("month", month), ("day", &date.day.to_string())],
+        ),
     }
 }
 
@@ -626,7 +630,32 @@ pub(super) fn supergroup_info_title(session: &Session, supergroup_id: i64) -> qu
 
 #[cfg(test)]
 mod tests {
-    use super::format_phone;
+    use super::{format_birthday, format_phone};
+    use quill::lang::{keys, tr, tr_with};
+
+    #[test]
+    fn a_birthday_reads_with_and_without_a_year() {
+        let yearless = quill::telegram::envelope::Birthdate {
+            day: 1,
+            month: 1,
+            year: None,
+        };
+        assert_eq!(
+            format_birthday(yearless),
+            tr_with(
+                keys::MONTH_DAY,
+                &[("month", tr(keys::MONTH_DAY1)), ("day", "1")]
+            )
+        );
+        let dated = quill::telegram::envelope::Birthdate {
+            day: 1,
+            month: 1,
+            year: Some(2000),
+        };
+        let text = format_birthday(dated);
+        assert!(text.starts_with("January 1, 2000 ("), "{text}");
+        assert!(text.ends_with(')'), "{text}");
+    }
 
     #[test]
     fn phone_numbers_group_for_reading() {

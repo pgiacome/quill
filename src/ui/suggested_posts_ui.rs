@@ -20,8 +20,8 @@ use quill::ids::{ChatId, MessageId};
 use quill::lang::{keys, tr};
 use quill::state::Session;
 use quill::suggested_posts::{
-    BAR_PRICED_TAIL, BAR_PROMPT, BarLine, DirectMessagesRole, SuggestBar, SuggestTerms,
-    SuggestedPostFailure, SuggestedPostPurpose, SuggestedPrice, bar_both_tail, bar_dated,
+    BarLine, DirectMessagesRole, SuggestBar, SuggestTerms, SuggestedPostFailure,
+    SuggestedPostPurpose, SuggestedPrice, bar_both_tail, bar_dated, bar_priced_tail, bar_prompt,
     time_value,
 };
 use quill::telegram::envelope::MessageSender;
@@ -192,12 +192,12 @@ impl QuillApp {
         let muted = cx.theme().muted_foreground;
         let date = |send_date: i32| time_label(send_date, cx);
         let line = match bar.terms.bar_line() {
-            BarLine::Prompt => div().child(BAR_PROMPT),
+            BarLine::Prompt => div().child(bar_prompt()),
             BarLine::Priced(price) => div()
                 .flex()
                 .items_center()
                 .child(price_amount(price, 13., cx))
-                .child(BAR_PRICED_TAIL),
+                .child(bar_priced_tail()),
             BarLine::Dated(send_date) => div().child(bar_dated(&date(send_date))),
             BarLine::PricedDated(price, send_date) => div()
                 .flex()

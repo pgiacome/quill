@@ -74,17 +74,21 @@
 "qll_money_charging_for_messages_needs_telegram" = "Для платных сообщений нужен Telegram Premium.";
 "qll_money_charging_needs_telegram_premium" = "Для взимания платы нужен Telegram Premium.";
 "qll_money_chat" = "Чат: {source}";
-"qll_money_check_your_s_boosts_to" = "Проверьте бусты вашего {place}, чтобы увидеть, как этот розыгрыш его усилил.";
+"qll_money_check_your_s_boosts_to_channel" = "Проверьте бусты вашего канала, чтобы увидеть, как этот розыгрыш его усилил.";
+"qll_money_check_your_s_boosts_to_group" = "Проверьте бусты вашей группы, чтобы увидеть, как этот розыгрыш её усилил.";
+"qll_money_click_to_offer_a_price_for" = "Нажмите, чтобы предложить цену за публикацию.";
 "qll_money_choose_countries" = "Выбрать страны…";
 "qll_money_choose_how_many_stars_gets" = "Выберите, сколько звёзд получит {name}";
 "qll_money_choose_how_many_stars_you" = "Выберите, сколько звёзд отправить в канал {channel} в поддержку этого поста.";
-"qll_money_choose_if_you_want_to" = "Выберите, ограничить ли розыгрыш только теми, кто присоединился к {place} после его начала.";
+"qll_money_choose_if_you_want_to_channel" = "Выберите, ограничить ли розыгрыш только теми, кто присоединился к каналу после его начала.";
+"qll_money_choose_if_you_want_to_group" = "Выберите, ограничить ли розыгрыш только теми, кто присоединился к группе после его начала.";
 "qll_money_choose_members" = "Выбрать участников…";
 "qll_money_choose_the_groups_and_channels" = "Выберите группы и каналы, в которые нужно вступить для участия в розыгрыше. Добавлено: {len}/{chats_max}.";
 "qll_money_choose_up_to_countries_chosen" = "Выберите страны (не более {countries_max}). Выбрано: {len}.";
 "qll_money_choose_up_to_countries_users" = "Выберите страны (не более {countries_max}). Пользователи с номером из Fragment могут участвовать в любом розыгрыше.";
 "qll_money_choose_up_to_members_chosen" = "Выберите участников (не более {chats_max}). Выбрано: {len}.";
-"qll_money_choose_when_winners_of_your" = "Выберите, когда случайно выберут победителей вашего {place}. Не позднее чем через {max_days} дн.";
+"qll_money_choose_when_winners_of_your_channel" = "Выберите, когда случайно выберут победителей вашего канала. Не позднее чем через {max_days} дн.";
+"qll_money_choose_when_winners_of_your_group" = "Выберите, когда случайно выберут победителей вашей группы. Не позднее чем через {max_days} дн.";
 "qll_money_collect_your_reward_using_fragment" = "Получите вознаграждение через Fragment — стороннюю платформу, которую рекламодатели используют для оплаты рекламы.";
 "qll_money_collectible_gift_name_e_g" = "Название коллекционного подарка, например PlushPepe-123";
 "qll_money_collectible_phone_bought" = "Этот номер телефона куплен на ";
@@ -208,6 +212,7 @@
 "qll_money_fee" = "Комиссия";
 "qll_money_followers" = "Подписчики";
 "qll_money_for_stars" = "{amount} за {star_count} ⭐";
+"qll_money_for_publishing_anytime" = " — публикация в любое время.";
 "qll_money_forgot_password" = "Забыли пароль?";
 "qll_money_fragment_on_for" = "{prefix}Fragment {date} за";
 "qll_money_free" = "Бесплатно";
@@ -218,7 +223,8 @@
 "qll_money_from_all_countries" = "Из всех стран";
 "qll_money_full_name" = "Полное имя";
 "qll_money_gb" = "{value} ГБ";
-"qll_money_get_more_boosts_for_your" = "Получайте больше бустов для вашего {0}, даря Telegram Premium вашим {1}.";
+"qll_money_get_more_boosts_for_your_channel" = "Получайте больше бустов для вашего канала, даря Telegram Premium вашим подписчикам.";
+"qll_money_get_more_boosts_for_your_group" = "Получайте больше бустов для вашей группы, даря Telegram Premium вашим участникам.";
 "qll_money_get_telegram_apps" = "Скачать приложения Telegram";
 "qll_money_gift" = "Подарить {headline}";
 "qll_money_gift_auction" = "Аукцион подарков, {badge}, {line}";
@@ -357,6 +363,7 @@
 "qll_money_public_shares" = "Публичные репосты";
 "qll_money_public_shares_2" = "публичных репоста";
 "qll_money_publish" = "Опубликовать";
+"qll_money_publish_on" = "Публикация {date}";
 "qll_money_put_this_gift_on_the" = "Выставьте подарок на маркетплейс. Любой сможет купить его по вашей цене.";
 "qll_money_raise_bid" = "Поднять ставку {countdown}";
 "qll_money_random_winners" = "Случайные победители";
@@ -449,6 +456,7 @@
 "qll_money_subscription" = "Подписка";
 "qll_money_subscriptions" = "⭐ Подписки";
 "qll_money_suggest_a_post" = "Предложить пост";
+"qll_money_suggest_a_post_below" = "Предложить пост ниже";
 "qll_money_suggest_changes" = "Предложить изменения";
 "qll_money_symbol_per_message" = "символ за сообщение";
 "qll_money_symbols_per_message" = "символов за сообщение";
@@ -480,7 +488,8 @@
 "qll_money_this_takes_from_your_balance" = "С вашего баланса спишется {stars}{unwrap_or_default}.";
 "qll_money_this_user" = "Этот пользователь";
 "qll_money_this_user_2" = "этот пользователь";
-"qll_money_this_will_receive" = "{chat_name}: {place} получит {boosts_text}";
+"qll_money_this_will_receive_channel" = "{chat_name}: этот канал получит {boosts_text}";
+"qll_money_this_will_receive_group" = "{chat_name}: эта группа получит {boosts_text}";
 "qll_money_time" = "Время";
 "qll_money_tip" = "Чаевые";
 "qll_money_ton" = "TON?";
@@ -496,7 +505,7 @@
 "qll_money_undo" = "Отменить ({seconds})";
 "qll_money_unknown" = "Неизвестно";
 "qll_money_unknown_user" = "НЕИЗВЕСТНЫЙ ПОЛЬЗОВАТЕЛЬ";
-"qll_money_unlock_for_stars_aria" = "Разблокировать за {stars} звёзд";
+"qll_money_unlock_for_stars_aria" = "Разблокировать за {stars} ⭐";
 "qll_money_unpin_from_the_top" = "Открепить";
 "qll_money_unsupported_button" = "Неподдерживаемая кнопка";
 "qll_money_up_to_12_characters_add" = "Не более 12 символов. Добавляйте подарки со страницы подарка.";

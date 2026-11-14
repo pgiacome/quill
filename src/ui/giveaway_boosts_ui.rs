@@ -38,10 +38,10 @@ impl QuillApp {
         if !matches!(chat.kind, ChatKind::Supergroup { .. }) {
             return div().into_any_element();
         }
-        let place = if chat.kind.is_channel() {
-            ("channel", "subscribers")
+        let place_key = if chat.kind.is_channel() {
+            keys::Q_MONEY_GET_MORE_BOOSTS_FOR_YOUR_CHANNEL
         } else {
-            ("group", "members")
+            keys::Q_MONEY_GET_MORE_BOOSTS_FOR_YOUR_GROUP
         };
         let status = session.groups.boost_status(chat_id.0);
         let prepaid = status
@@ -63,10 +63,12 @@ impl QuillApp {
                     this.open_giveaway_form(chat_id, None, window, cx);
                 })),
         );
-        section = section.child(div().text_xs().text_color(muted).child(tr_with(
-            keys::Q_MONEY_GET_MORE_BOOSTS_FOR_YOUR,
-            &[("0", place.0), ("1", place.1)],
-        )));
+        section = section.child(
+            div()
+                .text_xs()
+                .text_color(muted)
+                .child(tr_with(place_key, &[])),
+        );
         if status_missing {
             section = if status_in_flight {
                 section.child(

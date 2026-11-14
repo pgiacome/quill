@@ -1007,6 +1007,8 @@
 "qll_ops_view_release_on_github" = "View release on GitHub";
 "qll_ops_viewed" = " · Viewed";
 "qll_ops_voice_call" = "Voice call";
+"qll_ops_voice_call_2" = "call";
+"qll_ops_voice_call_4" = "{what} call";
 "qll_ops_waiting_for_audio_transport" = "Waiting for audio transport";
 "qll_ops_waiting_for_to_come_online" = "🔒 Waiting for {name} to come online…";
 "qll_ops_waiting_for_to_get_online" = "Waiting for {name} to get online…";

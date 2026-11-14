@@ -14,7 +14,7 @@
 "qll_agent_page_claim_secret_hidden" = "Агенты не видят секретные чаты, пока вы не добавите нужный чат по названию.";
 "qll_agent_page_claim_contacts_on" = "Агенты могут читать имена и имена пользователей из ваших контактов.";
 "qll_agent_page_claim_contacts_off" = "Агенты не могут читать ваши контакты.";
-"qll_agent_page_claim_raw_on" = "Агенты могут отправлять в Telegram прямые запросы, а перед рискованными Quill спросит вас.";
+"qll_agent_page_claim_raw_on" = "Агенты могут отправлять в Telegram прямые запросы, а перед рискованными запросами Quill спросит вас.";
 "qll_agent_page_claim_raw_off" = "Вы выключили прямые запросы к Telegram.";
 "qll_agent_page_claim_window_off" = "Агенты не могут использовать окно Quill.";
 "qll_agent_page_claim_window_ready" = "Агенты могут нажимать кнопки и вводить текст в окне Quill — в доступных им чатах.";
@@ -68,7 +68,7 @@
 "qll_agent_page_group_write" = "Запись";
 "qll_agent_page_group_write_hint" = "Отправка сообщений и изменения в чатах с доступом «Чтение и запись».";
 "qll_agent_page_group_raw" = "Прямые вызовы TDLib";
-"qll_agent_page_group_raw_hint" = "Любой запрос к Telegram, отправленный напрямую в TDLib по тем же правилам чатов. Некоторые запросы Quill блокирует, а перед рискованными спрашивает вас.";
+"qll_agent_page_group_raw_hint" = "Любой запрос к Telegram, отправленный напрямую в TDLib по тем же правилам чатов. Некоторые запросы Quill блокирует, а перед рискованными запросами спрашивает вас.";
 "qll_agent_page_group_window" = "Управление окном";
 "qll_agent_page_group_window_hint" = "Просмотр и использование окна Quill так же, как это делаете вы.";
 "qll_agent_page_raw_switch" = "Разрешить прямые вызовы TDLib";

@@ -3,8 +3,8 @@
 "qll_admin_log_deleted_message" = "Удалённое сообщение:";
 "qll_admin_log_pinned_message" = "Закреплённое сообщение:";
 "qll_admin_log_unpinned_message" = "Откреплённое сообщение";
-"qll_admin_log_invited" = "Пригласил {name}";
-"qll_admin_log_banned" = "Заблокировал {name}";
-"qll_admin_log_unbanned" = "Разблокировал {name}";
-"qll_admin_log_restricted" = "Ограничил {name}";
+"qll_admin_log_invited" = "Пригласил(а) {name}";
+"qll_admin_log_banned" = "Заблокировал(а) {name}";
+"qll_admin_log_unbanned" = "Разблокировал(а) {name}";
+"qll_admin_log_restricted" = "Ограничил(а) {name}";
 "qll_admin_log_loading_older" = "Загрузка более ранних действий…";

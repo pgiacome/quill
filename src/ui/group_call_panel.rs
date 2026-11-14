@@ -28,7 +28,7 @@ use gpui_kit::*;
 use quill::state::ActiveGroupCall;
 
 use crate::ui::app_theme::call_chrome;
-use quill::lang::{keys, tr, tr_with, trn};
+use quill::lang::{Key, keys, tr, tr_with, trn};
 
 /// lib_ui `colors.palette`.
 pub(super) const BG: u32 = call_chrome::GROUP_SURFACE;
@@ -422,14 +422,14 @@ impl QuillApp {
             .clone()
             .filter(|_| !self.refused_while_locked())
             .map(|quill::calls::rtmp_start::RtmpInfo { url, key }| {
-                let copy = |id: &'static str, label: &'static str, value: String| {
+                let copy = |id: &'static str, label: &'static str, copied: Key, value: String| {
                     Button::new(id)
                         .label(label)
                         .ghost()
                         .xsmall()
                         .text_color(rgb(ACTIVE_FG))
                         .on_click(cx.listener(move |this, _, _, cx| {
-                            this.copy_rtmp_value(label, &value, cx)
+                            this.copy_rtmp_value(copied, &value, cx)
                         }))
                 };
                 div()
@@ -460,11 +460,13 @@ impl QuillApp {
                             .child(copy(
                                 "group-call-rtmp-url",
                                 tr(keys::GROUP_CALL_RTMP_URL_COPY),
+                                keys::Q_AV_RTMP_URL_COPIED,
                                 url,
                             ))
                             .child(copy(
                                 "group-call-rtmp-key",
                                 tr(keys::GROUP_CALL_RTMP_KEY_COPY),
+                                keys::Q_AV_RTMP_KEY_COPIED,
                                 key,
                             ))
                             .child(

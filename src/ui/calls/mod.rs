@@ -627,7 +627,7 @@ impl QuillApp {
             let kind = if is_video {
                 tr(keys::Q_OPS_VIDEO_CALL_2)
             } else {
-                "call"
+                tr(keys::Q_OPS_VOICE_CALL_2)
             };
             let footer = div()
                 .flex()

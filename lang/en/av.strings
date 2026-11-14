@@ -298,6 +298,8 @@
 "qll_av_revoke_key" = "Revoke Key";
 "qll_av_revoking_invite_link" = "Revoking invite link…";
 "qll_av_rotate" = "Rotate";
+"qll_av_rtmp_key_copied" = "Stream key copied";
+"qll_av_rtmp_url_copied" = "Server URL copied";
 "qll_av_save_as" = "Save As…";
 "qll_av_save_as_2" = "Save As…";
 "qll_av_save_to" = "Save to…";
