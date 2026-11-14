@@ -377,7 +377,9 @@ impl Session {
         let mut calls: Vec<LiveGroupCall> =
             self.calls.group_call_details.values().cloned().collect();
         for call in &mut calls {
-            call.chat_id = call.chat_id.or_else(|| self.chat_id_for_group_call(call.id));
+            call.chat_id = call
+                .chat_id
+                .or_else(|| self.chat_id_for_group_call(call.id));
         }
         for chat in self.chats.values() {
             let Some(video_chat) = chat.video_chat.as_ref() else {

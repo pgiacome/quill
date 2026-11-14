@@ -223,7 +223,12 @@ fn a_joined_update_leaves_the_list_and_takes_the_slot() {
     }"#,
     );
     assert_eq!(
-        driver.session.calls.active_group_call.as_ref().map(|c| c.id),
+        driver
+            .session
+            .calls
+            .active_group_call
+            .as_ref()
+            .map(|c| c.id),
         Some(41)
     );
     assert!(
