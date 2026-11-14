@@ -10,7 +10,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::RequestId;
-use crate::lang::{keys, tr};
+use crate::lang::{keys, tr, tr_with};
 use std::collections::BTreeSet;
 
 pub const ACTION_BIRTHDATE: &str = "suggestedActionSetBirthdate";
@@ -278,7 +278,8 @@ pub fn birthday_label(b: &CloseBirthday, month: u8, day: u8) -> String {
             .copied()
             .map(tr)
             .unwrap_or_default();
-        format!("{name} {}", b.day)
+        let day = b.day.to_string();
+        tr_with(keys::MONTH_DAY, &[("month", name), ("day", &day)])
     }
 }
 

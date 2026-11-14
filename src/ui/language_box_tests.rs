@@ -223,3 +223,36 @@ fn quitting_flushes_the_writes_still_out(cx: &mut TestAppContext) {
     drop(done);
     assert_eq!(*quill::locks::lock_or_recover(&written), vec!["A", "B"]);
 }
+
+/// The Russian demo's strings: the shipped `qll_*` overlay and the demo's
+/// Russian `lng_*` fixture both land in one snapshot, so the box and the
+/// chat screens are Russian together.
+#[test]
+fn the_russian_demo_snapshot_translates_the_overlay_and_the_box() {
+    quill::lang::isolate_thread();
+    let choice = quill::lang::prefs::LanguageChoice {
+        pack_id: "ru".into(),
+        plural_code: "ru".into(),
+        name: "Russian".into(),
+        native_name: "Русский".into(),
+        ..Default::default()
+    };
+    let pack = crate::ui::language_demo::demo_ru_pack();
+    let snapshot = quill::lang::prefs::build_snapshot(&choice, &[], &pack);
+    quill::lang::install(Some(snapshot));
+    assert_eq!(
+        tr(keys::Q_CHAT_TYPING),
+        "печатает",
+        "the qll_* overlay (chat)"
+    );
+    assert_eq!(
+        tr(keys::Q_AV_SPEAKING),
+        "говорит",
+        "the qll_* overlay (calls)"
+    );
+    assert_eq!(
+        tr(keys::MENU_SETTINGS),
+        "Настройки",
+        "the demo's lng_* fixture"
+    );
+}
