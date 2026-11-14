@@ -1,8 +1,10 @@
 # Active group calls in the Calls tab
 
-The Calls tab lists every running group call above Recent calls, joined or
-not. Opening the tab never joins or opens a call: the list is a read of live
-state, and joining stays a press on a row.
+The Calls tab lists every unjoined running group call above Recent calls —
+every running call the call window does not own. A joined call is not listed
+there: it is in the call window, whose slot holds one call at a time. Opening
+the tab never joins or opens a call: the list is a read of live state, and
+joining stays a press on a row.
 
 ## Two sources, merged on read
 
@@ -20,9 +22,10 @@ from:
   shows no kind or count rather than guessing.
 
 The chat id the row needs (avatar, busy Join) is resolved on read from the
-chat whose `video_chat.group_call_id` matches. Sorting also happens on read:
-live streams first, then the others, then calls known only from a chat, each
-group by title; participant counts never reorder rows.
+chat whose `video_chat.group_call_id` matches. Sorting also happens on read,
+in one order: `LiveStream` first, then `VideoChat`, then `VoiceChat`, then
+calls known only from a chat (`kind: None`), each group by title; participant
+counts never reorder rows.
 
 ## The slot rule: only an answer may open a call
 
@@ -34,12 +37,14 @@ group by title; participant counts never reorder rows.
   must not undo a leave);
 - the call already in the slot may always update it;
 - a call the person is in is never replaced by an unjoined one;
-- an unjoined call may take an empty slot only when the update is the answer
-  to the person's own `getGroupCall` for that id.
+- an unjoined call may take a slot that holds no joined call only when the
+  update is the answer to the person's own `getGroupCall` for that id. That
+  includes replacing a different unjoined call already tracked, but never a
+  joined one.
 
-The last rule is why the answer's own `PendingRequest` is the intent. The
-answer arrives through `apply_calls_payload`, which compares the pending
-request to the call: it must be
+The last rule is why the answer's own `PendingRequest` is the intent.
+`group_call_update_may_take_slot` does the comparison; the pending request
+reaches it from `apply_calls_payload` and must be
 `CallsPurpose::GetGroupCall { group_call_id }` for the same id. That is an
 answer matched to the request that asked, not a purpose lookup, and it needs
 no "wanted" flag kept in step by hand (see
@@ -97,7 +102,11 @@ this way and says the current call must end first.
   waits; a joined update takes the slot and leaves the list; `is_active:
   false` and `group_call_id == 0` remove details; `has_participants: false`
   does not.
-- `ui::calls`: the section draws above Recent calls, streams first; Join sets
-  the intent; a busy Join offers the call; a confirmed offer notes the join.
+- `ui::calls`: the section is drawn above the Recent calls row, in the
+  session's order (`LiveStream` first); the `ready-calls-active` fixture
+  yields ids 61 and 62, kinds `LiveStream` then `VoiceChat`, counts 1,280 and
+  4, and chats 51 and 52; Join sets the intent; a busy Join offers the call;
+  a confirmed offer notes the join.
 - Screenshot demo `ready-calls-active`: one live stream and one voice chat
-  above the history rows, injected, no network.
+  above the history rows, injected, no network (the capture itself needs a
+  platform whose GPUI readback is implemented).

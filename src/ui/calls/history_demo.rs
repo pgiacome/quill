@@ -104,9 +104,11 @@ mod tests {
     use gpui_kit::component::Root;
     use gpui_kit::test::TestWindowExt;
     use gpui_kit::{AppContext, TestAppContext, VisualTestContext, px, size};
+    use quill::state::GroupCallKind;
 
     /// The screenshot cannot be taken on every platform, so the fixture is
-    /// checked here: both running calls reach the Calls tab as rows.
+    /// checked here: both running calls reach the session and the Calls tab
+    /// as rows, the stream first, above the Recent calls row.
     #[gpui_kit::test]
     fn the_active_calls_demo_draws_a_stream_and_a_voice_chat(cx: &mut TestAppContext) {
         cx.update(gpui_kit::init);
@@ -128,11 +130,57 @@ mod tests {
         for _ in 0..2 {
             vcx.update(|window, cx| window.render_frame(cx));
         }
+
+        let app = vcx.update(|window, cx| {
+            let root = window.root::<Root>().flatten().expect("window root");
+            let shell = root
+                .read(cx)
+                .view()
+                .clone()
+                .downcast::<QuillShell>()
+                .expect("the shell is the root view");
+            shell.read(cx).app.clone()
+        });
+        let listed = app.read_with(&vcx, |app, _| app.session().unwrap().live_group_calls());
+        assert_eq!(
+            listed.iter().map(|call| call.id).collect::<Vec<_>>(),
+            vec![61, 62],
+            "the stream first, then the voice chat"
+        );
+        assert_eq!(
+            listed.iter().map(|call| call.kind).collect::<Vec<_>>(),
+            vec![
+                Some(GroupCallKind::LiveStream),
+                Some(GroupCallKind::VoiceChat)
+            ]
+        );
+        assert_eq!(
+            listed
+                .iter()
+                .map(|call| call.participant_count)
+                .collect::<Vec<_>>(),
+            vec![1280, 4]
+        );
+        assert_eq!(
+            listed.iter().map(|call| call.chat_id).collect::<Vec<_>>(),
+            vec![Some(51), Some(52)]
+        );
+
         for id in [61u64, 62u64] {
             assert!(
                 vcx.update(|window, _| window.try_find(("active-call-row", id)).is_some()),
                 "row {id} is drawn"
             );
         }
+        let first_row = vcx
+            .update(|window, _| window.try_find(("active-call-row", 61u64)))
+            .expect("the first active call row is drawn");
+        let recent = vcx
+            .update(|window, _| window.try_find("calls-clear-all"))
+            .expect("the Recent calls row is drawn");
+        assert!(
+            first_row.bounds().origin.y < recent.bounds().origin.y,
+            "the active calls section is above Recent calls"
+        );
     }
 }
