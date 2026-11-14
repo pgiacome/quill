@@ -1,0 +1,4 @@
+// communities (TDLib 1.8.70 community features; English text from tdesktop lang.strings).
+"qll_community_ban_unavailable" = "Не удалось заблокировать: это сообщество больше недоступно.";
+"qll_community_create_busy" = "Другое сообщество ещё создаётся.";
+"qll_community_step_unavailable" = "Этот чат или сообщество больше недоступны.";
