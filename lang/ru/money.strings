@@ -26,7 +26,7 @@
 "qll_money_affiliate_program" = "Партнёрская программа";
 "qll_money_affiliate_programs" = "Партнёрские программы";
 "qll_money_affiliate_programs_2" = "Партнёрские программы";
-"qll_money_all" = "Все: {who}";
+"qll_money_all" = "Все {who}";
 "qll_money_all_gifts" = "‹ Все подарки";
 "qll_money_all_transactions" = "Все транзакции";
 "qll_money_allow_channel_messages" = "Разрешить сообщения каналов";
@@ -66,7 +66,7 @@
 "qll_money_cancel_the_suggestion" = "Отменить предложение";
 "qll_money_cancel_this_subscription" = "Отменить эту подписку?";
 "qll_money_canceled_active_until" = "Отменена — действует до {date}";
-"qll_money_card_top_up" = "Пополнение с карты";
+"qll_money_card_top_up" = "Пополнение картой";
 "qll_money_change_price" = "Изменить цену";
 "qll_money_change_price_to" = "Изменить цену на {stars}";
 "qll_money_change_the_price" = "Изменить цену";
@@ -235,7 +235,7 @@
 "qll_money_go_beyond_the_limits_and" = "Выйдите за пределы лимитов и откройте десятки эксклюзивных функций, оформив Telegram Premium.";
 "qll_money_go_to_message" = "Перейти к сообщению";
 "qll_money_hidden" = "Скрыто";
-"qll_money_hidden_from_your_profile" = "Скрыто в вашем профиле.";
+"qll_money_hidden_from_your_profile" = "Скрыто из вашего профиля.";
 "qll_money_hidden_sender" = "Скрытый отправитель";
 "qll_money_hide_from_my_profile" = "Скрыть из профиля";
 "qll_money_hide_my_name_and_message" = "Скрыть моё имя и сообщение";
@@ -270,7 +270,7 @@
 "qll_money_loading_options" = "Загрузка вариантов…";
 "qll_money_loading_payment_form" = "Загрузка формы оплаты…";
 "qll_money_loading_prices" = "Загрузка цен…";
-"qll_money_loading_public_shares" = "Загрузка публичных ссылок…";
+"qll_money_loading_public_shares" = "Загрузка публичных репостов…";
 "qll_money_loading_statistics" = "Загрузка статистики…";
 "qll_money_loading_subscriptions" = "Загрузка подписок…";
 "qll_money_loading_the_giveaway" = "Загрузка розыгрыша…";
@@ -313,8 +313,8 @@
 "qll_money_offer_sent_demo" = "Предложение отправлено (демо)";
 "qll_money_offer_this_price" = "предложить эту цену";
 "qll_money_on" = "Вкл.";
-"qll_money_on_sale_for" = "В продаже за {resale_star_count} ⭐.";
-"qll_money_only_new" = "Только новые: {who}";
+"qll_money_on_sale_for" = "В продаже за {resale_star_count}.";
+"qll_money_only_new" = "Только новые {who}";
 "qll_money_open_a_chat_with_a" = "Откройте чат с человеком или каналом, чтобы выбрать получателя подарка.";
 "qll_money_open_app" = "Открыть приложение";
 "qll_money_gift_is_being_sent" = "Подарок отправляется. Дождитесь завершения, прежде чем выбрать другого получателя.";
@@ -350,12 +350,12 @@
 "qll_money_previous" = "Назад";
 "qll_money_price" = "Цена";
 "qll_money_price_in_stars" = "Цена в звёздах";
-"qll_money_private_shares" = "Приватные ссылки";
+"qll_money_private_shares" = "Личные репосты";
 "qll_money_processing" = "Обработка…";
 "qll_money_programs" = "Программы";
-"qll_money_public_share" = "публичная ссылка";
-"qll_money_public_shares" = "Публичные ссылки";
-"qll_money_public_shares_2" = "публичные ссылки";
+"qll_money_public_share" = "публичный репост";
+"qll_money_public_shares" = "Публичные репосты";
+"qll_money_public_shares_2" = "публичных репоста";
 "qll_money_publish" = "Опубликовать";
 "qll_money_put_this_gift_on_the" = "Выставьте подарок на маркетплейс. Любой сможет купить его по вашей цене.";
 "qll_money_raise_bid" = "Поднять ставку {countdown}";
@@ -443,8 +443,8 @@
 "qll_money_still_processing_check_back_later" = "Всё ещё обрабатывается. Проверьте позже.";
 "qll_money_story" = "История";
 "qll_money_story_statistics" = "Статистика истории";
-"qll_money_street_address" = "Адрес улицы";
-"qll_money_street_address_line_2_optional" = "Адрес улицы (строка 2, необязательно)";
+"qll_money_street_address" = "Улица, дом";
+"qll_money_street_address_line_2_optional" = "Улица, дом (строка 2, необязательно)";
 "qll_money_submit" = "Отправить";
 "qll_money_subscription" = "Подписка";
 "qll_money_subscriptions" = "⭐ Подписки";
@@ -480,7 +480,7 @@
 "qll_money_this_takes_from_your_balance" = "С вашего баланса спишется {stars}{unwrap_or_default}.";
 "qll_money_this_user" = "Этот пользователь";
 "qll_money_this_user_2" = "этот пользователь";
-"qll_money_this_will_receive" = "{chat_name}: этот {place} получит {boosts_text}";
+"qll_money_this_will_receive" = "{chat_name}: {place} получит {boosts_text}";
 "qll_money_time" = "Время";
 "qll_money_tip" = "Чаевые";
 "qll_money_ton" = "TON?";
@@ -503,7 +503,7 @@
 "qll_money_update" = "Обновить";
 "qll_money_update_affiliate_program" = "Обновить партнёрскую программу";
 "qll_money_upgrade_this_gift_to_a" = "Улучшите этот подарок до коллекционного. Отправитель уже заплатил за него, поэтому вам это ничего не будет стоить.";
-"qll_money_upgrade_this_gift_to_a_2" = "Улучшить этот подарок до коллекционного за {stars} ⭐? Звёзды спишутся с баланса, и это нельзя отменить.";
+"qll_money_upgrade_this_gift_to_a_2" = "Улучшить этот подарок до коллекционного за {stars}? Звёзды спишутся с баланса, и это нельзя отменить.";
 "qll_money_upgrade_to_a_collectible" = "Улучшить до коллекционного ({stars})";
 "qll_money_upgrade_to_a_collectible_free" = "Улучшить до коллекционного (бесплатно)";
 "qll_money_user" = "Пользователь {id}";
@@ -521,7 +521,7 @@
 "qll_money_view_my_prize" = "Посмотреть мой приз";
 "qll_money_view_receipt" = "Посмотреть чек";
 "qll_money_view_statistics" = "Посмотреть статистику";
-"qll_money_viewing_members" = "Участники, просматривающие";
+"qll_money_viewing_members" = "Смотрят сейчас";
 "qll_money_views" = "Просмотры";
 "qll_money_views_per_post" = "Просмотров на пост";
 "qll_money_views_per_story" = "Просмотров на историю";
@@ -554,7 +554,7 @@
 "qll_money_you_need_to" = "Чтобы {what}, вам нужно: {label}.";
 "qll_money_you_need_to_add_up" = "Для создания нужно добавить до 3 подарков из одной коллекции.";
 "qll_money_you_pay_for_premium_in" = "Вы оплачиваете премиум при оформлении.";
-"qll_money_you_pay_for_stars_in" = "Вы оплачиваете звёзды при оформлении.";
+"qll_money_you_pay_for_stars_in" = "Вы платите за звёзды при оформлении.";
 "qll_money_you_pay_in_the_checkout" = "Вы платите при оформлении. Звёзды получит этот человек, а не ваш баланс.";
 "qll_money_you_reacted_with_1_star" = "Вы отреагировали 1 звездой.";
 "qll_money_you_reacted_with_stars" = "Вы отреагировали: {stars} ⭐.";
@@ -566,7 +566,7 @@
 "qll_money_your_balance_is" = "Ваш баланс: {stars}.";
 "qll_money_your_balance_is_buy_more" = "Ваш баланс: {stars_text}. Сначала купите ещё звёзды.";
 "qll_money_your_balance_is_too_low" = "Для этого подарка недостаточно средств на балансе.";
-"qll_money_your_balance_is_too_low_2" = "Недостаточно средств. Купите ещё звёзды в окне звёзд.";
+"qll_money_your_balance_is_too_low_2" = "Недостаточно средств. Купите ещё звёзды в разделе «Звёзды».";
 "qll_money_your_balance_is_too_low_3" = "Недостаточно средств на балансе ({unwrap_or_default}).";
 "qll_money_your_channel_needs_to_reach" = "Чтобы отключить рекламу, ваш канал должен достичь уровня {level}.";
 "qll_money_your_first_grams" = "Ваши первые Grams!";
