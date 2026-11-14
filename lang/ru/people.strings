@@ -144,10 +144,10 @@
 "qll_people_permissions_part_boosts" = "бусты, необходимые для обхода ограничений";
 "qll_people_could_not_update_topic" = "Не удалось обновить тему";
 "qll_people_couldn_t_load_contacts" = "Не удалось загрузить контакты.";
-"qll_people_couldnt_load_channels_retry" = "Не удалось загрузить каналы. Повторите";
-"qll_people_couldnt_load_groups_retry" = "Не удалось загрузить группы. Повторите";
+"qll_people_couldnt_load_channels_retry" = "Не удалось загрузить каналы. Повторите попытку.";
+"qll_people_couldnt_load_groups_retry" = "Не удалось загрузить группы. Повторите попытку.";
 "qll_people_couldnt_load_profile_photos" = "Не удалось загрузить фото профиля: {reason}";
-"qll_people_couldnt_load_retry" = "Не удалось загрузить. Повторите";
+"qll_people_couldnt_load_retry" = "Не удалось загрузить. Повторите попытку.";
 "qll_people_couldnt_load_the_emoji_go" = "Не удалось загрузить эмодзи. Вернитесь и откройте его снова, чтобы повторить.";
 "qll_people_couldnt_open_the_map" = "Не удалось открыть карту";
 "qll_people_couldnt_reach_telegram_try_again" = "Не удалось связаться с Telegram. Повторите попытку.";
@@ -172,7 +172,7 @@
 "qll_people_decline" = "Отклонить";
 "qll_people_default" = "По умолчанию";
 "qll_people_default_icon" = "Значок по умолчанию";
-"qll_people_delete_and_all_its_messages" = "Удалить {name} и все его сообщения? Это нельзя отменить.";
+"qll_people_delete_and_all_its_messages" = "Удалить {name} вместе со всеми сообщениями? Это нельзя отменить.";
 "qll_people_delete_chat" = "Удалить чат";
 "qll_people_delete_chats" = "Удалить чаты";
 "qll_people_delete_community" = "Удалить сообщество";
@@ -248,7 +248,7 @@
 "qll_people_join_requests" = "Заявки на вступление";
 "qll_people_join_requests_need_a_live" = "Для заявок на вступление нужно подключение (демо)";
 "qll_people_joined" = "Вступили ({joined_count})";
-"qll_people_joined_channel_demo" = "Вступление в канал (демо)";
+"qll_people_joined_channel_demo" = "Вы вступили в канал (демо)";
 "qll_people_joining_channel" = "Вступление в канал…";
 "qll_people_last_name" = "Фамилия";
 "qll_people_learn_more" = "Подробнее…";
@@ -259,7 +259,7 @@
 "qll_people_leaving_channel" = "Выход из канала…";
 "qll_people_leaving_group" = "Выход из группы…";
 "qll_people_could_not_change_photo" = "Не удалось изменить фото: {reason}";
-"qll_people_left_channel_demo" = "Выход из канала (демо)";
+"qll_people_left_channel_demo" = "Вы вышли из канала (демо)";
 "qll_people_level_boosts#one" = "Уровень {level} · {count} буст";
 "qll_people_level_boosts#few" = "Уровень {level} · {count} буста";
 "qll_people_level_boosts#many" = "Уровень {level} · {count} бустов";
@@ -296,7 +296,7 @@
 "qll_people_member_banned" = "Участник заблокирован";
 "qll_people_member_promoted" = "Участник назначен администратором";
 "qll_people_member_restricted" = "Участник ограничен";
-"qll_people_member_s_could_not_be" = "Не удалось добавить участников ({failed})";
+"qll_people_member_s_could_not_be" = "Не удалось добавить участников: {failed}";
 "qll_people_member_search_needs_a_live" = "Для поиска участников нужно подключение (демо)";
 "qll_people_member_unbanned" = "Участник разблокирован";
 "qll_people_month" = "Месяц";
@@ -361,7 +361,7 @@
 "qll_people_pick_a_chat_for_the" = "Выберите чат для сообщества";
 "qll_people_pick_a_date_and_time" = "Выберите дату и время";
 "qll_people_pick_at_least_one_contact" = "Выберите хотя бы один контакт для добавления";
-"qll_people_pinned" = "Закреплённое";
+"qll_people_pinned" = "Закреплено";
 "qll_people_pinned_2" = " · закреплено";
 "qll_people_pinning_needs_a_live_connection" = "Для закрепления нужно подключение (демо)";
 "qll_people_posting_as" = "Публикация от имени {title}.";
@@ -513,7 +513,7 @@
 "qll_people_welcome_messages_need_a_live" = "Для приветственных сообщений нужно подключение (демо)";
 "qll_people_why_are_you_reporting_this" = "Почему вы жалуетесь на это фото?";
 "qll_people_year" = "Год";
-"qll_people_years_old" = "{day} {month} {year} ({age} г.)";
+"qll_people_years_old" = "{day} {month} {year} ({age} л.)";
 "qll_people_you_are_an_admin_but" = "Вы администратор, но публикация для вас отключена.";
 "qll_people_you_are_banned_from_this" = "Вы заблокированы в этом канале.";
 "qll_people_you_cant_change_the_discussion" = "Здесь нельзя изменить группу обсуждения.";
