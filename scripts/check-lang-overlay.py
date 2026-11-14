@@ -8,6 +8,10 @@ fails when:
 - an entry uses a `lng_*` key: those come from Telegram, not from Quill;
 - an entry gives a form (`#one`, `#few`, …) to an ordinary English key, or no
   form to a plural one;
+- the same base key appears twice in one file, or two files disagree on its
+  kind or on the value of a form (one key, one translation);
+- a value has unbalanced `{`/`}`;
+- a plural entry lacks `#one`, `#few`, `#many` or `#other`;
 - the `{tags}` of a value differ from the English value (the same form when
   English has it, `#other` otherwise) or repeat a different number of times;
 - a present overlay file misses an English `qll_*` key of its counterpart,
@@ -138,6 +142,21 @@ def split_plural(key):
     return key, None
 
 
+def braces_balanced(value):
+    """No nesting and no stray brace, as `parse::braces_balanced`."""
+    open_brace = False
+    for c in value:
+        if c == '{':
+            if open_brace:
+                return False
+            open_brace = True
+        elif c == '}':
+            if not open_brace:
+                return False
+            open_brace = False
+    return not open_brace
+
+
 def strings_files(directory):
     if not os.path.isdir(directory):
         return []
@@ -194,6 +213,10 @@ def check_overlay(code, root, errors):
         english_by_file[name] = entries
 
     present = strings_files(directory)
+    # One key, one translation: the same base key may sit in two overlay
+    # files only with the same kind and the same value for every form.
+    defined = {}
+    kinds = {}
     for name in present:
         relative = 'lang/%s/%s' % (code, name)
         try:
@@ -202,6 +225,7 @@ def check_overlay(code, root, errors):
             errors.append('%s: %s' % (relative, err))
             continue
         seen = set()
+        local = {}
         for key, value, line in entries:
             where = '%s:%d' % (relative, line)
             base, form = split_plural(key)
@@ -213,6 +237,22 @@ def check_overlay(code, root, errors):
                 errors.append('%s: duplicate key %r' % (where, key))
                 continue
             seen.add(key)
+            if not braces_balanced(value):
+                errors.append('%s: %r has unbalanced braces' % (where, key))
+                continue
+            local.setdefault(base, set()).add(form)
+            previous_kind = kinds.get(base)
+            if previous_kind is None:
+                kinds[base] = (form is not None, relative, line)
+            elif previous_kind[0] != (form is not None):
+                errors.append('%s: %r is ordinary here but plural in %s:%d'
+                              % (where, base, previous_kind[1], previous_kind[2]))
+            previous = defined.get((base, form))
+            if previous is None:
+                defined[(base, form)] = (value, relative, line)
+            elif previous[0] != value:
+                errors.append('%s: %r differs from its translation in %s:%d'
+                              % (where, key, previous[1], previous[2]))
             record = english.get(base)
             if record is None:
                 continue
@@ -235,13 +275,19 @@ def check_overlay(code, root, errors):
                               % (where, key, sorted(tags(value).elements()),
                                  sorted(tags(reference).elements())))
 
+        for base, forms in local.items():
+            if forms == {None}:
+                continue
+            missing = [form for form in ('one', 'few', 'many', 'other')
+                       if form not in forms]
+            if missing:
+                errors.append('%s: %r has no %s'
+                              % (relative, base,
+                                 ', '.join('#' + form for form in missing)))
+
         counterpart = english_by_file.get(name)
         if counterpart is None:
             continue
-        local = {}
-        for key, _, _ in entries:
-            base, form = split_plural(key)
-            local.setdefault(base, set()).add(form)
         for key, value, line in counterpart:
             base, form = split_plural(key)
             if not base.startswith('qll_'):

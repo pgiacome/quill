@@ -1,5 +1,5 @@
 // Settings → Language (tdesktop boxes/language_box.cpp).
-"qll_translate_chats_hint" = "Предлагать переводить целые переписки с помощью панели над чатом.";
+"qll_translate_chats_hint" = "Предлагать переводить целые чаты с помощью панели над чатом";
 "qll_language_beta_title" = "Бета";
 "qll_language_beta_about" = "Переводы, над которыми сообщество Telegram ещё работает. Всё, что ещё не переведено, остаётся на английском.";
 "qll_language_translated_percent" = "Переведено на {percent}%";

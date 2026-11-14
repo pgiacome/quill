@@ -71,7 +71,7 @@
 "qll_settings_privacy_see_bio" = "Кто может видеть информацию обо мне";
 "qll_settings_privacy_see_birthdate" = "Кто может видеть мою дату рождения";
 "qll_settings_privacy_see_forwards" = "Кто может добавлять ссылку на мой аккаунт при пересылке моих сообщений";
-"qll_settings_privacy_see_gifts" = "Кто может показывать подарки в моём профиле";
+"qll_settings_privacy_see_gifts" = "Кто может видеть мои подарки в профиле";
 "qll_settings_privacy_see_last_seen" = "Кто может видеть время моего последнего посещения";
 "qll_settings_privacy_see_music" = "Кто может видеть сохранённую музыку в моём профиле";
 "qll_settings_privacy_see_phone" = "Кто может видеть мой номер телефона";
