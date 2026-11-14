@@ -14,8 +14,9 @@ impl QuillApp {
             .relative()
             .flex_1()
             .min_w_0()
-            .when(self.appearance.compact_mode, |field| {
-                field.min_h_8().flex().items_center()
+            // A field shorter than the buttons beside it is centred on them.
+            .when_some(self.density().composer_field_min_h, |field, height| {
+                field.min_h(px(height)).flex().items_center()
             })
             .map(|field| self.emoji_words_hover(field, cx))
             // tdesktop hides the field behind a rich draft's preview.
@@ -25,7 +26,7 @@ impl QuillApp {
             .key_context(super::keybindings::COMPOSER_CONTEXT)
             .child(
                 Textarea::new(&self.composer)
-                    .when(self.appearance.compact_mode, |field| field.small())
+                    .with_size(self.control_size())
                     .appearance(false)
                     .bordered(false)
                     .aria_label(tr(keys::SR_CHAT_COLUMN_MESSAGE))

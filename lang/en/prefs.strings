@@ -295,6 +295,8 @@
 "qll_prefs_close_window_2" = "Close Window";
 "qll_prefs_cmd_enter" = "⌘⏎ Cmd+Enter";
 "qll_prefs_code" = "Code";
+"qll_prefs_compact_mode" = "Compact mode";
+"qll_prefs_compact_mode_about" = "Fit more chats and messages on screen with tighter spacing.";
 "qll_prefs_composer" = "Composer";
 "qll_prefs_confirm_before_calling" = "Confirm before calling";
 "qll_prefs_confirm_new_passcode" = "Confirm new passcode";
@@ -460,8 +462,6 @@
 "qll_prefs_incomplete_login_attempts" = "Incomplete Login Attempts";
 "qll_prefs_instant_view" = "Instant View";
 "qll_prefs_interface_scale" = "Interface scale";
-"qll_prefs_compact_mode" = "Compact mode";
-"qll_prefs_compact_mode_about" = "Fit more chats and messages on screen with tighter spacing.";
 "qll_prefs_is_already_used_by_and" = "{chord} is already used by {other_label} and was not applied.";
 "qll_prefs_is_reserved_for_a_built" = "{chord} is reserved for a built-in shortcut and was not applied.";
 "qll_prefs_isnt_a_valid_shortcut_and" = "{chord} isn't a valid shortcut and was not applied.";

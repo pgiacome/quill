@@ -257,8 +257,8 @@ impl QuillApp {
                     .child(super::vanish::row_tracker(quill::ids::ChatMessage::new(
                         row_chat, row_msg,
                     )))
-                    .when(inputs.run_start && !self.appearance.compact_mode, |this| {
-                        this.pt_2()
+                    .when(inputs.run_start, |this| {
+                        this.pt(px(self.density().sender_gap))
                     })
                     // Jump target, forward selection and failed sends tint
                     // the whole row instead of outlining it: no border or

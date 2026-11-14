@@ -85,6 +85,10 @@ impl QuillApp {
     /// device setting (like tdesktop's locally stored theme choice), so it
     /// lives outside every account's folder and survives removing one.
     pub(crate) fn appearance_paths() -> AccountPaths {
+        #[cfg(test)]
+        if let Some(root) = test_prefs::root() {
+            return quill::settings::app_prefs_paths(&root);
+        }
         // `safe_app_root` has no `./quill-data` fallback (security: never
         // scatter account state under the launch directory); without a
         // platform data dir the prefs fall back to the temp dir.
@@ -114,6 +118,7 @@ impl QuillApp {
     /// reverted by the schedule.
     pub(crate) fn apply_appearance(&mut self, cx: &mut Context<Self>) {
         self.sync_night_clock(cx);
+        self.apply_title_bar_height(cx);
         let hc = self.appearance.theme == ThemeChoice::HighContrast;
         // The day or night theme (tdesktop keeps one of each and switches
         // with night mode); high contrast keeps its own palette.
@@ -227,16 +232,16 @@ impl QuillApp {
         cx: &mut Context<Self>,
         f: impl FnOnce(&mut AppearancePrefs),
     ) {
-        let previous_preview_lines = self.appearance.preview_lines;
+        let rows = density::RowLayout::of(&self.appearance);
         f(&mut self.appearance);
-        if previous_preview_lines != self.appearance.preview_lines {
-            self.chat_list.pin.end_drag();
-        }
         quill::tray::set_tray_enabled(self.appearance.work_mode.has_tray());
         quill::tray::monochrome::set_monochrome(self.appearance.tray_icon_monochrome);
         self.appearance.font_size_px = clamp_font_size(self.appearance.font_size_px);
         save_appearance_prefs(&Self::appearance_paths(), &self.appearance);
         self.apply_appearance(cx);
+        if density::RowLayout::of(&self.appearance) != rows {
+            self.appearance_layout_changed(cx);
+        }
         cx.notify();
     }
 
@@ -657,7 +662,11 @@ impl QuillApp {
 mod night_clock;
 pub(super) use night_clock::NightClock;
 mod appearance_keybindings_section;
-mod compact_mode;
+mod density;
+#[cfg(test)]
+mod test_prefs;
+#[cfg(test)]
+pub(in crate::ui) use test_prefs::own_appearance_prefs;
 mod new_accent_picker;
 pub(in crate::ui) use new_accent_picker::{AccentSelect, LinkHandlerRecheck};
 mod send_to_menu_section;

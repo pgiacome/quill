@@ -40,14 +40,21 @@ pub struct ChatListRowStyle {
     pub preview_lines: u8,
     pub media_icons: bool,
     pub rich_preview: bool,
+    pub density: crate::density::Density,
 }
 
 impl ChatListRowStyle {
-    pub fn new(preview_lines: u8, media_icons: bool, rich_preview: bool) -> Self {
+    pub fn new(
+        preview_lines: u8,
+        media_icons: bool,
+        rich_preview: bool,
+        density: crate::density::Density,
+    ) -> Self {
         Self {
             preview_lines: clamp_preview_lines(preview_lines),
             media_icons,
             rich_preview,
+            density,
         }
     }
 }
@@ -128,12 +135,18 @@ pub fn preview_sender_name(
     }
 }
 
-/// Fixed chat-row height for the virtual list: 64px base (avatar 46 +
-/// padding), 88px with the folder-tag strip; the third line adds
-/// one text_xs line (16px). The row renderer enforces the same height.
-pub fn chat_row_height_px(has_tags: bool, preview_lines: u8) -> f32 {
-    let base = if has_tags { 88.0 } else { 64.0 };
-    base + (clamp_preview_lines(preview_lines) - PREVIEW_LINES_MIN) as f32 * 16.0
+/// Fixed chat-row height for the virtual list at a density: the two-line
+/// row, one more line per preview line past the second, and the folder-tag
+/// strip (Standard: 64px, 80px with three lines, +24px with tags). The row
+/// renderer enforces the same height.
+pub fn chat_row_height_px(
+    has_tags: bool,
+    preview_lines: u8,
+    metrics: &crate::density::DensityMetrics,
+) -> f32 {
+    let extra_lines = (clamp_preview_lines(preview_lines) - PREVIEW_LINES_MIN) as f32;
+    let tags = if has_tags { metrics.row_tags } else { 0.0 };
+    metrics.row_base + extra_lines * metrics.row_line + tags
 }
 
 /// Clip entities to `max_bytes`, dropping degenerate ones (zero length

@@ -7,7 +7,7 @@
 
 use super::*;
 use crate::ui::chat_list_keys::ListRow;
-use crate::ui::chat_row::chat_row_avatar_size;
+use crate::ui::chat_row::row_text_lines;
 use crate::ui::pressable::PressableDiv;
 use gpui_kit::component::*;
 use gpui_kit::prelude::FluentBuilder;
@@ -382,15 +382,14 @@ impl QuillApp {
         let Some(summary) = self.community_row_summary(community_id) else {
             return div().into_any_element();
         };
-        let compact = self.appearance.compact_mode;
-        let avatar_size = chat_row_avatar_size(compact);
+        let m = self.density();
+        let avatar_size = m.avatar;
         let badge = summary.badge();
         let mentioned = summary.mentioned;
         div()
             .id(("community-row", community_id as u64))
             .w_full()
-            .px_2()
-            .when(compact, |row| row.px_1())
+            .px(px(m.row_inset))
             .h(height)
             .flex()
             .flex_col()
@@ -416,8 +415,7 @@ impl QuillApp {
                 div()
                     .flex()
                     .items_center()
-                    .gap_3()
-                    .when(compact, |row| row.gap_2())
+                    .gap(px(m.row_gap))
                     .child(
                         div()
                             .ml(px(-avatar_size * PEEK))
@@ -429,13 +427,7 @@ impl QuillApp {
                             )),
                     )
                     .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap_0p5()
-                            .when(compact, |lines| lines.gap_0().line_height(rems(1.125)))
-                            .min_w_0()
-                            .flex_1()
+                        row_text_lines(m)
                             .child(
                                 div()
                                     .flex()

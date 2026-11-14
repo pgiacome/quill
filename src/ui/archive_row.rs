@@ -7,7 +7,7 @@
 
 use super::app::{ChatListFilter, QuillApp};
 use super::chat_list_keys::ListRow;
-use super::chat_row::chat_row_avatar_size;
+use super::chat_row::row_text_lines;
 use super::context_menu_keys::context_menu_item;
 use super::pressable::PressableDiv;
 use super::*;
@@ -147,13 +147,12 @@ impl QuillApp {
             .and_then(|s| s.archive_row_summary())
             .unwrap_or_default();
         let badge = summary.badge();
-        let compact = self.appearance.compact_mode;
+        let m = self.density();
         div()
             .id("archive-row")
             .a11y_tag(quill::agent::ui_driver::redact::ARCHIVE)
             .w_full()
-            .px_2()
-            .when(compact, |row| row.px_1())
+            .px(px(m.row_inset))
             .h(height)
             .flex()
             .flex_col()
@@ -176,17 +175,10 @@ impl QuillApp {
                 div()
                     .flex()
                     .items_center()
-                    .gap_3()
-                    .when(compact, |row| row.gap_2())
-                    .child(archive_avatar(chat_row_avatar_size(compact)))
+                    .gap(px(m.row_gap))
+                    .child(archive_avatar(m.avatar))
                     .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap_0p5()
-                            .when(compact, |lines| lines.gap_0().line_height(rems(1.125)))
-                            .min_w_0()
-                            .flex_1()
+                        row_text_lines(m)
                             .child(div().font_semibold().min_w_0().truncate().child(title()))
                             .child(
                                 div()

@@ -17,6 +17,7 @@ use quill::chatlist_style::{
     ChatListRowStyle, ChatPreviewStyle, PREVIEW_LINES_DEFAULT, chat_row_height_px,
     clamp_preview_lines, clip_entities, preview_sender_name, preview_style,
 };
+use quill::density::{COMPACT, Density, STANDARD};
 use quill::diagnostics::{DiagnosticSink, MemorySink};
 use quill::ids::AccountKey;
 use quill::settings::{
@@ -96,24 +97,47 @@ fn chat_list_style_preview_lines_clamp_on_load() {
 
 #[test]
 fn row_style_clamps_preview_lines() {
-    assert_eq!(ChatListRowStyle::new(0, true, true).preview_lines, 2);
-    assert_eq!(ChatListRowStyle::new(3, false, false).preview_lines, 3);
-    assert_eq!(ChatListRowStyle::new(9, true, true).preview_lines, 3);
+    assert_eq!(
+        ChatListRowStyle::new(0, true, true, Density::Standard).preview_lines,
+        2
+    );
+    assert_eq!(
+        ChatListRowStyle::new(3, false, false, Density::Standard).preview_lines,
+        3
+    );
+    assert_eq!(
+        ChatListRowStyle::new(9, true, true, Density::Standard).preview_lines,
+        3
+    );
     assert_eq!(clamp_preview_lines(0), 2);
     assert_eq!(clamp_preview_lines(3), 3);
 }
 
 #[test]
 fn chat_row_height_reflects_lines_and_tags() {
-    // 56px base (avatar 40 + py_2), 80px with the folder-tag strip; the
+    // 64px base (avatar 46 + padding), +24px with the folder-tag strip; the
     // third line adds one text_xs line (16px).
-    assert_eq!(chat_row_height_px(false, 2), 64.0);
-    assert_eq!(chat_row_height_px(true, 2), 88.0);
-    assert_eq!(chat_row_height_px(false, 3), 80.0);
-    assert_eq!(chat_row_height_px(true, 3), 104.0);
+    let m = &STANDARD;
+    assert_eq!(chat_row_height_px(false, 2, m), 64.0);
+    assert_eq!(chat_row_height_px(true, 2, m), 88.0);
+    assert_eq!(chat_row_height_px(false, 3, m), 80.0);
+    assert_eq!(chat_row_height_px(true, 3, m), 104.0);
     // Out-of-range line counts clamp instead of producing odd heights.
-    assert_eq!(chat_row_height_px(false, 9), 80.0);
-    assert_eq!(chat_row_height_px(false, 0), 64.0);
+    assert_eq!(chat_row_height_px(false, 9, m), 80.0);
+    assert_eq!(chat_row_height_px(false, 0, m), 64.0);
+}
+
+#[test]
+fn compact_rows_are_shorter_by_the_same_rule() {
+    let m = &COMPACT;
+    assert_eq!(chat_row_height_px(false, 2, m), 40.0);
+    assert_eq!(chat_row_height_px(false, 3, m), 60.0);
+    assert_eq!(chat_row_height_px(true, 2, m), 64.0);
+    assert_eq!(chat_row_height_px(true, 3, m), 84.0);
+    assert_eq!(chat_row_height_px(false, 9, m), 60.0);
+    for (tags, lines) in [(false, 2), (true, 2), (false, 3), (true, 3)] {
+        assert!(chat_row_height_px(tags, lines, m) < chat_row_height_px(tags, lines, &STANDARD));
+    }
 }
 
 #[test]

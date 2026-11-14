@@ -103,26 +103,20 @@ impl ChatListItem {
 }
 
 /// kit Phase 9: a loading placeholder row for the chat list — a kit
-/// `Skeleton` avatar circle plus two skeleton text lines, matching the
-/// shape of a chat row.
-pub(super) fn chat_list_skeleton_row(index: usize, compact: bool) -> impl IntoElement {
+/// `Skeleton` avatar circle plus two skeleton text lines, in the shape and
+/// sizes of the two-line chat row it stands for.
+pub(super) fn chat_list_skeleton_row(
+    index: usize,
+    m: &quill::density::DensityMetrics,
+) -> impl IntoElement {
     div()
         .id(("chat-list-skeleton", index))
         .flex()
         .items_center()
-        .gap_3()
-        .px_3()
-        .py_2()
-        .when(compact, |row| row.px_1().py_1().gap_2())
-        .child(
-            Skeleton::new()
-                .size(px(if compact {
-                    chat_row_avatar_size(compact)
-                } else {
-                    40.
-                }))
-                .rounded_full(),
-        )
+        .gap(px(m.row_gap))
+        .px(px(m.row_inset))
+        .h(px(m.row_base))
+        .child(Skeleton::new().size(px(m.avatar)).rounded_full())
         .child(
             div()
                 .flex()
@@ -290,26 +284,31 @@ pub(super) fn chat_row_has_tags(
     )
 }
 
-/// Row extent shared by the renderer, virtual list and pin reordering.
-pub(super) fn chat_row_height(has_tags: bool, preview_lines: u8, compact: bool) -> Pixels {
-    if !compact {
-        return px(quill::chatlist_style::chat_row_height_px(
-            has_tags,
-            preview_lines,
-        ));
-    }
-    // The third line can contain both forum topic chips and an unread badge.
-    let content = if preview_lines >= quill::chatlist_style::PREVIEW_LINES_MAX {
-        60.
-    } else {
-        40.
-    };
-    let tags = if has_tags { 24. } else { 0. };
-    px(content + tags)
+/// Row extent shared by the renderer, virtual list and pin reordering
+/// (`quill::chatlist_style::chat_row_height_px`).
+pub(super) fn chat_row_height(
+    has_tags: bool,
+    preview_lines: u8,
+    m: &quill::density::DensityMetrics,
+) -> Pixels {
+    px(quill::chatlist_style::chat_row_height_px(
+        has_tags,
+        preview_lines,
+        m,
+    ))
 }
 
-pub(super) fn chat_row_avatar_size(compact: bool) -> f32 {
-    if compact { 28. } else { CHAT_ROW_AVATAR }
+/// A list row's text column, title over preview, at the density's line
+/// height and gap (the row heights fit them). Chat, archive and community
+/// rows share it.
+pub(super) fn row_text_lines(m: &quill::density::DensityMetrics) -> Div {
+    div()
+        .flex()
+        .flex_col()
+        .gap(px(m.row_lines_gap))
+        .when_some(m.line_height, |lines, line| lines.line_height(px(line)))
+        .min_w_0()
+        .flex_1()
 }
 
 /// The open chat's row under the pointer (or the keyboard selection).
@@ -351,9 +350,10 @@ pub(super) fn session_chat_row(
     // The verifying bot's icon before the title, once downloaded.
     verify_icon: Option<std::path::PathBuf>,
     // Slice chatlist-list-style: preview line count, media icons, and
-    // formatted preview (Settings → Appearance → Chat list rows).
+    // formatted preview (Settings → Appearance → Chat list rows), and the
+    // density.
     row_style: ChatListRowStyle,
-    compact: bool,
+    // The height declared to the `VirtualList` (`chat_row_height`).
     height: Pixels,
     // The chat with yourself: "Saved Messages" with a bookmark avatar.
     saved: bool,
@@ -497,16 +497,23 @@ pub(super) fn session_chat_row(
     } else {
         format!("{title} — {preview}")
     };
+    // kit Phase 3: tag chips via the shared helper — the row height
+    // (declared to the `VirtualList`) is derived from the same list.
     let tags = chat_row_tags(chat, folders, show_tags, viewing_folder);
-    let avatar_size = chat_row_avatar_size(compact);
+    let m = row_style.density.metrics();
+    let avatar_size = m.avatar;
     div()
         .id(("chat-row", id.0 as u64))
         .a11y_tag(quill::agent::ui_driver::redact::chat_tag(id.0))
         .w_full()
-        .px_2()
-        .when(compact, |row| row.px_1())
+        .px(px(m.row_inset))
         .role(Role::Button)
         .aria_label(row_label)
+        // kit Phase 3: fixed height (`chat_row_height`) — the `VirtualList`
+        // positions rows from declared sizes, so the row enforces the same
+        // height and centers its content. Title and preview truncate to one
+        // line each, so content can never overflow it; the heights fit the
+        // density's line height (`DensityMetrics::line_height`).
         .h(height)
         .flex()
         .flex_col()
@@ -592,8 +599,7 @@ pub(super) fn session_chat_row(
             div()
                 .flex()
                 .items_center()
-                .gap_3()
-                .when(compact, |row| row.gap_2())
+                .gap(px(m.row_gap))
                 // Parity slice: circular chat photo or colored initials for
                 // every chat-list row / chat type.
                 // Slice CL3: the select-mode check circle precedes the
@@ -633,13 +639,7 @@ pub(super) fn session_chat_row(
                     cx,
                 ))
                 .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_0p5()
-                        .when(compact, |lines| lines.gap_0().line_height(rems(1.125)))
-                        .min_w_0()
-                        .flex_1()
+                    row_text_lines(m)
                         .child(
                             div()
                                 .flex()

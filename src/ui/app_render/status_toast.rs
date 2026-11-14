@@ -4,7 +4,6 @@
 //! state (`ui/toast_queue.rs`); this file only wires them to the frame.
 
 use super::*;
-use crate::ui::app::PaneMode;
 use crate::ui::status_note::{NoteKind, StatusNote};
 use crate::ui::surface_reveal;
 use gpui_kit::TestSupportExt;
@@ -38,19 +37,11 @@ pub(super) fn viewer_toast_insets(bar: Pixels) -> ToastInsets {
 }
 
 impl QuillApp {
-    /// Keep the fixed line for startup blockers and demo captions. Compact
-    /// demos use the same floating feedback as a live chat.
-    pub(super) fn status_note_in_layout(&self) -> bool {
-        self.live.is_none()
-            && !self.demo_pins_toast()
-            && (self.pane_mode() != PaneMode::Ready || !self.appearance.compact_mode)
-    }
-
     /// The toast on screen this frame, if any. Advances the queue's timers
     /// and schedules the re-render for the next deadline; a paused (hovered)
     /// toast has none, so it stays until the pointer leaves or it is
-    /// clicked away. When the footer line is active it carries the note
-    /// on its own.
+    /// clicked away. Without a live session the footer line carries the
+    /// note instead, so nothing toasts.
     pub(super) fn status_toast_visible(&mut self, cx: &mut Context<Self>) -> Option<StatusNote> {
         // Any window's toast may drain it first: no window asked here.
         self.unasked(|this| this.drain_suggested_post_notes(cx));
@@ -64,7 +55,10 @@ impl QuillApp {
                 eprintln!("status: {}", self.connection.status_traced);
             }
         }
-        if self.status_note_in_layout() {
+        // Before a session exists the footer status line shows the note and
+        // keeps showing it (a blocker stays until it is resolved), so it is
+        // not toasted a second time.
+        if self.live.is_none() && !self.demo_pins_toast() {
             self.connection.drop_toasts();
             return None;
         }

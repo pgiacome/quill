@@ -7,18 +7,16 @@ use crate::ui::surface_reveal::{self, PinnedShown};
 use quill::ids::AccountChat;
 use quill::lang::{keys, tr, tr_with, trn};
 
-/// The pinned bar's height until it was laid out once.
-const PINNED_BAR_GUESS: Pixels = px(48.);
 /// `st::msgReplyBarSkip`: how far the swapped text slides.
 const PINNED_SWAP_SHIFT: f32 = 10.;
 
 /// The bar's title over its one-line preview.
-fn pinned_bar_lines_block(title: String, preview: String, compact: bool) -> Div {
+fn pinned_bar_lines_block(title: String, preview: String, line_height: Option<f32>) -> Div {
     div()
         .flex()
         .flex_col()
         .min_w_0()
-        .when(compact, |lines| lines.line_height(rems(1.)))
+        .when_some(line_height, |lines, line| lines.line_height(px(line)))
         .child(
             div()
                 .text_xs()
@@ -89,13 +87,13 @@ impl QuillApp {
             self.request_animation_tick(60, cx);
         }
         let drawn = drawn?;
-        let compact = self.appearance.compact_mode;
         let content = self.pinned_message_banner_body(chat_id, &drawn, cx)?;
         Some(surface_reveal::slide_open(
             content,
             drawn.shown,
             self.frame.surfaces.pinned_bar_size.height.clone(),
-            if compact { px(37.) } else { PINNED_BAR_GUESS },
+            // The bar's height until it was laid out once.
+            px(self.density().pinned_bar),
             px(0.),
             surface_reveal::Attached::Top,
         ))
@@ -230,9 +228,9 @@ impl QuillApp {
                 let lines = (previous.title.clone(), previous.preview.clone());
                 (lines, previous.index < index)
             });
-        let compact = self.appearance.compact_mode;
-        let lines_height = px(if compact { 32. } else { 34. });
-        let lines = |title, preview| pinned_bar_lines_block(title, preview, compact);
+        let m = self.density();
+        let lines_height = px(m.pinned_lines);
+        let lines = |title, preview| pinned_bar_lines_block(title, preview, m.pinned_line_height);
         let text = match previous {
             None => lines(title, preview).into_any_element(),
             Some(((old_title, old_preview), up)) => {
@@ -269,8 +267,7 @@ impl QuillApp {
                 .items_center()
                 .gap_2()
                 .px_3()
-                .py_1p5()
-                .when(compact, |bar| bar.py_0p5())
+                .py(px(m.pinned_inset_y))
                 .border_b_1()
                 .border_color(cx.theme().border)
                 .bg(bg_canvas())

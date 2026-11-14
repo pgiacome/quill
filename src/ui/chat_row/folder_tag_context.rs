@@ -153,7 +153,7 @@ impl QuillApp {
                     &chat.kind,
                     selected,
                     saved,
-                    chat_row_avatar_size(self.appearance.compact_mode),
+                    self.density().avatar,
                     cx,
                 );
                 // Swipe action for this row (none while selecting).
@@ -188,8 +188,8 @@ impl QuillApp {
                         }),
                         self.appearance.chat_list_media_icons,
                         self.appearance.chat_list_rich_preview,
+                        self.appearance.density,
                     ),
-                    self.appearance.compact_mode,
                     height,
                     saved,
                     self.session().and_then(|s| s.chat_preview_sender(chat)),

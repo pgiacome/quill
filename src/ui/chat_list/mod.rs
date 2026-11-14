@@ -650,7 +650,7 @@ impl QuillApp {
                     let height = chat_row_height(
                         chat_row_has_tags(chat, &names, tags, viewing),
                         session.chat_row_lines(chat.id, setting),
-                        self.appearance.compact_mode,
+                        self.density(),
                     );
                     Some((*id, f32::from(height)))
                 })
@@ -828,6 +828,8 @@ mod pin_drag_tests;
 pub(in crate::ui) use drop_on_row::DropOnRow;
 pub(in crate::ui) use drop_topic::DropTopic;
 mod header_fit;
+mod keep_top;
+pub(in crate::ui) use keep_top::ListTop;
 mod listed;
 mod view;
 pub(in crate::ui) use view::ChatListView;

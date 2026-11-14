@@ -73,6 +73,7 @@ impl QuillApp {
     /// The column itself: its frame, the header and the list caption.
     #[inline(never)]
     fn sidebar_column(&self, mode: PaneMode, cx: &mut Context<Self>) -> Stateful<Div> {
+        let m = self.density();
         div()
             .id("sidebar")
             .when(mode != PaneMode::Ready, |this| this.overflow_y_scroll())
@@ -81,16 +82,14 @@ impl QuillApp {
             .w(self.list_width())
             .flex_none()
             .h_full()
-            .p_3()
+            .px(px(m.sidebar_inset_x))
+            .py(px(m.sidebar_inset_y))
             .border_r_1()
             .border_color(cx.theme().border)
             .bg(cx.theme().sidebar)
             .flex()
             .flex_col()
-            .gap_2()
-            .when(self.appearance.compact_mode, |sidebar| {
-                sidebar.px_1().py_2().gap_1()
-            })
+            .gap(px(m.sidebar_gap))
             .child(self.sidebar_header(mode, cx))
             .when_some(
                 (self.chat_list.tab == SidebarTab::Chats)
@@ -178,7 +177,7 @@ impl QuillApp {
         let mut chats: Vec<&ChatSummary> = self.listed_main_chats();
         // Slice CL2: the Archived category shows only the archive section.
         let show_main_list = filter != ChatListFilter::Archived;
-        let compact = self.appearance.compact_mode;
+        let m = self.density();
         // Slice CL3: multi-select mode — rows toggle the check instead of
         // opening the chat. Defined once here so the select bar, the main
         // loop, and the archive loop all see it.
@@ -201,7 +200,7 @@ impl QuillApp {
                 // still loading.
                 let mut loading_list = list;
                 for i in 0..4 {
-                    loading_list = loading_list.child(chat_list_skeleton_row(i, compact));
+                    loading_list = loading_list.child(chat_list_skeleton_row(i, m));
                 }
                 loading_list
             } else {
@@ -219,10 +218,10 @@ impl QuillApp {
                 self.session().map_or(self.appearance.preview_lines, |s| {
                     s.chat_row_lines(chat.id, self.appearance.preview_lines)
                 }),
-                compact,
+                m,
             )
         };
-        let default_height = chat_row_height(false, self.appearance.preview_lines, compact);
+        let default_height = chat_row_height(false, self.appearance.preview_lines, m);
         let mut items: Vec<ChatListItem> = Vec::with_capacity(chats.len() + 2);
         // tdesktop: "Archived chats" is a pinned-top entry of the
         // unfiltered main list, a full row or (with `archiveCollapsed`) a
@@ -349,6 +348,7 @@ impl QuillApp {
                 .map(|item| ItemSize::new(px(0.), item.height()))
                 .collect(),
         );
+        self.restore_chat_list_top(&items);
         self.chat_list.begin_row_pass();
         self.chat_list.items = items;
         self.chat_list.folder_tags = folder_tags;

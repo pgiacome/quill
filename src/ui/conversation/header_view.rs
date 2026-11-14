@@ -76,8 +76,8 @@ impl QuillApp {
                     .flex()
                     .flex_col()
                     .min_w_0()
-                    .when(self.appearance.compact_mode, |identity| {
-                        identity.line_height(rems(1.125))
+                    .when_some(self.density().line_height, |identity, line| {
+                        identity.line_height(px(line))
                     })
                     .child(title_row)
                     .when_some(status_line, |this, line| {

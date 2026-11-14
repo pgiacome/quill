@@ -12,14 +12,10 @@
 //! own frame and shows no switch.
 #![deny(clippy::indexing_slicing)]
 
-use super::app::{PaneMode, QuillApp};
-use gpui_kit::assets::IconName;
-use gpui_kit::component::button::{Button, ButtonVariants};
-use gpui_kit::component::{ActiveTheme, Sizable, StyledExt, TITLE_BAR_HEIGHT, TitleBar};
+use gpui_kit::component::{ActiveTheme, TITLE_BAR_HEIGHT, TitleBar};
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::*;
 use quill::agent::ui_driver::redact::{WINDOW_CHROME, WINDOW_CHROME_CONTENT};
-use quill::lang::{keys, tr};
 use smallvec::SmallVec;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -82,6 +78,53 @@ pub(crate) fn sync(window: &mut Window, cx: &App, native: bool) {
     if changed {
         platform::apply(window, native);
     }
+}
+
+thread_local! {
+    /// The title-bar height each open window's macOS traffic lights were last
+    /// centred on. Kept per window, outside any element, so a frame that
+    /// draws no title bar (the lock screen) forgets nothing.
+    static LIGHTS_ON: RefCell<HashMap<WindowId, Pixels>> = RefCell::new(HashMap::new());
+}
+
+/// Centre `window`'s macOS traffic lights on a title bar `height` tall. A
+/// window opens with them centred on the kit's default bar
+/// (`TitleBar::title_bar_options`), so it is asked only when the height
+/// differs from the one the lights were last centred on. Cheap when nothing
+/// changed, so every title bar calls it from its render.
+fn sync_traffic_lights(window: &mut Window, cx: &App, height: Pixels) {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
+    let id = window.window_handle().window_id();
+    let (before, first) = LIGHTS_ON.with(|lights| {
+        let Ok(mut lights) = lights.try_borrow_mut() else {
+            return (None, false);
+        };
+        let before = lights.insert(id, height);
+        (Some(before.unwrap_or(TITLE_BAR_HEIGHT)), before.is_none())
+    });
+    if first {
+        // The entry goes with its window.
+        super::window_control::when_window_goes(window, cx, move |_| {
+            LIGHTS_ON.with(|lights| {
+                if let Ok(mut lights) = lights.try_borrow_mut() {
+                    lights.remove(&id);
+                }
+            });
+        });
+    }
+    if before.is_some_and(|before| before != height)
+        && let Some(position) = TitleBar::title_bar_options().traffic_light_position
+    {
+        window.set_traffic_light_position(traffic_lights_at(position, height));
+    }
+}
+
+/// The kit's traffic-light position for its default bar, moved to stay
+/// centred on a bar `height` tall.
+fn traffic_lights_at(default: Point<Pixels>, height: Pixels) -> Point<Pixels> {
+    point(default.x, default.y - (TITLE_BAR_HEIGHT - height) / 2.)
 }
 
 #[cfg(target_os = "linux")]
@@ -190,77 +233,6 @@ pub(crate) fn traffic_light_inset(window: &Window) -> Pixels {
     }
 }
 
-pub(super) fn main_title_bar(
-    mode: PaneMode,
-    compact: bool,
-    search_open: bool,
-    update: Option<AnyElement>,
-    menu_bar: Option<Entity<gpui_kit::component::menu::AppMenuBar>>,
-    cx: &mut Context<QuillApp>,
-) -> impl IntoElement {
-    let title = "Quill";
-    let show_cycle = mode == PaneMode::Synthetic;
-    // kit Phase 7: kit `TitleBar` — native-feel chrome (drag, double-click
-    // zoom, Linux min/max/close, macOS traffic-light inset) in theme tokens,
-    // replacing the hand-rolled 44px bar. The caption + action buttons ride
-    // as its children.
-    FrameTitleBar::new()
-        .compact(compact)
-        .on_close_window(cx.listener(|this, _, window, cx| {
-            this.exit_after_exports(super::export_quit::quit_app, window, cx);
-        }))
-        .caption(div().font_semibold().text_sm().child(title))
-        .when_some(menu_bar, |bar, menu| bar.menu(menu))
-        .child(
-            div()
-                .flex()
-                .gap_2()
-                .items_center()
-                .flex_none()
-                .children(update)
-                .when(mode == PaneMode::Ready, |this| {
-                    this.child(
-                        Button::new("search")
-                            .icon(if search_open {
-                                IconName::X
-                            } else {
-                                IconName::Search
-                            })
-                            .ghost()
-                            .when(compact, |button| button.small())
-                            .tooltip(if search_open {
-                                tr(keys::Q_MISC_CLOSE_SEARCH)
-                            } else {
-                                tr(keys::Q_MISC_SEARCH)
-                            })
-                            .accessibility_label(if search_open {
-                                tr(keys::Q_MISC_CLOSE_SEARCH)
-                            } else {
-                                tr(keys::Q_MISC_SEARCH)
-                            })
-                            .on_click(cx.listener(|this, _, window, cx| {
-                                if this.search_is_open() {
-                                    this.close_search_ui(window, cx);
-                                } else {
-                                    this.open_search_ui(window, cx);
-                                }
-                            })),
-                    )
-                })
-                .when(show_cycle, |this| {
-                    this.child(
-                        Button::new("cycle-auth")
-                            .icon(IconName::RotateCcw)
-                            .ghost()
-                            .when(compact, |button| button.small())
-                            .tooltip(tr(keys::Q_MISC_CYCLE_AUTH_STATE))
-                            .accessibility_label(tr(keys::Q_MISC_CYCLE_AUTH_STATE))
-                            .on_click(cx.listener(|this, _, _, cx| this.cycle_auth(cx))),
-                    )
-                }),
-        )
-}
-
 /// The bar above the window content: the kit `TitleBar` with Quill's own
 /// frame, or, with the system frame, a slim action row that drops the caption
 /// and the caption buttons (the OS draws both) and the drag area.
@@ -275,11 +247,6 @@ pub(crate) struct FrameTitleBar {
     on_close_window: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
     /// Overrides [`use_native`] (tests draw both frames on any platform).
     native: Option<bool>,
-    compact: bool,
-}
-
-pub(super) fn title_bar_height(compact: bool) -> Pixels {
-    if compact { px(26.) } else { TITLE_BAR_HEIGHT }
 }
 
 impl FrameTitleBar {
@@ -290,7 +257,6 @@ impl FrameTitleBar {
             children: SmallVec::new(),
             on_close_window: None,
             native: None,
-            compact: false,
         }
     }
 
@@ -304,11 +270,6 @@ impl FrameTitleBar {
     /// The window title, shown only in Quill's own bar.
     pub(crate) fn caption(mut self, caption: impl IntoElement) -> Self {
         self.caption = Some(caption.into_any_element());
-        self
-    }
-
-    pub(super) fn compact(mut self, compact: bool) -> Self {
-        self.compact = compact;
         self
     }
 
@@ -337,7 +298,8 @@ impl ParentElement for FrameTitleBar {
 
 impl RenderOnce for FrameTitleBar {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let height = title_bar_height(self.compact);
+        // Every bar is as tall as the density's (`Theme::title_bar_height`).
+        let height = cx.theme().title_bar_height;
         // The menu fills the free width so its trailing space still drags.
         let menu = self.menu.map(|menu| {
             div()
@@ -373,19 +335,7 @@ impl RenderOnce for FrameTitleBar {
                 .children(self.children)
                 .into_any_element();
         }
-        #[cfg(target_os = "macos")]
-        {
-            let inset =
-                window.use_keyed_state("title-bar-density", cx, |_, _| std::cell::Cell::new(false));
-            if inset.read(cx).replace(self.compact) != self.compact
-                && let Some(mut position) = TitleBar::title_bar_options().traffic_light_position
-            {
-                position.y -= (TITLE_BAR_HEIGHT - height) / 2.;
-                window.set_traffic_light_position(position);
-            }
-        }
-        #[cfg(not(target_os = "macos"))]
-        let _ = window;
+        sync_traffic_lights(window, cx, height);
         let on_close = self.on_close_window;
         let lead = match menu {
             Some(menu) => Some(menu.into_any_element()),
@@ -412,7 +362,6 @@ impl RenderOnce for FrameTitleBar {
             .a11y_tag(WINDOW_CHROME)
             .child(
                 TitleBar::new()
-                    .h(height)
                     .when_some(on_close, |bar, close| {
                         bar.on_close_window(move |event, window, cx| {
                             if !quill::agent::ui_driver::guard::refuse_hard_if_injecting(

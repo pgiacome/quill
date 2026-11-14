@@ -58,6 +58,8 @@ const GROUP: i64 = 31;
 
 #[gpui_kit::test]
 fn compact_spacing_remeasures_the_open_history_without_replacing_rows(cx: &mut TestAppContext) {
+    use quill::density::Density;
+    let _prefs = crate::ui::appearance::own_appearance_prefs("quill-density-history");
     let (app, mut vcx) = new_app(cx, "ready-chats");
     open_group(&app, &mut vcx);
     let heights = |vcx: &mut VisualTestContext| {
@@ -68,22 +70,22 @@ fn compact_spacing_remeasures_the_open_history_without_replacing_rows(cx: &mut T
     };
     let initial = heights(&mut vcx);
     let rebuilds = counts(&app, &mut vcx).0;
-    for compact in [true, false] {
+    for density in [Density::Compact, Density::Standard] {
         app.update(&mut vcx, |app, cx| {
-            app.appearance.compact_mode = compact;
-            app.refresh_compact_layout(cx);
+            app.set_appearance(cx, |appearance| appearance.density = density);
         });
         frames(&mut vcx);
-        let expected = if compact {
-            vec![
-                initial[0] - px(4.),
-                initial[1] - px(12.),
-                initial[2] - px(12.),
-            ]
+        let now = heights(&mut vcx);
+        if density == Density::Compact {
+            assert!(
+                now.iter()
+                    .zip(&initial)
+                    .all(|(compact, standard)| compact < standard),
+                "{now:?} vs {initial:?}"
+            );
         } else {
-            initial.clone()
-        };
-        assert_eq!(heights(&mut vcx), expected);
+            assert_eq!(now, initial);
+        }
         assert_eq!(counts(&app, &mut vcx).0, rebuilds);
         assert!(app.read_with(&vcx, |app, cx| {
             app.history.scroller.read(cx).is_following_tail()

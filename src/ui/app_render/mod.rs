@@ -10,8 +10,8 @@ use super::actions::{
 };
 use super::app::QuillApp;
 use super::command_shortcuts::CommandActions;
+use super::main_title_bar::main_title_bar;
 use super::window_actions::WindowActions;
-use super::window_frame::main_title_bar;
 use crate::ui::dismiss_layer::DismissLayer;
 use gpui_kit::component::alert::Alert;
 use gpui_kit::component::*;
@@ -334,7 +334,7 @@ impl Render for QuillApp {
             }))
             .child(main_title_bar(
                 self.pane_mode(),
-                self.appearance.compact_mode,
+                self.control_size(),
                 self.search_is_open(),
                 self.title_bar_update_button(cx),
                 // kit Phase 7: the in-window menu bar on Linux/Windows leads
@@ -445,14 +445,14 @@ impl Render for QuillApp {
             // Screenshot demos keep their caption as a fixed footer line
             // (`QUILL_DEMO_HIDE_STATUS=1` hides it, for recordings).
             .when(
-                self.status_note_in_layout()
+                self.live.is_none()
                     && !self.connection.status_note().is_empty()
+                    && !self.demo_pins_toast()
                     && std::env::var_os("QUILL_DEMO_HIDE_STATUS").is_none(),
                 |this| {
                     this.child(
                         div()
                             .id("status-line")
-                            .debug_selector(|| "status-line".into())
                             .flex_none()
                             .min_h(px(24.))
                             .px_3()

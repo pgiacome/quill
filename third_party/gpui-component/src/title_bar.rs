@@ -336,7 +336,7 @@ impl RenderOnce for TitleBar {
                 .flex_row()
                 .items_center()
                 .justify_between()
-                .h(TITLE_BAR_HEIGHT)
+                .h(cx.theme().title_bar_height)
                 .pl(TITLE_BAR_LEFT_PADDING)
                 .rounded_tl(radii.top_left)
                 .rounded_tr(radii.top_right)

@@ -319,22 +319,25 @@ pub(super) fn rows_per_page(viewport: Pixels, row: Pixels) -> usize {
     (viewport / row).floor() as usize
 }
 
+impl ChatListItem {
+    /// The selectable row this item is (the stories strip is not a row).
+    pub(super) fn list_row(&self) -> Option<ListRow> {
+        match self {
+            ChatListItem::Chat { id, .. } => Some(ListRow::Chat(*id)),
+            ChatListItem::ArchiveRow { .. } | ChatListItem::ArchiveBar => Some(ListRow::Archive),
+            ChatListItem::Community { community_id, .. } => Some(ListRow::Community(*community_id)),
+            ChatListItem::StoryStrip => None,
+        }
+    }
+}
+
 /// The selectable rows of the chat list with their item index, top to
-/// bottom (the stories strip is not a row).
+/// bottom.
 fn list_rows(items: &[ChatListItem]) -> Vec<(usize, ListRow)> {
     items
         .iter()
         .enumerate()
-        .filter_map(|(index, item)| match item {
-            ChatListItem::Chat { id, .. } => Some((index, ListRow::Chat(*id))),
-            ChatListItem::ArchiveRow { .. } | ChatListItem::ArchiveBar => {
-                Some((index, ListRow::Archive))
-            }
-            ChatListItem::Community { community_id, .. } => {
-                Some((index, ListRow::Community(*community_id)))
-            }
-            ChatListItem::StoryStrip => None,
-        })
+        .filter_map(|(index, item)| Some((index, item.list_row()?)))
         .collect()
 }
 
@@ -430,11 +433,7 @@ impl QuillApp {
             .and_then(|row| rows.iter().position(|(_, candidate)| *candidate == row));
         let page = rows_per_page(
             self.chat_list.scroll.bounds().size.height,
-            chat_row_height(
-                false,
-                self.appearance.preview_lines,
-                self.appearance.compact_mode,
-            ),
+            chat_row_height(false, self.appearance.preview_lines, self.density()),
         );
         let Some(&(item, row)) =
             step(key, current, rows.len(), page, false).and_then(|next| rows.get(next))
@@ -543,11 +542,7 @@ impl QuillApp {
             .first()
             .and_then(|row| keys.search_bounds_of(row).map(|b| b.size.height))
             .unwrap_or_else(|| {
-                chat_row_height(
-                    false,
-                    self.appearance.preview_lines,
-                    self.appearance.compact_mode,
-                )
+                chat_row_height(false, self.appearance.preview_lines, self.density())
             });
         let page = rows_per_page(
             self.search_ui.results_scroll.bounds().size.height,

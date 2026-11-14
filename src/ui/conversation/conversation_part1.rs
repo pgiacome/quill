@@ -195,8 +195,8 @@ impl QuillApp {
                                     .child(super::anim_layer::occluder(circle)),
                             )
                         })
-                        .p_3()
-                        .when(self.appearance.compact_mode, |composer| composer.py_1())
+                        .px_3()
+                        .py(px(self.density().composer_inset_y))
                         .border_t_1()
                         .border_color(cx.theme().border)
                         .flex()
@@ -315,8 +315,7 @@ impl QuillApp {
                                 .relative()
                                 .flex()
                                 .items_end()
-                                .gap_2()
-                                .when(self.appearance.compact_mode, |row| row.gap_1())
+                                .gap(px(self.density().composer_gap))
                                 .when(show_attach, |row| {
                                     row.when_some(self.bot_menu_button(cx), |row, button| {
                                         row.child(button)
@@ -332,9 +331,6 @@ impl QuillApp {
                                         Button::new("composer-emoji")
                                             .icon(IconName::FaceSlightlySmiling)
                                             .ghost()
-                                            .when(self.appearance.compact_mode, |button| {
-                                                button.small().h_8()
-                                            })
                                             .tooltip(if self.sticker_panel_open() {
                                                 tr(keys::Q_CHAT_CLOSE_STICKERS)
                                             } else {
@@ -403,8 +399,8 @@ impl QuillApp {
                 this.child(
                     div()
                         .id("composer-note")
-                        .p_3()
-                        .when(self.appearance.compact_mode, |note| note.py_1())
+                        .px_3()
+                        .py(px(self.density().composer_inset_y))
                         .border_t_1()
                         .border_color(cx.theme().border)
                         .text_sm()

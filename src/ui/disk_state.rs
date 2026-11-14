@@ -444,9 +444,7 @@ impl QuillApp {
                 .id("disk-full-cover")
                 .debug_selector(|| "disk-full-cover".to_string())
                 .absolute()
-                .top(super::window_frame::title_bar_height(
-                    self.appearance.compact_mode,
-                ))
+                .top(cx.theme().title_bar_height)
                 .left_0()
                 .right_0()
                 .bottom_0()

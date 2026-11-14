@@ -292,9 +292,8 @@ impl QuillApp {
         });
         let header = div()
             .id("conversation-header")
-            .px_4()
-            .py_2()
-            .when(self.appearance.compact_mode, |header| header.px_3().py_1())
+            .px(px(self.density().header_inset_x))
+            .py(px(self.density().header_inset_y))
             .border_b_1()
             .border_color(cx.theme().border)
             .flex()

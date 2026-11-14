@@ -68,6 +68,7 @@ pub mod credentials;
 pub mod data_settings;
 pub mod deep_link_inbox;
 pub mod deep_link_types;
+pub mod density;
 pub mod desktop_app_id;
 pub mod dev_cli;
 pub mod diagnostics;
