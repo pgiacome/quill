@@ -191,7 +191,9 @@ fn overlays_keep_placeholders_and_plural_other() {
         for (base, english) in key_table::KEY_NAMES.iter().zip(key_table::ENGLISH.iter()) {
             if matches!(english, English::Plural(_)) {
                 assert!(
-                    !entries.iter().any(|e| parse::split_plural(&e.key).0 == *base)
+                    !entries
+                        .iter()
+                        .any(|e| parse::split_plural(&e.key).0 == *base)
                         || plural_other.contains(*base),
                     "{code}: {base} has no #other"
                 );

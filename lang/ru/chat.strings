@@ -21,6 +21,7 @@
 "qll_chat_all" = "Все {total}";
 "qll_chat_all_chats" = "✓ Все чаты";
 "qll_chat_also_delete_for" = "Также удалить для {first_name}";
+"qll_chat_and_are_typing" = "{first} и {second} печатают";
 "qll_chat_archive" = "Архив";
 "qll_chat_attach" = "Прикрепить";
 "qll_chat_attached_files_send_to_upload#one" = "Прикреплён {count} файл. Отправьте, чтобы загрузить.";
@@ -55,6 +56,7 @@
 "qll_chat_choose_a_topic" = "Выберите тему";
 "qll_chat_choose_file" = "Выбрать файл";
 "qll_chat_choose_files" = "Выбрать файлы";
+"qll_chat_choosing_a_sticker" = "выбирает стикер";
 "qll_chat_clear" = "Очистить";
 "qll_chat_clear_all" = "Очистить всё";
 "qll_chat_clear_and_disable_the_frequent" = "Очистить и отключить список частых контактов? Его можно снова включить в разделе «Настройки → Конфиденциальность → Предлагать частые контакты».";
@@ -213,7 +215,18 @@
 "qll_chat_instant_view" = "Мгновенный просмотр";
 "qll_chat_is_an_admin_of_a_channel" = "{name} — администратор {title}, канала, куда вы запросили вступление.";
 "qll_chat_is_an_admin_of_a_group" = "{name} — администратор {title}, группы, куда вы запросили вступление.";
+"qll_chat_is_choosing_a_sticker" = "{name} выбирает стикер";
 "qll_chat_is_now_blocked" = "{user_id} заблокирован(а)";
+"qll_chat_is_playing_a_game" = "{name} играет в игру";
+"qll_chat_is_recording_a_video" = "{name} записывает видео";
+"qll_chat_is_recording_a_video_message" = "{name} записывает видеосообщение";
+"qll_chat_is_recording_a_voice_message" = "{name} записывает голосовое сообщение";
+"qll_chat_is_sending_a_file" = "{name} отправляет файл";
+"qll_chat_is_sending_a_photo" = "{name} отправляет фото";
+"qll_chat_is_sending_a_video" = "{name} отправляет видео";
+"qll_chat_is_sending_a_video_message" = "{name} отправляет видеосообщение";
+"qll_chat_is_sending_a_voice_message" = "{name} отправляет голосовое сообщение";
+"qll_chat_is_typing" = "{name} печатает";
 "qll_chat_italic" = "Курсив";
 "qll_chat_join" = "Вступить";
 "qll_chat_join_requests_2" = "Заявки на вступление";
@@ -291,6 +304,10 @@
 "qll_chat_opened_chat" = "Чат открыт";
 "qll_chat_original" = "Оригинал: {into}";
 "qll_chat_paste_as_plain_text" = "Вставить как обычный текст\t{chord}";
+"qll_chat_people_are_typing#one" = "{count} человек печатает";
+"qll_chat_people_are_typing#few" = "{count} человека печатают";
+"qll_chat_people_are_typing#many" = "{count} человек печатают";
+"qll_chat_people_are_typing#other" = "{count} человека печатают";
 "qll_chat_photo" = "Фото";
 "qll_chat_photo_copied" = "Фото скопировано";
 "qll_chat_photo_or_video" = "Фото или видео";
@@ -299,6 +316,7 @@
 "qll_chat_pick_a_topic_from_the" = "Выберите тему из списка, чтобы читать и писать в ней.";
 "qll_chat_pinned_message" = "Закреплённое сообщение #{count_index}";
 "qll_chat_pinned_messages" = "Закреплённые сообщения";
+"qll_chat_playing_a_game" = "играет в игру";
 "qll_chat_poll_stats" = "Статистика опроса";
 "qll_chat_polls_are_restricted_here" = "Опросы здесь ограничены";
 "qll_chat_preparing_the_file_send_again" = "Подготовка файла… отправьте ещё раз чуть позже";
@@ -322,6 +340,9 @@
 "qll_chat_received_gifts" = "Полученные подарки";
 "qll_chat_recent" = "Недавние";
 "qll_chat_more" = "Ещё";
+"qll_chat_recording_a_video" = "записывает видео";
+"qll_chat_recording_a_video_message" = "записывает видеосообщение";
+"qll_chat_recording_a_voice_message" = "записывает голосовое сообщение";
 "qll_chat_remember_choice" = "Запомнить выбор";
 "qll_chat_remove_attachment" = "Убрать {name}";
 "qll_chat_reminder" = "Напоминание";
@@ -410,6 +431,11 @@
 "qll_chat_send_as" = "Отправить как";
 "qll_chat_send_with_sound" = "Отправить со звуком";
 "qll_chat_sending" = "Отправка…";
+"qll_chat_sending_a_file" = "отправляет файл";
+"qll_chat_sending_a_photo" = "отправляет фото";
+"qll_chat_sending_a_video" = "отправляет видео";
+"qll_chat_sending_a_video_message" = "отправляет видеосообщение";
+"qll_chat_sending_a_voice_message" = "отправляет голосовое сообщение";
 "qll_chat_sending_gif" = "Отправка GIF";
 "qll_chat_shared_media" = "Общие медиа";
 "qll_chat_shift" = "Shift+";

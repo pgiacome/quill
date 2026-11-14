@@ -7,6 +7,7 @@
 //! days-from-civil inverse.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{Key, keys, tr, tr_with};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// A broken-down wall-clock time.
@@ -179,41 +180,84 @@ pub fn civil_local(unix: i64) -> CivilTime {
     civil_at(unix, utc_offset_at(unix))
 }
 
-const MONTHS: [&str; 12] = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+const MONTH_KEYS: [Key; 12] = [
+    keys::MONTH_DAY1,
+    keys::MONTH_DAY2,
+    keys::MONTH_DAY3,
+    keys::MONTH_DAY4,
+    keys::MONTH_DAY5,
+    keys::MONTH_DAY6,
+    keys::MONTH_DAY7,
+    keys::MONTH_DAY8,
+    keys::MONTH_DAY9,
+    keys::MONTH_DAY10,
+    keys::MONTH_DAY11,
+    keys::MONTH_DAY12,
 ];
-const WEEKDAYS: [&str; 7] = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
+const SHORT_MONTH_KEYS: [Key; 12] = [
+    keys::MONTH1_SMALL,
+    keys::MONTH2_SMALL,
+    keys::MONTH3_SMALL,
+    keys::MONTH4_SMALL,
+    keys::MONTH5_SMALL,
+    keys::MONTH6_SMALL,
+    keys::MONTH7_SMALL,
+    keys::MONTH8_SMALL,
+    keys::MONTH9_SMALL,
+    keys::MONTH10_SMALL,
+    keys::MONTH11_SMALL,
+    keys::MONTH12_SMALL,
+];
+const WEEKDAY_KEYS: [Key; 7] = [
+    keys::Q_MISC_WEEKDAY1,
+    keys::Q_MISC_WEEKDAY2,
+    keys::Q_MISC_WEEKDAY3,
+    keys::Q_MISC_WEEKDAY4,
+    keys::Q_MISC_WEEKDAY5,
+    keys::Q_MISC_WEEKDAY6,
+    keys::Q_MISC_WEEKDAY7,
+];
+const SHORT_WEEKDAY_KEYS: [Key; 7] = [
+    keys::Q_MISC_SHORT_WEEKDAY1,
+    keys::Q_MISC_SHORT_WEEKDAY2,
+    keys::Q_MISC_SHORT_WEEKDAY3,
+    keys::Q_MISC_SHORT_WEEKDAY4,
+    keys::Q_MISC_SHORT_WEEKDAY5,
+    keys::Q_MISC_SHORT_WEEKDAY6,
+    keys::Q_MISC_SHORT_WEEKDAY7,
 ];
 
+/// The full month name, "January" / «января».
 pub fn month_name(month: u8) -> &'static str {
-    MONTHS
-        .get(usize::from(month.clamp(1, 12) - 1))
-        .copied()
+    let index = usize::from(month.clamp(1, 12)).saturating_sub(1);
+    MONTH_KEYS
+        .get(index)
+        .map(|key| tr(*key))
         .unwrap_or_default()
 }
 
+/// The abbreviated month name, "Jan" / «янв.».
+pub fn short_month_name(month: u8) -> &'static str {
+    let index = usize::from(month.clamp(1, 12)).saturating_sub(1);
+    SHORT_MONTH_KEYS
+        .get(index)
+        .map(|key| tr(*key))
+        .unwrap_or_default()
+}
+
+/// The full weekday name, "Monday" / «Понедельник».
 pub fn weekday_name(weekday: u8) -> &'static str {
-    WEEKDAYS
+    WEEKDAY_KEYS
         .get(usize::from(weekday.min(6)))
-        .copied()
+        .map(|key| tr(*key))
+        .unwrap_or_default()
+}
+
+/// The abbreviated weekday name, "Mon" / «Пн».
+pub fn short_weekday_name(weekday: u8) -> &'static str {
+    SHORT_WEEKDAY_KEYS
+        .get(usize::from(weekday.min(6)))
+        .map(|key| tr(*key))
         .unwrap_or_default()
 }
 
@@ -245,10 +289,21 @@ pub fn needs_year(date: &CivilTime, now: &CivilTime) -> bool {
 /// the year by [`needs_year`] ("October 6, 2024") — always the date,
 /// never "Today".
 pub fn day_label(date: &CivilTime, now: &CivilTime) -> String {
+    let day = date.day.to_string();
     if !needs_year(date, now) {
-        format!("{} {}", month_name(date.month), date.day)
+        tr_with(
+            keys::MONTH_DAY,
+            &[("month", month_name(date.month)), ("day", &day)],
+        )
     } else {
-        format!("{} {}, {}", month_name(date.month), date.day, date.year)
+        tr_with(
+            keys::MONTH_DAY_YEAR,
+            &[
+                ("month", month_name(date.month)),
+                ("day", &day),
+                ("year", &date.year.to_string()),
+            ],
+        )
     }
 }
 
@@ -265,16 +320,9 @@ pub fn chat_list_stamp(date: &CivilTime, now: &CivilTime) -> String {
     }
     match age {
         i64::MIN..=0 => hhmm(date),
-        1..=6 => weekday_name(date.weekday)
-            .get(..3)
-            .unwrap_or_default()
-            .to_string(),
+        1..=6 => short_weekday_name(date.weekday).to_string(),
         _ if date.year == now.year => {
-            format!(
-                "{} {}",
-                date.day,
-                month_name(date.month).get(..3).unwrap_or_default()
-            )
+            format!("{} {}", date.day, short_month_name(date.month))
         }
         _ => short_date(date),
     }

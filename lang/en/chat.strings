@@ -141,6 +141,7 @@
 "qll_chat_all" = "All {total}";
 "qll_chat_all_chats" = "✓ All chats";
 "qll_chat_also_delete_for" = "Also delete for {first_name}";
+"qll_chat_and_are_typing" = "{first} and {second} are typing";
 "qll_chat_archive" = "Archive";
 "qll_chat_attach" = "Attach";
 "qll_chat_attached_files_send_to_upload#one" = "Attached {count} file. Send to upload.";
@@ -173,6 +174,7 @@
 "qll_chat_choose_a_topic" = "Choose a topic";
 "qll_chat_choose_file" = "Choose File";
 "qll_chat_choose_files" = "Choose Files";
+"qll_chat_choosing_a_sticker" = "choosing a sticker";
 "qll_chat_clear" = "Clear";
 "qll_chat_clear_all" = "Clear all";
 "qll_chat_clear_and_disable_the_frequent" = "Clear and disable the frequent contacts list? You can turn it back on in Settings > Privacy > Suggest frequent contacts.";
@@ -327,7 +329,18 @@
 "qll_chat_instant_view" = "Instant View";
 "qll_chat_is_an_admin_of_a_channel" = "{name} is an admin of {title}, a channel you requested to join.";
 "qll_chat_is_an_admin_of_a_group" = "{name} is an admin of {title}, a group you requested to join.";
+"qll_chat_is_choosing_a_sticker" = "{name} is choosing a sticker";
 "qll_chat_is_now_blocked" = "{user_id} is now blocked";
+"qll_chat_is_playing_a_game" = "{name} is playing a game";
+"qll_chat_is_recording_a_video" = "{name} is recording a video";
+"qll_chat_is_recording_a_video_message" = "{name} is recording a video message";
+"qll_chat_is_recording_a_voice_message" = "{name} is recording a voice message";
+"qll_chat_is_sending_a_file" = "{name} is sending a file";
+"qll_chat_is_sending_a_photo" = "{name} is sending a photo";
+"qll_chat_is_sending_a_video" = "{name} is sending a video";
+"qll_chat_is_sending_a_video_message" = "{name} is sending a video message";
+"qll_chat_is_sending_a_voice_message" = "{name} is sending a voice message";
+"qll_chat_is_typing" = "{name} is typing";
 "qll_chat_italic" = "Italic";
 "qll_chat_join" = "Join";
 "qll_chat_join_requests_2" = "Join requests";
@@ -405,6 +418,8 @@
 "qll_chat_opened_chat" = "Opened chat";
 "qll_chat_original" = "Original: {into}";
 "qll_chat_paste_as_plain_text" = "Paste as Plain Text\t{chord}";
+"qll_chat_people_are_typing#one" = "{count} people are typing";
+"qll_chat_people_are_typing#other" = "{count} people are typing";
 "qll_chat_photo" = "Photo";
 "qll_chat_photo_copied" = "Photo copied";
 "qll_chat_photo_or_video" = "Photo or video";
@@ -413,6 +428,7 @@
 "qll_chat_pick_a_topic_from_the" = "Pick a topic from the list to read and write in it.";
 "qll_chat_pinned_message" = "Pinned message #{count_index}";
 "qll_chat_pinned_messages" = "Pinned messages";
+"qll_chat_playing_a_game" = "playing a game";
 "qll_chat_poll_stats" = "Poll Stats";
 "qll_chat_polls_are_restricted_here" = "Polls are restricted here";
 "qll_chat_preparing_the_file_send_again" = "Preparing the file… send again in a moment";
@@ -438,6 +454,9 @@
 "qll_chat_received_gifts" = "Received gifts";
 "qll_chat_recent" = "Recent";
 "qll_chat_more" = "More";
+"qll_chat_recording_a_video" = "recording a video";
+"qll_chat_recording_a_video_message" = "recording a video message";
+"qll_chat_recording_a_voice_message" = "recording a voice message";
 "qll_chat_remember_choice" = "Remember choice";
 "qll_chat_remove_attachment" = "Remove {name}";
 "qll_chat_reminder" = "Reminder";
@@ -524,6 +543,11 @@
 "qll_chat_send_as" = "Send as";
 "qll_chat_send_with_sound" = "Send with sound";
 "qll_chat_sending" = "sending…";
+"qll_chat_sending_a_file" = "sending a file";
+"qll_chat_sending_a_photo" = "sending a photo";
+"qll_chat_sending_a_video" = "sending a video";
+"qll_chat_sending_a_video_message" = "sending a video message";
+"qll_chat_sending_a_voice_message" = "sending a voice message";
 "qll_chat_sending_gif" = "Sending GIF";
 "qll_chat_shared_media" = "Shared media";
 "qll_chat_shift" = "Shift+";

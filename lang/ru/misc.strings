@@ -479,6 +479,13 @@
 "qll_misc_share_to" = "Поделиться…";
 "qll_misc_share_your_phone_number_with" = "Поделиться номером телефона с ботом";
 "qll_misc_short_line" = "Короткая строка.";
+"qll_misc_short_weekday1" = "Пн";
+"qll_misc_short_weekday2" = "Вт";
+"qll_misc_short_weekday3" = "Ср";
+"qll_misc_short_weekday4" = "Чт";
+"qll_misc_short_weekday5" = "Пт";
+"qll_misc_short_weekday6" = "Сб";
+"qll_misc_short_weekday7" = "Вс";
 "qll_misc_show" = "Показать";
 "qll_misc_show_all_effects" = "Показать все эффекты";
 "qll_misc_show_all_reactions" = "Показать все реакции";
@@ -574,6 +581,13 @@
 "qll_misc_wallpaper" = "Обои";
 "qll_misc_wallpaper_will_be_removed" = "Обои будут удалены";
 "qll_misc_wear_a_collectible" = "Надеть коллекционный предмет";
+"qll_misc_weekday1" = "Понедельник";
+"qll_misc_weekday2" = "Вторник";
+"qll_misc_weekday3" = "Среда";
+"qll_misc_weekday4" = "Четверг";
+"qll_misc_weekday5" = "Пятница";
+"qll_misc_weekday6" = "Суббота";
+"qll_misc_weekday7" = "Воскресенье";
 "qll_misc_what_went_wrong_optional" = "Что пошло не так? (необязательно)";
 "qll_misc_windows_spell_checking_isnt_available" = "Проверка орфографии Windows недоступна для ваших языков. Добавьте язык с поддержкой проверки орфографии в разделе «Настройки → Время и язык».";
 "qll_misc_write_a_message" = "Написать сообщение…";
