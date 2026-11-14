@@ -11,7 +11,7 @@
 "qll_agent_page_claim_read_only" = "Агенты могут читать только в таких чатах: {places}.";
 "qll_agent_page_claim_no_chats" = "Агенты не видят ни одного из ваших чатов.";
 "qll_agent_page_claim_others_hidden" = "Агенты не видят другие чаты, пока вы их не добавите.";
-"qll_agent_page_claim_secret_hidden" = "Агенты не видят секретные чаты, пока вы не добавите нужный по названию.";
+"qll_agent_page_claim_secret_hidden" = "Агенты не видят секретные чаты, пока вы не добавите нужный чат по названию.";
 "qll_agent_page_claim_contacts_on" = "Агенты могут читать имена и имена пользователей из ваших контактов.";
 "qll_agent_page_claim_contacts_off" = "Агенты не могут читать ваши контакты.";
 "qll_agent_page_claim_raw_on" = "Агенты могут отправлять в Telegram прямые запросы, а перед рискованными Quill спросит вас.";
@@ -31,7 +31,7 @@
 "qll_agent_page_claim_agents_many" = "Подключено агентов: {count}.";
 "qll_agent_page_place_saved" = "Сохранённые сообщения";
 "qll_agent_page_place_bots" = "боты";
-"qll_agent_page_place_own_channels" = "каналы, которыми вы владеете";
+"qll_agent_page_place_own_channels" = "ваши каналы";
 "qll_agent_page_place_all_other" = "все остальные чаты";
 "qll_agent_page_place_added#one" = "{count} чат, который вы добавили";
 "qll_agent_page_place_added#few" = "{count} чата, которые вы добавили";
@@ -48,9 +48,9 @@
 "qll_agent_page_connected_none" = "Сейчас ни один агент не подключён.";
 "qll_agent_page_agent_tools" = "Использовал: {tools}";
 "qll_agent_page_agent_tools_none" = "Пока не использовал ни одного инструмента";
-"qll_agent_page_revoke_hint" = "Отключить этого агента и отклонять подключения под его именем. Чтобы не пускать никого, выключите «Разрешить агентов».";
+"qll_agent_page_revoke_hint" = "Отключить этого агента и отклонять подключения под его именем. Чтобы не пускать никого, выключите «Разрешить агентам».";
 "qll_agent_page_refused_title" = "Отключён вами";
-"qll_agent_page_refused_hint" = "Quill отклоняет подключения под этим именем, пока вы снова не разрешите их или не перезапустите Quill. Приложение всё ещё может подключиться под другим именем; чтобы не пускать никого, выключите «Разрешить агентов».";
+"qll_agent_page_refused_hint" = "Quill отклоняет подключения под этим именем, пока вы снова не разрешите их или не перезапустите Quill. Приложение всё ещё может подключиться под другим именем; чтобы не пускать никого, выключите «Разрешить агентам».";
 "qll_agent_page_allow_again" = "Разрешить снова";
 "qll_agent_page_last_used" = "Последнее использование: {time}";
 "qll_agent_page_not_used" = "Ещё не использовался";
@@ -151,7 +151,7 @@
 "qll_agent_page_tool_td_call_hint" = "Любой запрос к Telegram, которого нет среди других инструментов.";
 "qll_agent_page_tool_read_ui_tree" = "Чтение окна";
 "qll_agent_page_tool_read_ui_tree_hint" = "Содержимое экрана в виде текста.";
-"qll_agent_page_tool_take_screenshot" = "Сделать снимок экрана";
+"qll_agent_page_tool_take_screenshot" = "Сделать снимок окна";
 "qll_agent_page_tool_take_screenshot_hint" = "Изображение окна, где недоступные агентам чаты скрыты.";
 "qll_agent_page_tool_click_element" = "Нажатие";
 "qll_agent_page_tool_click_element_hint" = "Нажимает кнопку или элемент в окне.";
@@ -184,7 +184,7 @@
 "qll_agent_page_never_export_hint" = "Агенты не могут экспортировать целый чат или ваш аккаунт.";
 "qll_agent_page_never_settings" = "Настройки и выход из аккаунта";
 "qll_agent_page_never_settings_hint" = "Агенты не могут открыть настройки, выйти из аккаунта или удалить его, даже когда управляют окном.";
-"qll_agent_page_never_paid" = "Платные сообщения";
+"qll_agent_page_never_paid" = "Оплата сообщений";
 "qll_agent_page_never_paid_hint" = "Агенты не могут отправлять сообщения в чатах, где за каждое сообщение списываются звёзды.";
 "qll_agent_page_sees" = "Что видят агенты";
 "qll_agent_page_sees_nothing" = "Ничего, пока управление окном выключено.";

@@ -1,7 +1,7 @@
 // agent_access: Settings > Agent access (src/ui/settings_window/agent_access.rs, agent_grants.rs; the rest of the page is in agent_page.strings) and the agent request dialogs (src/ui/agent_dialogs.rs).
 "qll_agent_access" = "Доступ агентов";
 "qll_agent_access_about" = "Разрешите ИИ-агентам на этом компьютере, например Claude Code, использовать ваш аккаунт Telegram через Quill. Подключиться могут только приложения, запущенные под вашей учётной записью, а сам Quill никогда не отправляет ваши сообщения в ИИ-сервис.";
-"qll_agent_access_allow" = "Разрешить агентов";
+"qll_agent_access_allow" = "Разрешить агентам";
 "qll_agent_access_switch_hint" = "Разрешить ИИ-приложениям на этом компьютере использовать ваш аккаунт Telegram через Quill. По умолчанию выключено.";
 "qll_agent_access_connect" = "Подключить агента";
 "qll_agent_access_claude_code" = "Claude Code";
@@ -22,7 +22,7 @@
 "qll_agent_scope_off" = "Выключено";
 "qll_agent_scope_read" = "Чтение";
 "qll_agent_scope_read_write" = "Чтение и запись";
-"qll_agent_grants_caption" = "Чтение позволяет агенту видеть сообщения. Чтение и запись также позволяют ему отправлять сообщения от вашего имени, ставить реакции, закреплять, а также редактировать и удалять ваши сообщения. Всё, что он изменит, отображается в разделе «Активность».";
+"qll_agent_grants_caption" = "Чтение позволяет агенту видеть сообщения. Чтение и запись также позволяют ему отправлять сообщения от вашего имени, ставить реакции, закреплять, редактировать и удалять ваши сообщения. Всё, что он изменит, отображается в разделе «Активность».";
 "qll_agent_contacts_title" = "Контакты";
 "qll_agent_contacts_hint" = "Агенты могут читать имена и имена пользователей, но никогда — номера телефонов.";
 "qll_agent_chats_title" = "Чаты, которые вы добавили";
@@ -83,13 +83,13 @@
 "qll_agent_tool_set_draft" = "Записать черновик";
 "qll_agent_tool_mark_read" = "Отметить как прочитанное";
 "qll_agent_tool_mute_chat" = "Отключить уведомления";
-"qll_agent_tool_archive_chat" = "В архив";
+"qll_agent_tool_archive_chat" = "Архивировать";
 "qll_agent_tool_set_chat_folder" = "Добавить в папку";
 "qll_agent_tool_remove_reaction" = "Убрать реакцию";
 "qll_agent_tool_unpin_message" = "Открепить";
 "qll_agent_tool_clear_draft" = "Очистить черновик";
 "qll_agent_tool_unmute_chat" = "Включить уведомления";
-"qll_agent_tool_unarchive_chat" = "Из архива";
+"qll_agent_tool_unarchive_chat" = "Разархивировать";
 "qll_agent_tool_remove_from_folder" = "Убрать из папки";
 "qll_agent_tool_ui_click" = "Нажатие в окне";
 "qll_agent_tool_ui_menu" = "Открытие меню в окне";
@@ -119,7 +119,7 @@
 "qll_agent_confirm_preview_reaction" = "Реакция:";
 "qll_agent_confirm_preview_message" = "Сообщение:";
 "qll_agent_activity_clear_hint" = "Очищает журнал для всех аккаунтов";
-"qll_agent_takeover_driving" = "{agent} управляет";
+"qll_agent_takeover_driving" = "{agent} управляет окном";
 "qll_agent_takeover_stop" = "Остановить";
 "qll_agent_takeover_stop_hint" = "Останавливает нажатия и ввод агента в этом окне, пока вы не выключите и снова включите управление в настройках. Доступ агентов при этом остаётся включённым.";
 "qll_agent_takeover_paused" = "Приостановлено";
@@ -129,7 +129,7 @@
 "qll_agent_takeover_effect_auto" = "Автоматически";
 "qll_agent_takeover_effect_sweep" = "Свечение и бегущий блик";
 "qll_agent_takeover_effect_still" = "Неподвижное свечение";
-"qll_agent_takeover_effect_auto_hint" = "Пока агент управляет, по свечению пробегает блик. При уменьшении анимации, режиме энергосбережения или системном режиме пониженного энергопотребления он остаётся неподвижным.";
+"qll_agent_takeover_effect_auto_hint" = "Пока агент управляет, по свечению пробегает блик. Блик остаётся неподвижным, если уменьшена анимация, включён режим энергосбережения или системный режим пониженного энергопотребления.";
 "qll_agent_takeover_effect_sweep_hint" = "Пока агент управляет, по свечению всегда пробегает блик. При уменьшении анимации он всё равно остаётся неподвижным.";
 "qll_agent_takeover_effect_still_hint" = "Пока агент управляет, свечение вокруг окна остаётся неподвижным.";
 "qll_agent_grants_save_failed" = "Не удалось сохранить, какие чаты доступны агентам: {err}";
