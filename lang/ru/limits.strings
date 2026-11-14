@@ -1,0 +1,3 @@
+// limits (sliders for mute, auto-delete, downloads and storage; clear history box).
+"qll_auto_download_no_chats" = "В вашем списке чатов пока нет таких чатов.";
+"qll_auto_download_master" = "Скачивать медиафайлы автоматически";
