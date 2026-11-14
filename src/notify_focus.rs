@@ -16,6 +16,7 @@
 //! in-process read is cheap). The parsers are pure and tested.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use crate::locks::LockExt;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -186,11 +187,11 @@ pub fn plan_alert(input: AlertInput) -> AlertPlan {
 /// (`lng_settings_alert_*`).
 pub fn attention_label() -> &'static str {
     if cfg!(target_os = "macos") {
-        "Bounce the Dock icon"
+        tr(keys::Q_SETTINGS_NOTIFICATIONS_ATTENTION_DOCK)
     } else if cfg!(windows) {
-        "Flash the taskbar icon"
+        tr(keys::Q_SETTINGS_NOTIFICATIONS_ATTENTION_TASKBAR)
     } else {
-        "Draw attention to the window"
+        tr(keys::Q_SETTINGS_NOTIFICATIONS_ATTENTION_WINDOW)
     }
 }
 
