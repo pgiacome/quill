@@ -370,9 +370,10 @@ impl Session {
     }
 
     /// Every running group call the Calls tab lists: the details
-    /// `updateGroupCall` sent plus chats that report participants but
-    /// whose update never arrived. Calls owned by the call window
-    /// (`active_group_call` once joined, `story_stream`) are left to it.
+    /// `updateGroupCall` sent about unjoined calls, plus chats that report
+    /// participants but whose update never arrived (a bare row). Calls
+    /// owned by the call window (`active_group_call` once joined,
+    /// `story_stream`) are left to it.
     pub fn live_group_calls(&self) -> Vec<LiveGroupCall> {
         let mut calls: Vec<LiveGroupCall> =
             self.calls.group_call_details.values().cloned().collect();
@@ -425,6 +426,7 @@ impl Session {
             rank(a.kind)
                 .cmp(&rank(b.kind))
                 .then_with(|| a.title.to_lowercase().cmp(&b.title.to_lowercase()))
+                .then_with(|| a.id.cmp(&b.id))
         });
         calls
     }

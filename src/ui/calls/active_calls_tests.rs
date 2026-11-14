@@ -11,7 +11,7 @@ use crate::ui::keybindings::bind_keys;
 use crate::ui::screenshot_demo::ScreenshotDemo;
 use crate::ui::shell::QuillShell;
 use gpui_kit::component::Root;
-use gpui_kit::test::TestWindowExt;
+use gpui_kit::test::{TestQueryExt, TestWindowExt};
 use gpui_kit::{AppContext, Entity, TestAppContext, VisualTestContext, px, size};
 use quill::call_link::OfferedCallLink;
 use quill::diagnostics::DiagnosticSink;
@@ -67,7 +67,8 @@ fn feed(app: &mut QuillApp, json: &str) {
 }
 
 /// Two running calls with their chats: a live stream (61, "Design live")
-/// and a voice chat (62, "Team standup").
+/// and a voice chat (62) whose call title differs from its chat's, so the
+/// row's name preference is visible.
 fn seed_two_calls(app: &mut QuillApp) {
     feed(
         app,
@@ -98,7 +99,7 @@ fn seed_two_calls(app: &mut QuillApp) {
     feed(
         app,
         r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":62,
-        "title":"Team standup","is_active":true,"is_video_chat":false,"is_joined":false,
+        "title":"Old call title","is_active":true,"is_video_chat":false,"is_joined":false,
         "is_rtmp_stream":false,"participant_count":3}}"#,
     );
 }
@@ -132,6 +133,26 @@ fn the_section_orders_streams_first_and_join_sets_the_intent(cx: &mut TestAppCon
     assert_eq!(listed[0].chat_id, Some(51));
     assert_eq!(listed[1].chat_id, Some(52));
 
+    // The row name prefers the loaded chat's title, falling back to the
+    // call's own only when the chat is not loaded.
+    app.read_with(&vcx, |app, _| {
+        let session = app.session();
+        assert_eq!(
+            super::active_calls::row_name(&listed[1], session),
+            "Team standup",
+            "the chat's title wins"
+        );
+        let chatless = LiveGroupCall {
+            chat_id: None,
+            ..listed[1].clone()
+        };
+        assert_eq!(
+            super::active_calls::row_name(&chatless, session),
+            "Old call title",
+            "the call's title is the fallback"
+        );
+    });
+
     // The section is drawn above the history, one row and one Join per call.
     assert!(
         vcx.update(|window, _| window.try_find("calls-clear-all").is_some()),
@@ -147,6 +168,10 @@ fn the_section_orders_streams_first_and_join_sets_the_intent(cx: &mut TestAppCon
             "row {id} is drawn"
         );
     }
+    assert!(
+        vcx.update(|window, _| window.try_find_by_label("Join Team standup").is_some()),
+        "the Join label names the call"
+    );
 
     // Not busy: the wish names the call; the window joins once it is tracked.
     // The button, the row's body and a listed row all ask for the same call.
@@ -309,4 +334,50 @@ fn a_confirmed_joining_offer_notes_join_for_a_voice_chat() {
         StreamJoinIntent::Call(61),
         "a link only opens the call screen"
     );
+}
+
+/// No running calls: the Calls tab draws the history with no Active calls
+/// header above it.
+#[gpui_kit::test]
+fn an_empty_list_draws_no_header(cx: &mut TestAppContext) {
+    let (_app, mut vcx) = new_app(cx);
+    frames(&mut vcx);
+    assert!(
+        vcx.update(|window, _| window.try_find("calls-clear-all").is_some()),
+        "the Calls tab is drawn"
+    );
+    assert!(
+        vcx.update(|window, _| window.try_find("active-calls").is_none()),
+        "no Q_OPS_ACTIVE_CALLS section without calls"
+    );
+}
+
+/// The busy decision used by the row: a 1:1 call, a joined call, a
+/// reconnecting one and an in-flight UI join all block a new one, while a
+/// tracked call nobody is in does not.
+#[test]
+fn a_listed_join_is_busy_while_a_call_is_joined_reconnecting_or_joining() {
+    let sink: Arc<dyn DiagnosticSink> = Arc::new(quill::diagnostics::MemorySink::new());
+    let mut session = quill::state::Session::new(quill::ids::AccountKey::primary(), sink);
+    let busy = |session: &quill::state::Session, joining| {
+        super::active_calls::listed_join_is_busy(session, joining)
+    };
+    assert!(!busy(&session, None), "no call at all");
+    assert!(!busy(&session, Some(7)), "no tracked call");
+
+    session.calls.active_group_call = Some(quill::state::ActiveGroupCall::fresh(7));
+    assert!(!busy(&session, None), "a call only being looked at");
+
+    let mut joined = quill::state::ActiveGroupCall::fresh(7);
+    joined.is_joined = true;
+    session.calls.active_group_call = Some(joined);
+    assert!(busy(&session, None), "joined");
+
+    let mut reconnecting = quill::state::ActiveGroupCall::fresh(7);
+    reconnecting.rejoin = quill::state::GroupCallRejoin::Wanted { attempts: 0 };
+    session.calls.active_group_call = Some(reconnecting);
+    assert!(busy(&session, None), "a reconnect is still in the call");
+
+    session.calls.active_group_call = Some(quill::state::ActiveGroupCall::fresh(7));
+    assert!(busy(&session, Some(7)), "the UI's join is in flight");
 }

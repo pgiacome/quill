@@ -13,11 +13,30 @@ use crate::ui::user_error::user_error_for;
 use gpui_kit::assets::IconName;
 use quill::ids::ChatId;
 use quill::lang::{keys, tr, trn_decimal};
-use quill::state::{GroupCallKind, LiveGroupCall};
+use quill::state::{GroupCallKind, LiveGroupCall, Session};
+
+/// Whether a listed call's Join has a call to replace: a 1:1 call, or a
+/// group call that is joined, reconnecting after a network loss, or whose
+/// join is in flight. `joining` is the call the call window is joining
+/// right now (its UI-side mark; the transport covers the rest).
+pub(super) fn listed_join_is_busy(session: &Session, joining: Option<i32>) -> bool {
+    session.calls.active_call.is_some() || session.group_call_joined_or_joining(joining)
+}
+
+/// The row's name: the loaded chat's title, or the call's own title when
+/// the chat is not loaded yet.
+pub(super) fn row_name(call: &LiveGroupCall, session: Option<&Session>) -> String {
+    call.chat_id
+        .and_then(|chat_id| session.and_then(|session| session.chats.get(&chat_id)))
+        .map(|chat| chat.title.clone())
+        .filter(|title| !title.is_empty())
+        .unwrap_or_else(|| call.title.clone())
+}
 
 impl QuillApp {
-    /// The section above Recent calls: every running group call, joined or
-    /// not. The list is already ordered by `Session::live_group_calls`.
+    /// The section above Recent calls: the unjoined running group calls (and
+    /// chat-seeded bare rows) the call window does not own. The list is
+    /// already ordered by `Session::live_group_calls`.
     pub(super) fn active_calls_section(
         &self,
         calls: &[LiveGroupCall],
@@ -47,7 +66,7 @@ impl QuillApp {
     /// it, and Join. The row and the button both join; the row does not
     /// open the chat.
     fn active_call_row(&self, call: &LiveGroupCall, cx: &mut Context<Self>) -> impl IntoElement {
-        let name = call.title.clone();
+        let name = row_name(call, self.session());
         let status = status_line(call);
         let spoken = if status.is_empty() {
             name.clone()
@@ -111,7 +130,7 @@ impl QuillApp {
                     .icon(icon)
                     .label(tr(keys::GROUP_CALL_JOIN))
                     .ghost()
-                    .accessibility_label(tr(keys::GROUP_CALL_JOIN))
+                    .accessibility_label(format!("{} {name}", tr(keys::GROUP_CALL_JOIN)))
                     .on_click(cx.listener(move |this, _, _, cx| {
                         cx.stop_propagation();
                         this.join_listed_group_call(&button_call, cx);
@@ -120,20 +139,17 @@ impl QuillApp {
             .test_support()
     }
 
-    /// Join a running call from the Calls tab. Busy (a 1:1 call or a joined
-    /// group call is on screen): the offered call waits for the old one to
-    /// end, as a call link does; without a chat there is nothing to offer,
-    /// so the note asks to end the call first. Otherwise the wish names the
-    /// call and, with a live driver, its `getGroupCall` asks for it.
+    /// Join a running call from the Calls tab. Busy (a 1:1 call, or a group
+    /// call that is joined, reconnecting, or joining right now): the offered
+    /// call waits for the old one to end, as a call link does; without a
+    /// chat there is nothing to offer, so the note asks to end the call
+    /// first. Otherwise the wish names the call and, with a live driver,
+    /// its `getGroupCall` asks for it.
     pub(super) fn join_listed_group_call(&mut self, call: &LiveGroupCall, cx: &mut Context<Self>) {
-        let busy = self.session().is_some_and(|session| {
-            session.calls.active_call.is_some()
-                || session
-                    .calls
-                    .active_group_call
-                    .as_ref()
-                    .is_some_and(|active| active.is_joined)
-        });
+        let joining = self.group_call_screen.joining_call();
+        let busy = self
+            .session()
+            .is_some_and(|session| listed_join_is_busy(session, joining));
         if busy {
             if let Some(chat) = call.chat_id {
                 self.offer_call_link(

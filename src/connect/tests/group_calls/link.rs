@@ -212,6 +212,7 @@ fn a_joining_offer_carries_the_join_through_the_confirmation() {
         .confirm()
         .cloned()
         .expect("asks");
+    assert_eq!(ask.chat_id, 51, "the row's chat is what is offered");
     assert!(
         ask.join_when_offered,
         "the intent waits in the confirmation, not in a join wish"
@@ -229,6 +230,47 @@ fn a_joining_offer_carries_the_join_through_the_confirmation() {
         !sent_types(&recorder).iter().any(|t| t == "joinVideoChat"),
         "the UI notes the join; the driver only offered the call"
     );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A reconnecting call is still "in a call": its join has not landed after
+/// a network loss (`need_rejoin`), so a different call must ask first.
+#[test]
+fn a_reconnecting_call_blocks_the_offer() {
+    let (dir, mut driver, recorder, _handle, _sink, _seq) = ready_group_call_driver();
+    let mut other = tracked_group_call(true, false, false);
+    other.is_joined = false;
+    driver.session.calls.active_group_call = Some(other);
+    let before = recorder.snapshot().len();
+    let step = driver.offer_call_link(ChatId(51), "AbC", false).unwrap();
+    assert_eq!(step, CallLinkStep::OtherCallOn);
+    assert_eq!(recorder.snapshot().len(), before, "nothing is fetched");
+    let ask = driver
+        .session
+        .calls
+        .call_link_stage
+        .confirm()
+        .cloned()
+        .expect("asks");
+    assert_eq!(ask.chat_id, 51);
+    assert_eq!(
+        ask.leave,
+        LeaveKind::GroupCall {
+            current_is_channel: false
+        }
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The Calls tab's Join arm for a non-stream call makes the same join the
+/// call screen's Join does: `joinVideoChat` for the tracked call.
+#[test]
+fn a_non_stream_join_reaches_join_video_chat() {
+    let (dir, mut driver, recorder, _handle, _sink, _seq) = ready_group_call_driver();
+    driver.join_video_chat(555).expect("join sends");
+    let join = sent_request(&recorder, "joinVideoChat");
+    assert_eq!(join["group_call_id"], 555);
+    assert_eq!(join["invite_hash"], "");
     let _ = std::fs::remove_dir_all(&dir);
 }
 

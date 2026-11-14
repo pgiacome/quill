@@ -377,6 +377,16 @@ fn replay_group_call_signaling() {
     assert!(call.can_be_managed);
     assert!(call.can_toggle_mute_new_participants);
     assert!(call.participants.is_empty());
+    // The answer consumed its own `getGroupCall`: no pending request leaks.
+    assert!(
+        session
+            .requests
+            .pending_extra_for(
+                RequestPurpose::Calls(CallsPurpose::GetGroupCall { group_call_id: 555 }),
+                None
+            )
+            .is_none()
+    );
 
     // Join: `updateGroupCall` flips `is_joined`; the `joinVideoChat`
     // `text` answer is stored, never consumed.

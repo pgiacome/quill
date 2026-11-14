@@ -89,6 +89,14 @@ fn the_answer_to_the_peoples_own_fetch_takes_the_slot() {
             .map(|c| c.id),
         Some(51)
     );
+    assert!(
+        driver.session.calls.group_call_details.contains_key(&51),
+        "the answer's call is still listed while unjoined"
+    );
+    // Leaving the tracked call removes its details too.
+    driver.session.leave_group_call_local();
+    assert!(driver.session.calls.active_group_call.is_none());
+    assert!(!driver.session.calls.group_call_details.contains_key(&51));
     let _ = std::fs::remove_dir_all(dir);
 }
 
@@ -235,6 +243,10 @@ fn a_joined_update_leaves_the_list_and_takes_the_slot() {
         !driver.session.live_group_calls().iter().any(|c| c.id == 41),
         "a call in the slot is not listed beside it"
     );
+    assert!(
+        !driver.session.calls.group_call_details.contains_key(&41),
+        "a joined update removes the details entry"
+    );
     assert_eq!(driver.session.chat_id_for_group_call(41), Some(51));
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -376,5 +388,59 @@ fn zero_group_call_id_removes_details_but_no_participants_does_not() {
         "video_chat":{"@type":"videoChat","group_call_id":0,"has_participants":false,"default_participant_id":null}}"#,
     );
     assert!(!driver.session.calls.group_call_details.contains_key(&41));
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn the_list_orders_by_kind_before_title_and_then_by_id() {
+    let (dir, _recorder, mut driver, seq) = group_call_test_driver();
+    let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
+    // A voice chat whose title sorts first and a stream whose title sorts
+    // last: rank decides, not the title.
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        r#"{
+        "@type":"updateGroupCall",
+        "group_call":{"@type":"groupCall","id":42,"title":"Alpha standup",
+        "is_active":true,"is_video_chat":false,"is_joined":false,
+        "is_rtmp_stream":false,"participant_count":4}
+    }"#,
+    );
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        r#"{
+        "@type":"updateGroupCall",
+        "group_call":{"@type":"groupCall","id":41,"title":"Zeta live",
+        "is_active":true,"is_video_chat":false,"is_joined":false,
+        "is_rtmp_stream":true,"participant_count":12}
+    }"#,
+    );
+    let ids = |driver: &ConnectDriver<Arc<RecordingSender>>| {
+        driver
+            .session
+            .live_group_calls()
+            .iter()
+            .map(|call| call.id)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(ids(&driver), vec![41, 42], "a stream sorts first");
+
+    // Same kind and title: the id breaks the tie (41 before 43).
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        r#"{
+        "@type":"updateGroupCall",
+        "group_call":{"@type":"groupCall","id":43,"title":"Zeta live",
+        "is_active":true,"is_video_chat":false,"is_joined":false,
+        "is_rtmp_stream":true,"participant_count":2}
+    }"#,
+    );
+    assert_eq!(ids(&driver), vec![41, 43, 42]);
     let _ = std::fs::remove_dir_all(dir);
 }

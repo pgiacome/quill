@@ -63,8 +63,10 @@ pub struct CallsState {
     /// `joinVideoChat` response payload is stored (`join_payload`) and
     /// never consumed (real media transport is the C2 program).
     pub active_group_call: Option<ActiveGroupCall>,
-    /// Details `updateGroupCall` sent about running calls, joined or not.
-    /// Unjoined calls live here, never in `active_group_call`.
+    /// Details `updateGroupCall` sent about unjoined running calls. A
+    /// joined update removes its entry (the window owns that call), and the
+    /// chat seed can re-add a bare row until the next update while the call
+    /// still runs.
     pub group_call_details: std::collections::BTreeMap<i32, LiveGroupCall>,
     /// The live story the viewer plays: a receive-only group call of its
     /// own beside `active_call` and `active_group_call` (tdesktop

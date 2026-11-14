@@ -41,6 +41,9 @@ impl<S: JsonSender> ConnectDriver<S> {
             return Ok(CallLinkStep::JustOpen);
         };
         let target_is_channel = chat.kind.is_channel();
+        // Joined, reconnecting after a network loss, or with its join in
+        // flight: all are in a call, so a different one must ask first.
+        let in_call = self.session.group_call_joined_or_joining(None);
         let current = self
             .session
             .calls
@@ -48,7 +51,7 @@ impl<S: JsonSender> ConnectDriver<S> {
             .as_ref()
             .map(|call| CurrentCall {
                 group_call_id: call.id,
-                joined: call.is_joined,
+                in_call,
             });
         let private_call = self.session.calls.active_call.is_some();
         let step = plan(

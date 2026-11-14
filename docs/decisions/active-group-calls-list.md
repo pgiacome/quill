@@ -2,9 +2,12 @@
 
 The Calls tab lists every unjoined running group call above Recent calls —
 every running call the call window does not own. A joined call is not listed
-there: it is in the call window, whose slot holds one call at a time. Opening
-the tab never joins or opens a call: the list is a read of live state, and
-joining stays a press on a row.
+there: it is in the call window, whose slot holds one call at a time, and a
+joined update removes its details. Once the window no longer tracks a call
+that is still running (left, or replaced), the chat seed can re-add a bare
+row for it until the next `updateGroupCall`. Opening the tab never joins or
+opens a call: the list is a read of live state, and joining stays a press on
+a row.
 
 ## Two sources, merged on read
 
@@ -24,8 +27,8 @@ from:
 The chat id the row needs (avatar, busy Join) is resolved on read from the
 chat whose `video_chat.group_call_id` matches. Sorting also happens on read,
 in one order: `LiveStream` first, then `VideoChat`, then `VoiceChat`, then
-calls known only from a chat (`kind: None`), each group by title; participant
-counts never reorder rows.
+calls known only from a chat (`kind: None`), each group by lowercased title
+and then by call id; participant counts never reorder rows.
 
 ## The slot rule: only an answer may open a call
 
@@ -78,6 +81,12 @@ empty stream may legitimately have no participants yet, and the call is still
 running. A chat with `has_participants: false` only stops seeding a row; it
 does not delete what `updateGroupCall` said.
 
+Leaving or ending a still-running call removes its details
+(`leave_group_call_local`, or the joined update when someone else owns it).
+The chat still points at the call, though, so the chat seed can re-add a bare
+row (`kind: None`, `participant_count: 0`) until the next `updateGroupCall`
+says what the call is again; the row shows no kind or count in the meantime.
+
 `live_group_calls()` finally hides the call in the window slot only while it
 is *joined* (and hides a call in `story_stream` always). A call being opened
 stays listed until it is joined, so the list does not blink it out between
@@ -86,8 +95,9 @@ the answer and the join.
 ## The busy Join carries `join_when_offered`
 
 The Calls tab's Join (`ui/calls/active_calls.rs`) checks whether a 1:1 call
-or a joined group call is on. Busy, it does not silently do nothing: it takes
-the call-link leave confirmation the app already has
+or a group call that is joined, reconnecting, or joining right now is on.
+Busy, it does not silently do nothing: it takes the call-link leave
+confirmation the app already has
 (`offer_call_link_joining`, `src/connect/group_calls/link.rs`) for the row's
 chat, with `join_when_offered: true`. The flag waits in the confirmation
 (`CallLinkConfirm`), so a declined question leaves no join behind; once the
@@ -99,9 +109,11 @@ this way and says the current call must end first.
 
 - `connect::tests::group_calls`: an unjoined update feeds the list and takes
   no slot; its own `getGroupCall` answer takes the slot; a racing update
-  waits; a joined update takes the slot and leaves the list; `is_active:
-  false` and `group_call_id == 0` remove details; `has_participants: false`
-  does not.
+  waits; a reconnecting call still blocks another offer; a joined update
+  takes the slot and leaves the list; `is_active: false`, a leave and
+  `group_call_id == 0` remove details; `has_participants: false` does not;
+  a stream sorts above a voice chat despite its title, and the id breaks a
+  title tie.
 - `ui::calls`: the section is drawn above the Recent calls row, in the
   session's order (`LiveStream` first); the `ready-calls-active` fixture
   yields ids 61 and 62, kinds `LiveStream` then `VoiceChat`, counts 1,280 and

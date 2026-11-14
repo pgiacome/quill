@@ -36,11 +36,13 @@ pub enum CallLinkStep {
     Offer { group_call_id: i32 },
 }
 
-/// The call that is tracked or joined right now.
+/// The call that is tracked or in use right now.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CurrentCall {
     pub group_call_id: i32,
-    pub joined: bool,
+    /// The person is in the call, not merely looking at it: joined,
+    /// reconnecting after a network loss, or its join is in flight.
+    pub in_call: bool,
 }
 
 /// Decide what a call link does. `video_chat` is the chat's group call id,
@@ -62,8 +64,8 @@ pub fn plan(
         return CallLinkStep::OtherCallOn;
     }
     match current {
-        Some(call) if call.group_call_id == id && call.joined => CallLinkStep::AlreadyJoined,
-        Some(call) if call.joined => CallLinkStep::OtherCallOn,
+        Some(call) if call.group_call_id == id && call.in_call => CallLinkStep::AlreadyJoined,
+        Some(call) if call.in_call => CallLinkStep::OtherCallOn,
         _ => CallLinkStep::Offer { group_call_id: id },
     }
 }
@@ -347,7 +349,7 @@ mod tests {
         // The same call tracked but not joined yet still gets the offer.
         let tracked = CurrentCall {
             group_call_id: 4,
-            joined: false,
+            in_call: false,
         };
         assert_eq!(
             plan(&channel(), Some(call(4)), Some(tracked), false),
@@ -357,16 +359,16 @@ mod tests {
 
     #[test]
     fn a_running_call_blocks_the_offer() {
-        let joined = |id| CurrentCall {
+        let in_call = |id| CurrentCall {
             group_call_id: id,
-            joined: true,
+            in_call: true,
         };
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(joined(4)), false),
+            plan(&channel(), Some(call(4)), Some(in_call(4)), false),
             CallLinkStep::AlreadyJoined
         );
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(joined(9)), false),
+            plan(&channel(), Some(call(4)), Some(in_call(9)), false),
             CallLinkStep::OtherCallOn
         );
         assert_eq!(

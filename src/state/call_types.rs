@@ -364,11 +364,12 @@ pub enum GroupCallKind {
     LiveStream,
 }
 
-/// A running group call the Calls tab lists, joined or not. The list is
-/// built from `updateGroupCall` details and from chats that report a
-/// `video_chat`; [`Self::kind`] is `None` when only `chat.video_chat` is
-/// known, so what kind of call it is and how many people are in it are
-/// not known yet.
+/// A running group call the Calls tab lists: an unjoined one, or a bare
+/// row seeded from a chat. A joined call belongs to the call window; its
+/// details are not kept, and the chat seed can re-add a bare row until the
+/// next update once the window no longer tracks it. [`Self::kind`] is
+/// `None` when only `chat.video_chat` is known, so what kind of call it is
+/// and how many people are in it are not known yet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LiveGroupCall {
     pub id: i32,
