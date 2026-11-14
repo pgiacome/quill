@@ -17,7 +17,7 @@ fn feed(
 }
 
 #[test]
-fn an_unjoined_update_feeds_the_list_and_not_the_slot() {
+fn an_unjoined_update_feeds_the_list() {
     let (dir, _recorder, mut driver, seq) = group_call_test_driver();
     let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
     feed(

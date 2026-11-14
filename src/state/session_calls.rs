@@ -396,9 +396,8 @@ impl Session {
             });
         }
         let shown = |id: i32| {
-            // An unjoined call still tracked by the window under the
-            // permissive slot rule is listed beside it; a joined one is
-            // the window's.
+            // The window slot hides a call only when that call is joined:
+            // a call being opened stays listed until it is joined.
             self.calls
                 .active_group_call
                 .as_ref()
