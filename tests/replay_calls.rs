@@ -337,10 +337,16 @@ fn replay_group_call_signaling() {
     assert_eq!(vc.group_call_id, 555);
     assert!(!vc.has_participants);
 
-    // Full `groupCall` JSON per schema 1.8.67 line 7154.
+    // Full `groupCall` fields per schema 1.8.67 line 7154.
+    let group_call_fields = |is_joined: bool, need_rejoin: bool, is_active: bool| {
+        format!(
+            r#""id":555,"unique_id":"999","title":"Demo voice","invite_link":"","paid_message_star_count":0,"scheduled_start_date":0,"enabled_start_notification":false,"is_active":{is_active},"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":{is_joined},"need_rejoin":{need_rejoin},"is_owned":false,"can_be_managed":true,"participant_count":3,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[{{"@type":"groupCallRecentSpeaker","participant_id":{{"@type":"messageSenderUser","user_id":42}},"is_speaking":true}}],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":false,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0"#
+        )
+    };
     let group_call_json = |is_joined: bool, need_rejoin: bool, is_active: bool| {
         format!(
-            r#"{{"@type":"updateGroupCall","group_call":{{"@type":"groupCall","id":555,"unique_id":"999","title":"Demo voice","invite_link":"","paid_message_star_count":0,"scheduled_start_date":0,"enabled_start_notification":false,"is_active":{is_active},"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":{is_joined},"need_rejoin":{need_rejoin},"is_owned":false,"can_be_managed":true,"participant_count":3,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[{{"@type":"groupCallRecentSpeaker","participant_id":{{"@type":"messageSenderUser","user_id":42}},"is_speaking":true}}],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":false,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0}}}}"#
+            r#"{{"@type":"updateGroupCall","group_call":{{"@type":"groupCall",{}}}}}"#,
+            group_call_fields(is_joined, need_rejoin, is_active)
         )
     };
     let participant_json = |user_id: i64, flags: &str, order: &str| {
@@ -349,13 +355,20 @@ fn replay_group_call_signaling() {
         )
     };
 
-    // The call exists but isn't joined yet.
-    apply_all_seq(
-        &mut session,
-        &sink,
-        &seq,
-        &[&group_call_json(false, false, true)],
+    // The call exists but isn't joined yet: the person's own
+    // `getGroupCall` answer is what opens the tracker.
+    let req_id = session.requests.register(
+        quill::ids::AccountGeneration(1),
+        RequestPurpose::Calls(CallsPurpose::GetGroupCall { group_call_id: 555 }),
+        None,
+        None,
     );
+    let answer = format!(
+        r#"{{"@type":"groupCall","@extra":"{}",{}}}"#,
+        req_id.0,
+        group_call_fields(false, false, true)
+    );
+    apply_all_seq(&mut session, &sink, &seq, &[&answer]);
     let call = session.calls.active_group_call.as_ref().expect("tracked");
     assert_eq!(call.id, 555);
     assert_eq!(call.title, "Demo voice");

@@ -236,8 +236,10 @@ impl Session {
 
     /// Phase C3a: `updateGroupCall` state machine. The current call holds
     /// one group call at a time (like the single 1:1 call):
-    /// - a different call id replaces the tracked call (participants
-    ///   reload via updates);
+    /// - a different call id replaces the tracked call only when
+    ///   `group_call_update_may_take_slot` allows it — a joined call, or
+    ///   an unjoined one whose `getGroupCall` the person asked for
+    ///   (participants reload via updates);
     /// - `need_rejoin` makes a rejoin due (`GroupCallRejoin::want`) so the
     ///   UI shows "Reconnecting…" and the driver re-issues the join;
     /// - a joined, non-`need_rejoin` update that follows a not-joined one
