@@ -30,6 +30,16 @@ fn add_team_chat(h: &mut Harness) {
     );
 }
 
+/// The person pressed the Team chat's video-chat affordance: the app
+/// asks for the call, and only its `getGroupCall` answer opens the slot.
+fn fetch_video_chat(h: &mut Harness) {
+    h.driver.fetch_group_call(555).expect("fetch sends");
+    h.answer(
+        "getGroupCall",
+        r#"{"@type":"groupCall","id":555,"title":"Team","is_active":true,"is_video_chat":true,"is_joined":false}"#,
+    );
+}
+
 fn open_story(h: &mut Harness) {
     h.ingest(STORY);
     h.driver
@@ -148,7 +158,7 @@ fn a_video_chat_joins_beside_an_open_story() {
     let mut h = watching();
     h.ingest(&LIVE_CALL.replace("JOINED", "true"));
     add_team_chat(&mut h);
-    h.ingest(&video_chat(true, false));
+    fetch_video_chat(&mut h);
     assert_eq!(current_id(&h), Some(555));
     h.driver
         .join_video_chat(555)
@@ -309,7 +319,7 @@ fn joining_the_story_chats_call_stops_the_story() {
     h.ingest(&LIVE_CALL.replace("JOINED", "true"));
     assert_eq!(h.sent("joinLiveStory"), 1);
     assert!(!story_failed(&h));
-    h.ingest(&video_chat(true, false));
+    fetch_video_chat(&mut h);
     h.driver.join_video_chat(555).expect("the call joins");
     assert_eq!(handle.group_leaves(), vec![4242], "the story's media goes");
     assert!(story_failed(&h), "the viewer shows it failed, with Retry");
@@ -326,7 +336,7 @@ fn a_story_of_the_chat_youre_in_a_call_with_does_not_join() {
     let mut h = harness();
     let handle = with_engine(&mut h);
     add_team_chat(&mut h);
-    h.ingest(&video_chat(true, false));
+    fetch_video_chat(&mut h);
     h.driver.join_video_chat(555).expect("the call joins");
     h.ingest(&video_chat(true, true));
     open_team_story(&mut h);
@@ -347,7 +357,7 @@ fn a_story_of_another_chat_keeps_playing_beside_the_call() {
     add_team_chat(&mut h);
     open_story(&mut h);
     h.ingest(&LIVE_CALL.replace("JOINED", "true"));
-    h.ingest(&video_chat(true, false));
+    fetch_video_chat(&mut h);
     h.driver.join_video_chat(555).expect("the call joins");
     assert!(handle.group_leaves().is_empty());
     assert!(!story_failed(&h));

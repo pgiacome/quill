@@ -249,7 +249,7 @@ impl Session {
     pub(crate) fn accept_group_call_update(
         &mut self,
         group_call: &ParsedGroupCall,
-        _pending: Option<&PendingRequest>,
+        pending: Option<&PendingRequest>,
     ) {
         self.note_live_group_call(group_call);
         // TDLib confirms the leave: later joined updates are real again.
@@ -263,7 +263,7 @@ impl Session {
             self.accept_story_stream_update(group_call);
             return;
         }
-        if group_call.is_live_story || !self.group_call_update_may_take_slot(group_call) {
+        if group_call.is_live_story || !self.group_call_update_may_take_slot(group_call, pending) {
             return;
         }
         if !group_call.is_active {
@@ -646,17 +646,30 @@ impl Session {
 
     /// Whether an update (or a `getGroupCall` answer) for `group_call`
     /// may take the current call slot. An update for the tracked call
-    /// always may. One you are not in never replaces a call you are in,
-    /// scheduled updates included (a looked-up `getGroupCall` or another
-    /// chat's call). A late joined update for the call just left is not
-    /// tracked either.
-    fn group_call_update_may_take_slot(&self, group_call: &ParsedGroupCall) -> bool {
+    /// always may. A call nobody joined takes the slot only when it is
+    /// the answer to the person's own `getGroupCall`, and never over a
+    /// call they are in. A late joined update for the call just left is
+    /// not tracked either.
+    fn group_call_update_may_take_slot(
+        &self,
+        group_call: &ParsedGroupCall,
+        pending: Option<&PendingRequest>,
+    ) -> bool {
+        let asked = pending.is_some_and(|request| {
+            matches!(
+                request.purpose,
+                RequestPurpose::Calls(CallsPurpose::GetGroupCall { group_call_id })
+                    if group_call_id == group_call.id
+            )
+        });
         if group_call.is_joined {
             return !self.calls.group_call_left(group_call.id);
         }
         match self.calls.active_group_call.as_ref() {
-            Some(tracked) => tracked.id == group_call.id || !tracked.is_joined,
-            None => true,
+            Some(tracked) if tracked.id == group_call.id => true,
+            Some(tracked) if tracked.is_joined => false,
+            Some(_) => asked,
+            None => asked,
         }
     }
 

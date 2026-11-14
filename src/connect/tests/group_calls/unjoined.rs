@@ -39,6 +39,161 @@ fn an_unjoined_update_feeds_the_list() {
 }
 
 #[test]
+fn an_unjoined_update_never_takes_an_empty_slot() {
+    let (dir, _recorder, mut driver, seq) = group_call_test_driver();
+    let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        r#"{
+        "@type":"updateGroupCall",
+        "group_call":{"@type":"groupCall","id":41,"title":"Town hall",
+        "is_active":true,"is_video_chat":false,"is_joined":false,
+        "is_rtmp_stream":false,"participant_count":3}
+    }"#,
+    );
+    assert!(
+        driver.session.calls.active_group_call.is_none(),
+        "an update for a call nobody joined is listed, not opened"
+    );
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn the_answer_to_the_peoples_own_fetch_takes_the_slot() {
+    let (dir, recorder, mut driver, seq) = group_call_test_driver();
+    let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
+    driver.fetch_group_call(51).expect("fetch sends");
+    let extra =
+        serde_json::from_str::<Value>(recorder.snapshot().last().unwrap()).unwrap()["@extra"]
+            .as_str()
+            .unwrap()
+            .to_string();
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        &format!(
+            r#"{{"@type":"groupCall","@extra":"{extra}",
+        "id":51,"title":"Town hall","is_active":true,"is_video_chat":false,
+        "is_joined":false,"is_rtmp_stream":false,"participant_count":3}}"#
+        ),
+    );
+    assert_eq!(
+        driver
+            .session
+            .calls
+            .active_group_call
+            .as_ref()
+            .map(|c| c.id),
+        Some(51)
+    );
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn an_unjoined_update_racing_the_answer_waits_for_the_answer() {
+    let (dir, recorder, mut driver, seq) = group_call_test_driver();
+    let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
+    // The update for the call the person looked up may beat its answer.
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        r#"{
+        "@type":"updateGroupCall",
+        "group_call":{"@type":"groupCall","id":51,"title":"Town hall",
+        "is_active":true,"is_video_chat":false,"is_joined":false,
+        "is_rtmp_stream":false,"participant_count":3}
+    }"#,
+    );
+    assert!(driver.session.calls.active_group_call.is_none());
+
+    driver.fetch_group_call(51).expect("fetch sends");
+    let extra =
+        serde_json::from_str::<Value>(recorder.snapshot().last().unwrap()).unwrap()["@extra"]
+            .as_str()
+            .unwrap()
+            .to_string();
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        &format!(
+            r#"{{"@type":"groupCall","@extra":"{extra}",
+        "id":51,"title":"Town hall","is_active":true,"is_video_chat":false,
+        "is_joined":false,"is_rtmp_stream":false,"participant_count":3}}"#
+        ),
+    );
+    assert_eq!(
+        driver
+            .session
+            .calls
+            .active_group_call
+            .as_ref()
+            .map(|c| c.id),
+        Some(51)
+    );
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn another_unjoined_call_does_not_replace_a_tracked_unjoined_one() {
+    let (dir, recorder, mut driver, seq) = group_call_test_driver();
+    let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
+    driver.fetch_group_call(51).expect("fetch sends");
+    let extra =
+        serde_json::from_str::<Value>(recorder.snapshot().last().unwrap()).unwrap()["@extra"]
+            .as_str()
+            .unwrap()
+            .to_string();
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        &format!(
+            r#"{{"@type":"groupCall","@extra":"{extra}",
+        "id":51,"title":"Town hall","is_active":true,"is_video_chat":false,
+        "is_joined":false,"is_rtmp_stream":false,"participant_count":3}}"#
+        ),
+    );
+    assert_eq!(
+        driver
+            .session
+            .calls
+            .active_group_call
+            .as_ref()
+            .map(|c| c.id),
+        Some(51)
+    );
+
+    // A different unjoined call with no request behind it must not
+    // replace the one the person asked for.
+    feed(
+        &mut driver,
+        &seq,
+        &sink,
+        r#"{
+        "@type":"updateGroupCall",
+        "group_call":{"@type":"groupCall","id":52,"title":"Studio",
+        "is_active":true,"is_video_chat":true,"is_joined":false,
+        "is_rtmp_stream":false,"participant_count":5}
+    }"#,
+    );
+    assert_eq!(
+        driver
+            .session
+            .calls
+            .active_group_call
+            .as_ref()
+            .map(|c| c.id),
+        Some(51)
+    );
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
 fn a_joined_update_leaves_the_list_and_takes_the_slot() {
     let (dir, _recorder, mut driver, seq) = group_call_test_driver();
     let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
