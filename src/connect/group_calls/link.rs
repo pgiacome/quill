@@ -19,6 +19,21 @@ impl<S: JsonSender> ConnectDriver<S> {
         invite_hash: &str,
         live_stream: bool,
     ) -> Result<CallLinkStep, ConnectSendError> {
+        self.offer_call_link_joining(chat_id, invite_hash, live_stream, false)
+    }
+
+    /// [`Self::offer_call_link`] with the caller's intent for the offer:
+    /// `join_when_offered` says the confirmed offer joins the call itself
+    /// (the Calls tab's Join) once the old one ends, instead of only
+    /// opening its screen. The flag waits in the leave confirmation, so a
+    /// declined question leaves no join behind.
+    pub fn offer_call_link_joining(
+        &mut self,
+        chat_id: ChatId,
+        invite_hash: &str,
+        live_stream: bool,
+        join_when_offered: bool,
+    ) -> Result<CallLinkStep, ConnectSendError> {
         if !self.chats_path_active() {
             return Err(ConnectSendError::InvalidRequest);
         }
@@ -68,6 +83,7 @@ impl<S: JsonSender> ConnectDriver<S> {
                     live_stream,
                     target_is_channel,
                     leave,
+                    join_when_offered,
                 });
             }
             _ => {}
@@ -156,8 +172,12 @@ impl<S: JsonSender> ConnectDriver<S> {
     }
 
     fn offer_confirmed_link(&mut self, link: CallLinkConfirm) -> Result<(), ConnectSendError> {
-        let step =
-            self.offer_call_link(ChatId(link.chat_id), &link.invite_hash, link.live_stream)?;
+        let step = self.offer_call_link_joining(
+            ChatId(link.chat_id),
+            &link.invite_hash,
+            link.live_stream,
+            link.join_when_offered,
+        )?;
         if let CallLinkStep::Offer { group_call_id } = step
             && let CallLinkStage::Joinable(pending) =
                 std::mem::take(&mut self.session.calls.call_link_stage)
@@ -166,6 +186,7 @@ impl<S: JsonSender> ConnectDriver<S> {
                 offered: OfferedCallLink {
                     group_call_id,
                     live_stream: link.live_stream,
+                    join_when_offered: link.join_when_offered,
                 },
                 link: pending,
             };

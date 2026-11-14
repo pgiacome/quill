@@ -280,7 +280,7 @@ impl QuillApp {
                 invite_hash,
                 live_stream,
                 ..
-            } => self.offer_call_link(chat_id, invite_hash, *live_stream, cx),
+            } => self.offer_call_link(chat_id, invite_hash, *live_stream, false, cx),
             DeepLinkAction::OpenChatById {
                 message_id,
                 media_timestamp,

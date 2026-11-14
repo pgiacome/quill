@@ -12,7 +12,7 @@ use crate::ui::status_note::StatusNote;
 use crate::ui::user_error::user_error_for;
 use gpui_kit::assets::IconName;
 use quill::ids::ChatId;
-use quill::lang::{keys, tr, trn_with};
+use quill::lang::{keys, tr, trn_decimal};
 use quill::state::{GroupCallKind, LiveGroupCall};
 
 impl QuillApp {
@@ -140,6 +140,7 @@ impl QuillApp {
                     ChatId(chat),
                     "",
                     call.kind == Some(GroupCallKind::LiveStream),
+                    true,
                     cx,
                 );
             } else {
@@ -164,7 +165,7 @@ impl QuillApp {
 
 /// What kind of call a row lists ("Live stream", "Video chat", "Voice
 /// Chat"); a call known only from `chat.video_chat` has no kind.
-fn kind_label(kind: Option<GroupCallKind>) -> &'static str {
+pub(super) fn kind_label(kind: Option<GroupCallKind>) -> &'static str {
     match kind {
         Some(GroupCallKind::LiveStream) => tr(keys::VIEW_BUTTON_VOICE_CHAT_CHANNEL),
         Some(GroupCallKind::VideoChat) => tr(keys::MENU_START_GROUP_CALL_OPTIONS),
@@ -175,15 +176,17 @@ fn kind_label(kind: Option<GroupCallKind>) -> &'static str {
 }
 
 /// The row's second line: the kind, then " • " and who is in the call when
-/// the count is known. Streams count viewers; the others participants.
-/// Nothing at all for a call known only from `chat.video_chat`.
-fn status_line(call: &LiveGroupCall) -> String {
+/// the count is known. Streams count viewers; the others participants; the
+/// count is grouped ("1,200") like the rest of the app. Nothing at all for a
+/// call known only from `chat.video_chat`.
+pub(super) fn status_line(call: &LiveGroupCall) -> String {
     let kind = kind_label(call.kind);
     let people = (call.participant_count > 0).then(|| {
+        let count = i64::from(call.participant_count);
         if call.kind == Some(GroupCallKind::LiveStream) {
-            trn_with(keys::GROUP_CALL_RTMP_VIEWERS, call.participant_count, &[])
+            trn_decimal(keys::GROUP_CALL_RTMP_VIEWERS, count)
         } else {
-            trn_with(keys::Q_OPS_CALL_PARTICIPANTS, call.participant_count, &[])
+            trn_decimal(keys::Q_OPS_CALL_PARTICIPANTS, count)
         }
     });
     match (kind, people) {

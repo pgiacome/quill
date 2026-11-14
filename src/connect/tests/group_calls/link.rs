@@ -109,6 +109,7 @@ fn another_joined_call_blocks_the_offer() {
             current_is_channel: false
         }
     );
+    assert!(!ask.join_when_offered, "a link only opens the call screen");
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -131,6 +132,7 @@ fn confirming_leaves_the_old_call_and_offers_the_new_one() {
         CallLinkStage::Offered { offered, .. } if *offered == crate::call_link::OfferedCallLink {
             group_call_id: 555,
             live_stream: false,
+            join_when_offered: false,
         }
     ));
     assert_eq!(driver.session.calls.call_link_stage.hash_for(555), "AbC");
@@ -186,6 +188,47 @@ fn a_confirmed_stream_link_keeps_its_live_stream_into_the_offer() {
         &driver.session.calls.call_link_stage,
         CallLinkStage::Offered { offered, .. } if offered.live_stream && offered.group_call_id == 555
     ));
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The Calls tab's Join while another call is on carries the intent through
+/// the leave confirmation: once confirmed, the offer says to join this
+/// voice chat (not only to open its screen). The driver still joins
+/// nothing; the UI notes the join from the offer.
+#[test]
+fn a_joining_offer_carries_the_join_through_the_confirmation() {
+    let (dir, mut driver, recorder, _handle, _sink, _seq) = ready_group_call_driver();
+    let mut other = tracked_group_call(false, false, false);
+    other.is_joined = true;
+    driver.session.calls.active_group_call = Some(other);
+    let step = driver
+        .offer_call_link_joining(ChatId(51), "", false, true)
+        .unwrap();
+    assert_eq!(step, CallLinkStep::OtherCallOn);
+    let ask = driver
+        .session
+        .calls
+        .call_link_stage
+        .confirm()
+        .cloned()
+        .expect("asks");
+    assert!(
+        ask.join_when_offered,
+        "the intent waits in the confirmation, not in a join wish"
+    );
+    assert!(!ask.live_stream);
+    driver.confirm_call_link_leave().unwrap();
+    assert!(matches!(
+        &driver.session.calls.call_link_stage,
+        CallLinkStage::Offered { offered, .. }
+            if offered.join_when_offered
+                && !offered.live_stream
+                && offered.group_call_id == 555
+    ));
+    assert!(
+        !sent_types(&recorder).iter().any(|t| t == "joinVideoChat"),
+        "the UI notes the join; the driver only offered the call"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 

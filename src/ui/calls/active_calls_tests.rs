@@ -4,6 +4,7 @@
 //! that will track the call; a busy one offers the call (or, without a
 //! chat to offer, says to end the current call first).
 use crate::ui::app::QuillApp;
+use crate::ui::call_link_ui::offered_call_intent;
 use crate::ui::chat_list_state::SidebarTab;
 use crate::ui::group_call_stream_layout::StreamJoinIntent;
 use crate::ui::keybindings::bind_keys;
@@ -12,9 +13,10 @@ use crate::ui::shell::QuillShell;
 use gpui_kit::component::Root;
 use gpui_kit::test::TestWindowExt;
 use gpui_kit::{AppContext, Entity, TestAppContext, VisualTestContext, px, size};
+use quill::call_link::OfferedCallLink;
 use quill::diagnostics::DiagnosticSink;
-use quill::lang::{keys, tr};
-use quill::state::LiveGroupCall;
+use quill::lang::{keys, tr, trn_decimal};
+use quill::state::{GroupCallKind, LiveGroupCall};
 use quill::telegram::client::copy_and_parse;
 use std::sync::Arc;
 
@@ -188,7 +190,7 @@ fn the_section_orders_streams_first_and_join_sets_the_intent(cx: &mut TestAppCon
 }
 
 #[gpui_kit::test]
-fn a_busy_join_opens_the_leave_confirmation(cx: &mut TestAppContext) {
+fn a_busy_join_offers_the_call_instead_of_joining(cx: &mut TestAppContext) {
     let (app, mut vcx) = new_app(cx);
     app.update_in(&mut vcx, |app, _, _| {
         seed_two_calls(app);
@@ -201,8 +203,8 @@ fn a_busy_join_opens_the_leave_confirmation(cx: &mut TestAppContext) {
     );
 
     // With a chat, the call is offered rather than joined: live, that is
-    // `offer_call_link`'s leave confirmation; the demo has no call driver,
-    // so the offer is its note and nothing is joined.
+    // `offer_call_link`'s leave confirmation and then the offer; the demo
+    // has no call driver, so the offer is its note and nothing is joined.
     app.update_in(&mut vcx, |app, _, cx| {
         app.join_listed_group_call(&listed[0], cx);
     });
@@ -242,4 +244,69 @@ fn a_busy_join_opens_the_leave_confirmation(cx: &mut TestAppContext) {
         );
         assert!(app.group_call_screen.stream_wish().is_none());
     });
+}
+
+/// The row says only what the list knows: a `chat.video_chat`-seeded call
+/// has no kind and no count, so its second line is empty.
+#[test]
+fn the_row_status_shows_no_kind_or_count_it_does_not_know() {
+    let seeded = LiveGroupCall {
+        id: 63,
+        chat_id: None,
+        title: "Mystery".to_string(),
+        kind: None,
+        participant_count: 0,
+    };
+    assert_eq!(super::active_calls::status_line(&seeded), "");
+
+    let stream = LiveGroupCall {
+        kind: Some(GroupCallKind::LiveStream),
+        participant_count: 12,
+        ..seeded.clone()
+    };
+    let stream_line = super::active_calls::status_line(&stream);
+    assert!(
+        stream_line.contains(tr(keys::VIEW_BUTTON_VOICE_CHAT_CHANNEL)),
+        "the live-stream label: {stream_line}"
+    );
+    assert!(
+        stream_line.contains(&trn_decimal(keys::GROUP_CALL_RTMP_VIEWERS, 12)),
+        "12 viewers: {stream_line}"
+    );
+
+    let voice = LiveGroupCall {
+        kind: Some(GroupCallKind::VoiceChat),
+        participant_count: 0,
+        ..seeded
+    };
+    assert_eq!(
+        super::active_calls::status_line(&voice),
+        tr(keys::Q_AV_VOICE_CHAT_2),
+        "the kind alone, no count at zero"
+    );
+}
+
+/// A confirmed Calls-tab offer notes the join whatever the call's kind; a
+/// link's offer keeps the call screen's Join for a non-stream call.
+#[test]
+fn a_confirmed_joining_offer_notes_join_for_a_voice_chat() {
+    let joining = OfferedCallLink {
+        group_call_id: 61,
+        live_stream: false,
+        join_when_offered: true,
+    };
+    assert_eq!(
+        offered_call_intent(&joining),
+        StreamJoinIntent::Join(61),
+        "the Calls tab's Join continues after the old call ends"
+    );
+    let link = OfferedCallLink {
+        join_when_offered: false,
+        ..joining
+    };
+    assert_eq!(
+        offered_call_intent(&link),
+        StreamJoinIntent::Call(61),
+        "a link only opens the call screen"
+    );
 }

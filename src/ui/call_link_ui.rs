@@ -9,18 +9,33 @@ use crate::ui::status_note::StatusNote;
 use gpui_kit::component::button::*;
 use gpui_kit::component::dialog::Dialog;
 use gpui_kit::*;
-use quill::call_link::{BAD_LINK_NOTE, CallLinkStep, step_note};
+use quill::call_link::{BAD_LINK_NOTE, CallLinkStep, OfferedCallLink, step_note};
 use quill::ids::ChatId;
 use quill::lang::{keys, tr};
 
+/// What an offered call asks the window to do: the Calls tab's Join takes
+/// the call whatever its kind, while a link opens a stream (and keeps the
+/// call screen's Join for the other kinds). Pure, so the choice is tested
+/// without a live driver.
+pub(super) fn offered_call_intent(offered: &OfferedCallLink) -> StreamJoinIntent {
+    if offered.join_when_offered {
+        StreamJoinIntent::Join(offered.group_call_id)
+    } else {
+        StreamJoinIntent::Call(offered.group_call_id)
+    }
+}
+
 impl QuillApp {
     /// The link's chat is open: offer its call. The call screen's Join
-    /// button joins, with the link's hash.
+    /// button joins, with the link's hash. `join_when_offered` is the Calls
+    /// tab's Join: once a busy confirmation is answered, the offer joins the
+    /// call itself instead of waiting for the call screen's Join.
     pub(super) fn offer_call_link(
         &mut self,
         chat_id: ChatId,
         invite_hash: &str,
         live_stream: bool,
+        join_when_offered: bool,
         cx: &mut Context<Self>,
     ) {
         let Some(live) = self.live.as_mut() else {
@@ -28,14 +43,22 @@ impl QuillApp {
             cx.notify();
             return;
         };
-        match live
-            .driver
-            .offer_call_link(chat_id, invite_hash, live_stream)
-        {
+        match live.driver.offer_call_link_joining(
+            chat_id,
+            invite_hash,
+            live_stream,
+            join_when_offered,
+        ) {
             Ok(step) => {
-                // A stream opened from its link joins in its window.
+                // The call is offered at once (nothing busy): a stream opens
+                // in its window, the Calls tab's Join asks for it too.
                 if let CallLinkStep::Offer { group_call_id } = step {
-                    self.note_stream_join_intent(StreamJoinIntent::Call(group_call_id));
+                    let intent = if join_when_offered {
+                        StreamJoinIntent::Join(group_call_id)
+                    } else {
+                        StreamJoinIntent::Call(group_call_id)
+                    };
+                    self.note_stream_join_intent(intent);
                 }
                 // Busy: the leave confirmation shows in this window.
                 if matches!(step, CallLinkStep::OtherCallOn) {
@@ -59,7 +82,8 @@ impl QuillApp {
     }
 
     /// A confirmed link offered its call once the old one ended: what the
-    /// link's own press does, a stream opening in its window and the note.
+    /// link's own press does, a stream opening in its window, the Calls tab
+    /// joining the call, and the note.
     pub(super) fn take_offered_call_link(&mut self, cx: &mut Context<Self>) {
         let Some(offered) = self
             .live
@@ -68,7 +92,7 @@ impl QuillApp {
         else {
             return;
         };
-        self.note_stream_join_intent(StreamJoinIntent::Call(offered.group_call_id));
+        self.note_stream_join_intent(offered_call_intent(&offered));
         self.set_note(StatusNote::silent(tr(if offered.live_stream {
             keys::Q_OPS_OPENING_THE_LIVE_STREAM
         } else {

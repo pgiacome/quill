@@ -86,6 +86,7 @@ fn a_hang_up_tdlib_refuses_drops_the_link_waiting_for_it() {
             live_stream: false,
             target_is_channel: false,
             leave: LeaveKind::PrivateCall,
+            join_when_offered: false,
         },
         leaving: LeavingCall::Private {
             call_id: 77,
