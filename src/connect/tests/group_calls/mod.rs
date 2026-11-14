@@ -28,6 +28,7 @@ mod share_links;
 mod stream;
 mod stream_sound;
 mod transport;
+mod unjoined;
 
 /// Phase C2f: participant-management request shapes and gates
 /// (schema 1.8.67 — inviteGroupCallParticipant :14375,
