@@ -1,3 +1,5 @@
+use super::key_table::English;
+use super::parse::Form;
 use super::*;
 
 fn pack(strings: &[(&str, PackValue)]) -> Snapshot {
@@ -139,5 +141,61 @@ fn english_strings_use_the_ellipsis_character() {
             !text.contains("..."),
             "{name}.strings has a three-dot ellipsis"
         );
+    }
+}
+
+#[test]
+fn overlays_keep_placeholders_and_plural_other() {
+    fn tags(text: &str) -> Vec<&str> {
+        let mut out = Vec::new();
+        let mut rest = text;
+        while let Some(start) = rest.find('{') {
+            let tail = &rest[start + 1..];
+            let Some(end) = tail.find('}') else { break };
+            out.push(&tail[..end]);
+            rest = &tail[end + 1..];
+        }
+        out.sort_unstable();
+        out
+    }
+    for (code, text) in key_table::OVERLAYS {
+        let entries = parse::parse_strings(text).unwrap_or_else(|err| panic!("{code}: {err}"));
+        let mut plural_other = std::collections::HashSet::new();
+        for entry in &entries {
+            let (base, form) = parse::split_plural(&entry.key);
+            let Some(index) = key_table::index_of(base) else {
+                continue;
+            };
+            let Some(english) = key_table::ENGLISH.get(index) else {
+                continue;
+            };
+            match (english, form) {
+                (English::Text(value), None) => {
+                    assert_eq!(tags(value), tags(&entry.value), "{code}: {base}");
+                }
+                (English::Plural(forms), Some(form)) => {
+                    let value = forms
+                        .get(form.index())
+                        .copied()
+                        .flatten()
+                        .or_else(|| forms.get(Form::Other.index()).copied().flatten());
+                    let Some(value) = value else { continue };
+                    assert_eq!(tags(value), tags(&entry.value), "{code}: {}", entry.key);
+                    if form == Form::Other {
+                        plural_other.insert(base.to_string());
+                    }
+                }
+                _ => panic!("{code}: {:?} has the wrong kind", entry.key),
+            }
+        }
+        for (base, english) in key_table::KEY_NAMES.iter().zip(key_table::ENGLISH.iter()) {
+            if matches!(english, English::Plural(_)) {
+                assert!(
+                    !entries.iter().any(|e| parse::split_plural(&e.key).0 == *base)
+                        || plural_other.contains(*base),
+                    "{code}: {base} has no #other"
+                );
+            }
+        }
     }
 }

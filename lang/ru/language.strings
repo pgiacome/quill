@@ -1,0 +1,14 @@
+// Settings → Language (tdesktop boxes/language_box.cpp).
+"qll_translate_chats_hint" = "Предлагать переводить целые переписки с помощью панели над чатом.";
+"qll_language_beta_title" = "Бета";
+"qll_language_beta_about" = "Переводы, над которыми сообщество Telegram ещё работает. Всё, что ещё не переведено, остаётся на английском.";
+"qll_language_translated_percent" = "Переведено на {percent}%";
+"qll_translate_chats_premium" = "Для перевода целых чатов нужен Telegram Premium.";
+
+// The t.me/setlanguage box (tdesktop lang/lang_cloud_manager.cpp).
+"qll_language_link_looking_up" = "Ищем язык…";
+"qll_language_link_progress" = "Прогресс";
+"qll_language_link_status" = "Статус";
+"qll_language_link_beta" = "Бета";
+"qll_language_link_about" = "Quill переключит интерфейс на {lang_name}. Непереведённые строки останутся на английском. Вернуться можно в любой момент в разделе «Настройки → Язык».";
+"qll_language_link_already" = "Quill уже использует этот язык. Выбрать другой можно в любой момент в разделе «Настройки → Язык».";

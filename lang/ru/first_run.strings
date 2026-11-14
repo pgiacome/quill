@@ -1,0 +1,13 @@
+// First-run onboarding: the experimental notice and the highlights
+// (src/ui/first_run_ui.rs).
+"qll_first_run_notice_title" = "Quill — экспериментальная версия";
+"qll_first_run_notice_early" = "Quill находится на ранней стадии разработки. Возможны ошибки, недостающие функции и изменения между версиями.";
+"qll_first_run_notice_risk" = "Программа предоставляется как есть, без каких-либо гарантий. Вы используете её на свой риск, а разработчики не несут ответственности за любой ущерб или убытки.";
+"qll_first_run_welcome" = "Добро пожаловать в Quill";
+"qll_first_run_open_title" = "Открытый исходный код";
+"qll_first_run_open_body" = "Весь код Quill открыт под лицензией MIT.";
+"qll_first_run_native_title" = "Нативный для каждой ОС";
+"qll_first_run_native_body" = "Написан на Rust, отрисовывается на GPU и работает на macOS, Windows и Linux.";
+"qll_first_run_telegram_title" = "Чаты, звонки и истории";
+"qll_first_run_telegram_body" = "Группы, каналы, голосовые и видеозвонки, истории и несколько аккаунтов одновременно.";
+"qll_first_run_replay" = "Показать приветствие";
