@@ -1,0 +1,4 @@
+// story_stealth: Stealth Mode (tdesktop English).
+"qll_stealth_enabled_tip" = "Авторы историй, которые вы просмотрели за последние **{past}** или просмотрите в ближайшие **{future}**, не увидят вас в списке зрителей.";
+"qll_stealth_next_about" = "Скрыть мои просмотры на {duration}.";
+"qll_stealth_past_about" = "Скрыть мои просмотры за {duration}.";

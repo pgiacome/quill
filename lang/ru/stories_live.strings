@@ -1,0 +1,5 @@
+// stories_live: the live story in the story viewer (tdesktop English).
+"qll_live_story_failed" = "Не удалось отправить сообщение.";
+"qll_live_story_hide_comments" = "Скрыть комментарии";
+"qll_live_story_show_comments" = "Показать комментарии";
+"qll_stories_link_url_placeholder" = "https://… (необязательно, Premium)";
