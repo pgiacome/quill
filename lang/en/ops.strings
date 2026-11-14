@@ -296,6 +296,7 @@
 "qll_ops_accounts_you_are_not_using" = "Accounts you are not using stay connected and keep their unread counts.";
 "qll_ops_active" = "Active";
 "qll_ops_active_2" = "✓ Active";
+"qll_ops_active_calls" = "Active calls";
 "qll_ops_ad_options" = "Ad options";
 "qll_ops_add" = "Add";
 "qll_ops_add_a_comment" = "Add a comment";
@@ -350,6 +351,8 @@
 "qll_ops_call_failed" = "Call failed";
 "qll_ops_call_log_sent" = "Call log sent.";
 "qll_ops_call_log_upload_sent" = "Call log upload sent";
+"qll_ops_call_participants#one" = "{count} participant";
+"qll_ops_call_participants#other" = "{count} participants";
 "qll_ops_call_state" = "Call state: {type_name}";
 "qll_ops_calling" = "Calling…";
 "qll_ops_calling_2" = "Calling…";
@@ -580,6 +583,7 @@
 "qll_ops_editing_a_message" = "Editing a message.";
 "qll_ops_email_reset_requested_waiting_for" = "Email reset requested — waiting for Telegram";
 "qll_ops_end_answer" = "End & answer";
+"qll_ops_end_current_call_first" = "End the current call first.";
 "qll_ops_end_time" = "End Time";
 "qll_ops_end_to_end_verification" = "End-to-end verification:";
 "qll_ops_ending" = "Ending…";
