@@ -1,7 +1,7 @@
 // Passkeys: creating one on a security key and signing in with it (tdesktop
 // webauthn/webauthn_common.cpp, webauthn/cable_box.cpp,
 // settings/sections/settings_passkeys.cpp, intro/intro_qr.cpp).
-"qll_passkey_error_access_denied" = "Quill не разрешено использовать ваш ключ безопасности. Добавьте правило udev для ключей безопасности, отключите ключ и подключите его снова.";
+"qll_passkey_error_access_denied" = "Quill не разрешено использовать ваш ключ безопасности. Добавьте правило udev для ключей безопасности, выньте ключ и подключите его снова.";
 // Quill: the row Quill shows while the Windows Security dialog is open (tdesktop
 // blocks its window on the call instead).
 "qll_passkey_windows_waiting" = "Ожидание Windows Security…";

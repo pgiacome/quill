@@ -24,7 +24,7 @@
 "qll_prefs_auto_delete_timer" = "Таймер автоудаления";
 "qll_prefs_auto_lock_if_away_for" = "Автоблокировка при отсутствии";
 "qll_prefs_auto_lock_if_inactive_for" = "Автоблокировка при неактивности";
-"qll_prefs_auto_night" = "Автоночной режим";
+"qll_prefs_auto_night" = "Автоматический ночной режим";
 "qll_prefs_automatic" = "Автоматически";
 "qll_prefs_automatically_delete_new_messages_in" = "Автоматически удалять новые сообщения во всех новых чатах через заданное время. Таймер также можно настроить для каждого чата в его меню.";
 "qll_prefs_automatically_switch_to_the_dark" = "Автоматически включать тёмную тему ночью.";
@@ -62,7 +62,7 @@
 "qll_prefs_choose_a_group" = "Выберите группу:";
 "qll_prefs_choose_the_types_of_gifts" = "Выберите типы подарков, которые вы принимаете. Для их изменения нужен Telegram Premium.";
 "qll_prefs_clear_formatting" = "Очистить форматирование";
-"qll_prefs_clear_saved_payment_shipping_info" = "Удалить сохранённые платёжные и доставочные данные…";
+"qll_prefs_clear_saved_payment_shipping_info" = "Удалить сохранённые платёжные данные и данные доставки…";
 "qll_prefs_close_search_cancel" = "Закрыть поиск / отменить";
 "qll_prefs_close_window" = "Закрыть окно";
 "qll_prefs_close_window_2" = "Закрыть окно";
@@ -94,14 +94,14 @@
 "qll_prefs_could_not_disconnect_the_website" = "Не удалось отключить сайт.";
 "qll_prefs_could_not_load_notification_defaults" = "Не удалось загрузить настройки уведомлений по умолчанию.";
 "qll_prefs_could_not_load_archive_settings" = "Не удалось загрузить настройки архива.";
-"qll_prefs_could_not_open_the_file" = "не удалось открыть файл";
+"qll_prefs_could_not_open_the_file" = "Не удалось открыть файл";
 "qll_prefs_could_not_reset_exception" = "Не удалось сбросить исключение";
 "qll_prefs_could_not_reset_notification_settings" = "Не удалось сбросить настройки уведомлений";
 "qll_prefs_could_not_terminate_the_session" = "Не удалось завершить сеанс.";
-"qll_prefs_could_not_update_the_send" = "не удалось обновить меню «Отправить»: {error}";
+"qll_prefs_could_not_update_the_send" = "Не удалось обновить меню «Отправить»: {error}";
 "qll_prefs_could_not_update_the_session" = "Не удалось обновить настройку сеанса.";
 "qll_prefs_couldn_t_load_privacy_settings" = "Не удалось загрузить настройки конфиденциальности.";
-"qll_prefs_couldn_t_save_badge_settings" = "не удалось сохранить настройки значка: {err}";
+"qll_prefs_couldn_t_save_badge_settings" = "Не удалось сохранить настройки значка: {err}";
 "qll_prefs_couldn_t_update_wallpapers" = "Не удалось обновить обои: {error}";
 "qll_prefs_couldnt_add_the_proxy_try" = "Не удалось добавить прокси. Попробуйте ещё раз.";
 "qll_prefs_couldnt_check_the_password_try" = "Не удалось проверить пароль. Попробуйте позже.";
@@ -109,7 +109,7 @@
 "qll_prefs_couldnt_load_blocked_users" = "Не удалось загрузить заблокированных пользователей.";
 "qll_prefs_couldnt_load_these_settings" = "Не удалось загрузить эти настройки.";
 "qll_prefs_couldnt_reach_telegram_support_try" = "Не удалось связаться с поддержкой Telegram. Попробуйте ещё раз.";
-"qll_prefs_couldnt_save" = "не удалось сохранить: {err}";
+"qll_prefs_couldnt_save" = "Не удалось сохранить: {err}";
 "qll_prefs_couldnt_save_settings" = "Не удалось сохранить настройки: {err}";
 "qll_prefs_couldnt_save_the_proxy_try" = "Не удалось сохранить прокси. Попробуйте ещё раз.";
 "qll_prefs_couldnt_update_call_settings" = "Не удалось обновить настройки звонков.";
@@ -148,7 +148,7 @@
 "qll_prefs_delete_selected_messages" = "Удалить выбранные сообщения";
 "qll_prefs_delete_synced_contacts" = "Удалить синхронизированные контакты…";
 "qll_prefs_delete_this_wallpaper_from_your" = "Удалить эти обои из установленных?";
-"qll_prefs_deletes_the_shipping_info_and" = "Удаляет доставочные данные и платёжные реквизиты, сохранённые Telegram при прошлых покупках.";
+"qll_prefs_deletes_the_shipping_info_and" = "Удаляет информацию о доставке и платёжные реквизиты, сохранённые Telegram при прошлых покупках.";
 "qll_prefs_demo_badge_settings_are_not" = "Демо: настройки значка не сохраняются";
 "qll_prefs_demo_desktop_notifications_are_not" = "Демо: уведомления на рабочем столе не сохраняются";
 "qll_prefs_demo_device_name_is_not" = "Демо: имя устройства не сохраняется";
@@ -173,7 +173,7 @@
 "qll_prefs_enter_a_time_as_hours" = "Введите время как часы:минуты, например 0:30";
 "qll_prefs_enter_a_web_proxy_address" = "Введите действительный адрес веб-прокси и секрет.";
 "qll_prefs_enter_full_screen" = "Перейти в полноэкранный режим";
-"qll_prefs_enter_sends_or_enter_inserts" = "Enter отправляет — либо Enter вставляет новую строку, а Ctrl/Cmd+Enter отправляет.";
+"qll_prefs_enter_sends_or_enter_inserts" = "Enter отправляет. Либо Enter вставляет новую строку, а Ctrl/Cmd+Enter отправляет.";
 "qll_prefs_enter_the_code_from_the" = "введите код из письма";
 "qll_prefs_enter_the_new_login_email" = "введите новую почту для входа";
 "qll_prefs_enter_the_new_recovery_email" = "введите новую резервную почту";
@@ -187,7 +187,7 @@
 "qll_prefs_everyone" = "Все";
 "qll_prefs_exception_reset" = "Исключение сброшено…";
 "qll_prefs_exception_reset_2" = "Исключение сброшено";
-"qll_prefs_exceptions_2" = "{label} · исключений: {label_2}";
+"qll_prefs_exceptions_2" = "{label} · исключения: {label_2}";
 "qll_prefs_exceptions_unavailable_reopen_the_dialog" = "Исключения недоступны — откройте диалог заново, чтобы повторить.";
 "qll_prefs_export" = "Экспорт";
 "qll_prefs_extend_the_selection_to_the" = "Расширить выделение до более старого сообщения";
@@ -238,7 +238,7 @@
 "qll_prefs_isnt_a_valid_shortcut_and" = "{chord} не является допустимым сочетанием и не применено.";
 "qll_prefs_italic" = "Курсив";
 "qll_prefs_just_send" = "Сразу отправить";
-"qll_prefs_keeps_the_contacts_tab_up" = "Поддерживает вкладку «Контакты» в актуальном состоянии с серверами Telegram.";
+"qll_prefs_keeps_the_contacts_tab_up" = "Синхронизирует вкладку «Контакты» с серверами Telegram.";
 "qll_prefs_keyboard_shortcuts" = "Сочетания клавиш";
 "qll_prefs_keyboard_shortcuts_2" = "Сочетания клавиш";
 "qll_prefs_large_emoji" = "Крупные эмодзи";
@@ -416,7 +416,7 @@
 "qll_prefs_reset_zoom" = "Сбросить масштаб";
 "qll_prefs_resetting_all_notification_settings" = "Сброс всех настроек уведомлений…";
 "qll_prefs_retry" = "Повторить";
-"qll_prefs_right_click_files_in_explorer" = "Щёлкните файлы правой кнопкой мыши в Проводнике, выберите «Отправить», затем Quill, чтобы выбрать для них чат.";
+"qll_prefs_right_click_files_in_explorer" = "Щёлкните правой кнопкой мыши по файлам в Проводнике, выберите «Отправить», затем Quill, чтобы выбрать для них чат.";
 "qll_prefs_route_calls_through_the_enabled" = "Направлять звонки через включённый прокси";
 "qll_prefs_run" = "Запустить";
 "qll_prefs_s" = "{title} ({max} с)";
@@ -424,7 +424,7 @@
 "qll_prefs_scales_the_whole_interface_applied" = "Масштабирует весь интерфейс, применяется сразу.";
 "qll_prefs_schedule" = "Запланировать";
 "qll_prefs_scheduled_messages" = "Отложенные сообщения";
-"qll_prefs_screenshot_demo_qr_sign_in" = "демо-скриншот — вход по QR-коду со ссылкой ключа доступа (внедрённая авторизация, без подключения к Telegram)";
+"qll_prefs_screenshot_demo_qr_sign_in" = "Демо: скриншот — вход по QR-коду со ссылкой ключа доступа (внедрённая авторизация, без подключения к Telegram)";
 "qll_prefs_scroll_down_a_page" = "Прокрутить вниз на страницу";
 "qll_prefs_scroll_to_the_first_message" = "Перейти к первому сообщению";
 "qll_prefs_scroll_to_the_latest_message" = "Перейти к последнему сообщению";
@@ -468,7 +468,7 @@
 "qll_prefs_sound_volume" = "Громкость звука";
 "qll_prefs_spelling" = "Орфография";
 "qll_prefs_spoiler" = "Спойлер";
-"qll_prefs_stars_per_message" = "{incoming_paid_message_star_count} звёзд за сообщение";
+"qll_prefs_stars_per_message" = "Звёзд за сообщение: {incoming_paid_message_star_count}";
 "qll_prefs_start_in_tray" = "Запускать в трее";
 "qll_prefs_start_quill_automatically_when_you" = "Запускать Quill автоматически при входе на это устройство.";
 "qll_prefs_start_quill_in_the_system" = "Запускать Quill в системном трее";
@@ -538,7 +538,7 @@
 "qll_prefs_updating" = "Обновление…";
 "qll_prefs_updating_session_setting" = "Обновление настройки сеанса…";
 "qll_prefs_use_less_data_for_calls" = "Меньше трафика при звонках";
-"qll_prefs_use_the_shortcuts_from_keyboard" = "Используйте сочетания из раздела «Системные настройки» › «Клавиатура» › «Замена текста».";
+"qll_prefs_use_the_shortcuts_from_keyboard" = "Используйте сочетания из раздела «Системные настройки → Клавиатура → Замена текста».";
 "qll_prefs_use_the_system_window_frame" = "Использовать системную рамку окна";
 "qll_prefs_used_when_a_chat_keeps" = "Используется, когда для чата оставлена настройка по умолчанию.";
 "qll_prefs_user" = "Пользователь {user_id}";
