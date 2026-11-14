@@ -21,7 +21,7 @@ pub fn gift_duration(month_count: i64, day_count: i64) -> String {
     }
 }
 
-/// The "Reason" row: `lng_gift_link_reason_*`.
+/// The "Reason" row: `qll_rest_gift_reason_*`.
 pub fn gift_reason(is_from_giveaway: bool, used: bool) -> String {
     match (is_from_giveaway, used) {
         (true, true) => tr(keys::Q_REST_GIFT_REASON_GIVEAWAY).to_string(),

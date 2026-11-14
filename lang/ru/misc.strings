@@ -522,7 +522,7 @@
 "qll_misc_this_color_is_used_for_2" = "Этот цвет используется для фона профиля ({group_word}).";
 "qll_misc_this_color_will_be_used" = "Этот цвет будет использоваться для фона вашего профиля.";
 "qll_misc_this_font_isnt_installed_so" = "Этот шрифт не установлен, поэтому используется шрифт по умолчанию.";
-"qll_misc_this_is_at_boost_level" = "{group_word}: уровень бустов {level}.";
+"qll_misc_this_is_at_boost_level" = "Уровень бустов: {level} ({group_word}).";
 "qll_misc_this_one_i_think" = "Мне кажется, этот.";
 "qll_misc_this_proxy_link_is_not" = "Эта ссылка на прокси недействительна.";
 "qll_misc_title_quill" = "--title=Quill";

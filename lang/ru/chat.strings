@@ -258,7 +258,7 @@
 "qll_chat_move_down" = "Вниз";
 "qll_chat_move_up" = "Вверх";
 "qll_chat_mute_notifications" = "Выключить уведомления";
-"qll_chat_muted" = "без звука";
+"qll_chat_muted" = "Без звука";
 "qll_chat_muted_forever" = "Без звука навсегда";
 "qll_chat_new_topic" = "Новая тема";
 "qll_chat_newer_match" = "Более новое совпадение";

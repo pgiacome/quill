@@ -696,7 +696,7 @@
 "qll_ops_load_more_tracks" = "Load more tracks";
 "qll_ops_load_the_newly_entered_gift" = "Load the newly entered gift before buying.";
 "qll_ops_loading" = "Loading…";
-"qll_ops_location" = "Location";
+"qll_ops_location" = "location";
 "qll_ops_loading_2" = "Loading {to_lowercase}…";
 "qll_ops_loading_calls" = "Loading calls…";
 "qll_ops_loading_recent_actions" = "Loading recent actions…";

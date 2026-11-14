@@ -160,10 +160,6 @@ pub(in crate::ui) fn paid_media_card(
             keys::Q_MONEY_UNLOCK_FOR_STARS_ARIA,
             &[("stars", &stars.to_string())],
         ))
-        .aria_description(tr_with(
-            keys::Q_MONEY_UNLOCK_FOR_STARS,
-            &[("stars", &stars.to_string())],
-        ))
         .tab_index(0)
         .cursor_pointer()
         .on_click(cx.listener(move |this, _, window, cx| {
