@@ -105,12 +105,12 @@
 "qll_misc_could_not_load_more_gifs" = "Не удалось загрузить ещё GIF";
 "qll_misc_could_not_make_the_wallpaper" = "Не удалось создать ссылку на обои";
 "qll_misc_could_not_mark_as_read" = "Не удалось отметить как прочитанное";
-"qll_misc_could_not_mark_mentions_as" = "Упоминания отмечены как прочитанные";
-"qll_misc_could_not_mark_reactions_as" = "Реакции отмечены как прочитанные";
+"qll_misc_could_not_mark_mentions_as" = "Не удалось отметить упоминания как прочитанные";
+"qll_misc_could_not_mark_reactions_as" = "Не удалось отметить реакции как прочитанные";
 "qll_misc_could_not_open_the_wallpaper" = "Не удалось открыть ссылку на обои";
 "qll_misc_could_not_pin" = "Не удалось закрепить";
 "qll_misc_could_not_register_check_your" = "Не удалось зарегистрироваться — проверьте имя и примите текущие условия";
-"qll_misc_could_not_reorder_pinned_topics" = "Порядок закреплённых тем изменён";
+"qll_misc_could_not_reorder_pinned_topics" = "Не удалось изменить порядок закреплённых тем";
 "qll_misc_could_not_request_a_recovery" = "Не удалось запросить код восстановления";
 "qll_misc_could_not_save_gif" = "Не удалось сохранить GIF";
 "qll_misc_could_not_save_the_fact" = "Не удалось сохранить проверку фактов";
