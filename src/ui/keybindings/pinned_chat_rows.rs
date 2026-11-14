@@ -292,8 +292,8 @@ pub(in crate::ui) fn app_menus_with(
         MenuItem::action(tr(keys::Q_PREFS_QUIT_QUILL), QuitApp),
     ]));
     menus.extend([
-        Menu::new("File").items(file_items),
-        Menu::new("Edit").items([
+        Menu::new(tr(keys::Q_MISC_MENU_FILE)).items(file_items),
+        Menu::new(tr(keys::Q_MISC_MENU_EDIT)).items([
             MenuItem::action(tr(keys::Q_PREFS_UNDO), UndoAction),
             MenuItem::action(tr(keys::Q_PREFS_REDO), RedoAction),
             MenuItem::separator(),
@@ -307,9 +307,9 @@ pub(in crate::ui) fn app_menus_with(
                 OsAction::SelectAll,
             ),
         ]),
-        Menu::new("View").items(view_items),
-        Menu::new("Window").items(window_items),
-        Menu::new("Help").items([
+        Menu::new(tr(keys::Q_MISC_MENU_VIEW)).items(view_items),
+        Menu::new(tr(keys::Q_MISC_MENU_WINDOW)).items(window_items),
+        Menu::new(tr(keys::Q_MISC_MENU_HELP)).items([
             MenuItem::action(tr(keys::Q_PREFS_KEYBOARD_SHORTCUTS_2), OpenShortcuts),
             MenuItem::action(tr(keys::Q_PREFS_QUILL_ON_GITHUB), OpenHelp),
         ]),

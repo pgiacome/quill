@@ -49,6 +49,7 @@
 "qll_leftovers_pinned" = "Закреплено";
 "qll_leftovers_price_up_to_stars" = "Цена может составлять до {count} ⭐.";
 "qll_leftovers_push_to_talk_release_delay" = "Задержка отпускания кнопки разговора";
+"qll_leftovers_quick_action_react" = "Реагировать быстрой реакцией";
 "qll_leftovers_read_only_mode" = "Режим только для чтения";
 "qll_leftovers_replacing_attachment_with" = "Замена вложения на {name}";
 "qll_leftovers_reply_requested" = "↩ Запрошен ответ";

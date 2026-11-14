@@ -116,6 +116,7 @@
 "qll_leftovers_pinned" = "Pinned";
 "qll_leftovers_price_up_to_stars" = "The price can be up to {count} Stars.";
 "qll_leftovers_push_to_talk_release_delay" = "Push-to-talk release delay";
+"qll_leftovers_quick_action_react" = "React with the quick reaction";
 "qll_leftovers_read_only_mode" = "Read-Only Mode";
 "qll_leftovers_replacing_attachment_with" = "Replacing attachment with {name}";
 "qll_leftovers_reply_requested" = "↩ Reply requested";

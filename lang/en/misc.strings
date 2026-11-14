@@ -368,6 +368,11 @@
 "qll_misc_mark_all_as_read" = "Mark all as read";
 "qll_misc_members_can_use_these_emoji" = "Members can use these emoji in the group even without Premium.";
 "qll_misc_mentions_marked_as_read" = "mentions marked as read";
+"qll_misc_menu_edit" = "Edit";
+"qll_misc_menu_file" = "File";
+"qll_misc_menu_help" = "Help";
+"qll_misc_menu_view" = "View";
+"qll_misc_menu_window" = "Window";
 "qll_misc_messages_selected#one" = "{count} message selected";
 "qll_misc_messages_selected#other" = "{count} messages selected";
 "qll_misc_messages_selected_2#one" = "{count} message selected";

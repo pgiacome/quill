@@ -4,6 +4,7 @@
 //! the dispatch is unit tested.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{Key, keys};
 use serde::{Deserialize, Serialize};
 
 /// What a double-click on a message does.
@@ -30,9 +31,9 @@ pub enum QuickEffect {
 impl QuickAction {
     /// Radio order in settings. tdesktop shows Reply and React only; `None`
     /// is a stored value there with no radio, and Quill matches that.
-    pub const ALL: [(QuickAction, &'static str); 2] = [
-        (QuickAction::Reply, "Reply"),
-        (QuickAction::React, "React with the quick reaction"),
+    pub const ALL: [(QuickAction, Key); 2] = [
+        (QuickAction::Reply, keys::Q_CHAT_REPLY),
+        (QuickAction::React, keys::Q_LEFTOVERS_QUICK_ACTION_REACT),
     ];
 
     /// Index of `self` in [`Self::ALL`].

@@ -282,6 +282,11 @@
 "qll_misc_mark_all_as_read" = "Отметить всё как прочитанное";
 "qll_misc_members_can_use_these_emoji" = "Участники могут использовать эти эмодзи в группе даже без Premium.";
 "qll_misc_mentions_marked_as_read" = "Упоминания отмечены как прочитанные";
+"qll_misc_menu_edit" = "Правка";
+"qll_misc_menu_file" = "Файл";
+"qll_misc_menu_help" = "Справка";
+"qll_misc_menu_view" = "Вид";
+"qll_misc_menu_window" = "Окно";
 "qll_misc_messages_selected#one" = "{count} сообщение выбрано";
 "qll_misc_messages_selected#few" = "{count} сообщения выбрано";
 "qll_misc_messages_selected#many" = "{count} сообщений выбрано";

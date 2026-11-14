@@ -8,6 +8,7 @@
 //! it while rendering, and the Appearance dialog writes it.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{Key, keys};
 use std::sync::atomic::{AtomicU32, Ordering};
 
 /// One power-saving category.
@@ -90,43 +91,46 @@ pub const ALL_BITS: u32 = Flag::Animations.bit()
 
 /// A titled group of switches (`lng_settings_power_*`).
 pub struct Group {
-    pub title: Option<&'static str>,
-    pub items: &'static [(Flag, &'static str)],
+    pub title: Option<Key>,
+    pub items: &'static [(Flag, Key)],
 }
 
 /// The dialog's layout, with tdesktop's wording.
 pub const GROUPS: [Group; 5] = [
     Group {
-        title: Some("Animated Stickers"),
+        title: Some(keys::Q_SETTINGS_POWER_SEC_STICKERS),
         items: &[
-            (Flag::StickersPanel, "Autoplay in panel"),
-            (Flag::StickersChat, "Autoplay in chat"),
+            (Flag::StickersPanel, keys::Q_SETTINGS_POWER_STICKERS_PANEL),
+            (Flag::StickersChat, keys::Q_SETTINGS_POWER_STICKERS_CHAT),
         ],
     },
     Group {
-        title: Some("Animated Emoji"),
+        title: Some(keys::Q_SETTINGS_POWER_SEC_EMOJI),
         items: &[
-            (Flag::EmojiPanel, "Autoplay in panel"),
-            (Flag::EmojiReactions, "Autoplay in reactions menu"),
-            (Flag::EmojiChat, "Autoplay in messages"),
-            (Flag::EmojiStatus, "Autoplay in premium status"),
+            (Flag::EmojiPanel, keys::Q_SETTINGS_POWER_EMOJI_PANEL),
+            (Flag::EmojiReactions, keys::Q_SETTINGS_POWER_EMOJI_REACTIONS),
+            (Flag::EmojiChat, keys::Q_SETTINGS_POWER_EMOJI_CHAT),
+            (Flag::EmojiStatus, keys::Q_SETTINGS_POWER_EMOJI_STATUS),
         ],
     },
     Group {
-        title: Some("Animations in Chats"),
+        title: Some(keys::Q_SETTINGS_POWER_SEC_CHATS),
         items: &[
-            (Flag::ChatBackground, "Wallpaper rotation"),
-            (Flag::ChatSpoiler, "Animated spoiler effect"),
-            (Flag::ChatEffects, "Effects in messages"),
+            (
+                Flag::ChatBackground,
+                keys::Q_SETTINGS_POWER_WALLPAPER_ROTATION,
+            ),
+            (Flag::ChatSpoiler, keys::Q_SETTINGS_POWER_SPOILER_EFFECT),
+            (Flag::ChatEffects, keys::Q_SETTINGS_POWER_MESSAGE_EFFECTS),
         ],
     },
     Group {
         title: None,
-        items: &[(Flag::Calls, "Animations in Calls")],
+        items: &[(Flag::Calls, keys::Q_SETTINGS_POWER_CALLS)],
     },
     Group {
         title: None,
-        items: &[(Flag::Animations, "Interface animations")],
+        items: &[(Flag::Animations, keys::Q_SETTINGS_POWER_INTERFACE)],
     },
 ];
 
@@ -259,9 +263,15 @@ mod tests {
 
     #[test]
     fn groups_list_every_flag_exactly_once() {
+        use crate::lang::tr;
+
         let mut seen = 0u32;
         for group in &GROUPS {
-            for (flag, _) in group.items {
+            if let Some(title) = group.title {
+                assert!(!tr(title).is_empty(), "a group title has no text");
+            }
+            for &(flag, key) in group.items {
+                assert!(!tr(key).is_empty(), "{flag:?} has no label");
                 assert_eq!(seen & flag.bit(), 0, "{flag:?} listed twice");
                 seen |= flag.bit();
             }
