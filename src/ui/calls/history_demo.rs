@@ -1,6 +1,8 @@
-//! Screenshot demo of the Calls tab with a page of call history and more on
-//! the server: the spinner row at the end, where a Load more button used to
-//! be. Injected, no live Telegram, so no next page arrives.
+//! Screenshot demos of the Calls tab. `ready-calls-history` has a page of
+//! call history and more on the server: the spinner row at the end, where a
+//! Load more button used to be. `ready-calls-active` puts a live stream and
+//! a voice chat above the same history. Injected, no live Telegram, so no
+//! next page arrives.
 #![deny(clippy::indexing_slicing)]
 
 use crate::ui::app::QuillApp;
@@ -19,14 +21,47 @@ register_demos![
         "screenshot demo — call history loading more"
     )
     .setup(QuillApp::demo_calls_history),
+    DemoSpec::chats(
+        "ready-calls-active",
+        "screenshot demo — active group calls above recent calls"
+    )
+    .setup(QuillApp::demo_calls_active),
+];
+
+/// Two running calls with their chats: a live stream (61, "Design live",
+/// 1,280 viewers) and a voice chat (62, "Team standup", 4 people). Fed
+/// through the session's own parser, as the app receives them.
+const ACTIVE_CALLS: [&str; 6] = [
+    r#"{"@type":"updateNewChat","chat":{"id":51,"title":"Design live","type":{"@type":"chatTypeSupergroup","supergroup_id":51,"is_channel":true},"unread_count":0}}"#,
+    r#"{"@type":"updateChatVideoChat","chat_id":51,"video_chat":{"@type":"videoChat","group_call_id":61,"has_participants":true,"default_participant_id":null}}"#,
+    r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":61,"title":"Design live","is_active":true,"is_video_chat":false,"is_joined":false,"is_rtmp_stream":true,"participant_count":1280}}"#,
+    r#"{"@type":"updateNewChat","chat":{"id":52,"title":"Team standup","type":{"@type":"chatTypeSupergroup","supergroup_id":52,"is_channel":false},"unread_count":0}}"#,
+    r#"{"@type":"updateChatVideoChat","chat_id":52,"video_chat":{"@type":"videoChat","group_call_id":62,"has_participants":true,"default_participant_id":null}}"#,
+    r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":62,"title":"Team standup","is_active":true,"is_video_chat":false,"is_joined":false,"is_rtmp_stream":false,"participant_count":4}}"#,
 ];
 
 impl QuillApp {
     fn demo_calls_history(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        self.demo_calls_tab(false, cx);
+    }
+
+    fn demo_calls_active(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        self.demo_calls_tab(true, cx);
+    }
+
+    fn demo_calls_tab(&mut self, active_calls: bool, cx: &mut Context<Self>) {
         let Some(session) = self.demo_session.as_mut() else {
             return;
         };
         self.demo_ui.seq.store(session.last_seq, Ordering::SeqCst);
+        let sink: Arc<dyn DiagnosticSink> = self.demo_ui.sink.clone();
+        if active_calls {
+            for json in ACTIVE_CALLS {
+                if let Some(owned) = copy_and_parse(json, &self.demo_ui.seq, &sink) {
+                    session.apply(owned);
+                }
+            }
+        }
         let extra = session.request(RequestPurpose::SearchCallMessages, None);
         // Recent calls only take the page they wait for.
         session.calls.recent_calls.page_sent(extra);
@@ -53,11 +88,51 @@ impl QuillApp {
             extra.0,
             calls.join(","),
         );
-        let sink: Arc<dyn DiagnosticSink> = self.demo_ui.sink.clone();
         if let Some(owned) = copy_and_parse(&json, &self.demo_ui.seq, &sink) {
             session.apply(owned);
         }
         self.chat_list.tab = SidebarTab::Calls;
         cx.notify();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::QuillApp;
+    use crate::ui::screenshot_demo::ScreenshotDemo;
+    use crate::ui::shell::QuillShell;
+    use gpui_kit::component::Root;
+    use gpui_kit::test::TestWindowExt;
+    use gpui_kit::{AppContext, TestAppContext, VisualTestContext, px, size};
+
+    /// The screenshot cannot be taken on every platform, so the fixture is
+    /// checked here: both running calls reach the Calls tab as rows.
+    #[gpui_kit::test]
+    fn the_active_calls_demo_draws_a_stream_and_a_voice_chat(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        cx.update(crate::ui::keybindings::bind_keys);
+        let handle = cx.open_window(size(px(1100.), px(800.)), move |window, cx| {
+            let view = cx.new(|cx| {
+                QuillApp::new_with_demo(
+                    window,
+                    cx,
+                    None,
+                    Some(ScreenshotDemo::named("ready-calls-active")),
+                )
+            });
+            let shell = cx.new(|_| QuillShell::new(view));
+            Root::new(shell, window, cx)
+        });
+        let mut vcx = VisualTestContext::from_window(handle.into(), cx);
+        vcx.run_until_parked();
+        for _ in 0..2 {
+            vcx.update(|window, cx| window.render_frame(cx));
+        }
+        for id in [61u64, 62u64] {
+            assert!(
+                vcx.update(|window, _| window.try_find(("active-call-row", id)).is_some()),
+                "row {id} is drawn"
+            );
+        }
     }
 }
