@@ -2,7 +2,7 @@
 //! prints them (`lang_tag.cpp`, `statistics_format_values.cpp`).
 
 use super::{ONE_DAY_MS, StatChart};
-use crate::local_time::{CivilTime, civil_at, month_name, short_weekday_name};
+use crate::local_time::{CivilTime, civil_at, short_month_name, short_weekday_name};
 
 /// `FormatCountToShort`: `9999`, `12.3K`, `4M`, `1.2B` (one decimal,
 /// truncated, dropped when zero).
@@ -94,21 +94,26 @@ fn utc_day(seconds: i64) -> CivilTime {
     civil_at(seconds, 0)
 }
 
-/// `12 October`.
+/// `12 Oct`.
 pub fn day_month(seconds: i64) -> String {
     let date = utc_day(seconds);
-    format!("{} {}", date.day, month_name(date.month))
+    format!("{} {}", date.day, short_month_name(date.month))
 }
 
-/// `12 October 2024`.
+/// `12 Oct 2024`.
 pub fn day_month_year(seconds: i64) -> String {
     let date = utc_day(seconds);
-    format!("{} {} {}", date.day, month_name(date.month), date.year)
+    format!(
+        "{} {} {}",
+        date.day,
+        short_month_name(date.month),
+        date.year
+    )
 }
 
-/// The tooltip's date: `Sat, 12 October 2024` for a day, `Sat, 12 October
-/// 14:00` for an hour (`LangDetailedDayMonth`); the time reads in the
-/// viewer's zone, `offset_secs` east of UTC.
+/// The tooltip's date: `Sat, 12 Oct 2024` for a day, `Sat, 12 Oct 14:00`
+/// for an hour (`LangDetailedDayMonth`); the time reads in the viewer's
+/// zone, `offset_secs` east of UTC.
 pub fn detailed_day(seconds: i64, offset_secs: i32) -> String {
     let utc = utc_day(seconds);
     if utc.hour != 0 || utc.minute != 0 {
@@ -117,7 +122,7 @@ pub fn detailed_day(seconds: i64, offset_secs: i32) -> String {
             "{}, {} {} {:02}:{:02}",
             short_weekday_name(local.weekday),
             local.day,
-            month_name(local.month),
+            short_month_name(local.month),
             local.hour,
             local.minute
         )
@@ -126,7 +131,7 @@ pub fn detailed_day(seconds: i64, offset_secs: i32) -> String {
             "{}, {} {} {}",
             short_weekday_name(utc.weekday),
             utc.day,
-            month_name(utc.month),
+            short_month_name(utc.month),
             utc.year
         )
     }
@@ -136,7 +141,7 @@ const SEVEN_DAYS: i64 = 7 * 86_400;
 
 impl StatChart {
     /// The x-axis label of point `i` (`getDayString`): `00:00`-style
-    /// hours for an hourly series, `14:30` within a day, `12 October` for days.
+    /// hours for an hourly series, `14:30` within a day, `12 Oct` for days.
     pub fn day_label(&self, i: usize, offset_secs: i32) -> String {
         let Some(&x) = self.x.get(i) else {
             return String::new();

@@ -418,7 +418,7 @@
 "qll_chat_opened_chat" = "Opened chat";
 "qll_chat_original" = "Original: {into}";
 "qll_chat_paste_as_plain_text" = "Paste as Plain Text\t{chord}";
-"qll_chat_people_are_typing#one" = "{count} people are typing";
+"qll_chat_people_are_typing#one" = "{count} person is typing";
 "qll_chat_people_are_typing#other" = "{count} people are typing";
 "qll_chat_photo" = "Photo";
 "qll_chat_photo_copied" = "Photo copied";

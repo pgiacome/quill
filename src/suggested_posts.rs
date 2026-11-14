@@ -13,7 +13,8 @@
 //! `connect::suggested_posts`, the screens in `ui::suggested_posts_ui`.
 
 use crate::ids::{ChatId, MessageId, RequestId};
-use crate::local_time::{CivilTime, hhmm, month_name};
+use crate::lang::{keys, tr_with};
+use crate::local_time::{CivilTime, hhmm, short_month_name};
 use serde_json::{Value, json};
 use std::collections::{HashMap, VecDeque};
 
@@ -239,21 +240,35 @@ pub fn bar_both_tail(date: &str) -> String {
 /// "Mar 5 at 10:00", or "Mar 5, 2027 at 10:00" in another year
 /// (tdesktop `langDateTime` as the bar and the boxes show a time).
 pub fn date_time_label(date: &CivilTime, now: &CivilTime) -> String {
-    let month = month_name(date.month).get(..3).unwrap_or_default();
-    let time = hhmm(date);
-    if date.year == now.year {
-        format!("{month} {} at {time}", date.day)
+    let day = date.day.to_string();
+    let date_text = if date.year == now.year {
+        tr_with(
+            keys::MONTH_DAY,
+            &[("month", short_month_name(date.month)), ("day", &day)],
+        )
     } else {
-        format!("{month} {}, {} at {time}", date.day, date.year)
-    }
+        tr_with(
+            keys::MONTH_DAY_YEAR,
+            &[
+                ("month", short_month_name(date.month)),
+                ("day", &day),
+                ("year", &date.year.to_string()),
+            ],
+        )
+    };
+    tr_with(
+        keys::MEDIAVIEW_DATE_TIME,
+        &[("date", &date_text), ("time", &hhmm(date))],
+    )
 }
 
 /// The block's time: "today at 10:00", "yesterday at 10:00", else
 /// [`date_time_label`] (tdesktop `FormatDateTime`).
 pub fn block_time_label(date: &CivilTime, now: &CivilTime) -> String {
+    let time = hhmm(date);
     match now.day_number().checked_sub(date.day_number()) {
-        Some(0) => format!("today at {}", hhmm(date)),
-        Some(1) => format!("yesterday at {}", hhmm(date)),
+        Some(0) => tr_with(keys::MEDIAVIEW_TODAY, &[("time", &time)]),
+        Some(1) => tr_with(keys::MEDIAVIEW_YESTERDAY, &[("time", &time)]),
         _ => date_time_label(date, now),
     }
 }

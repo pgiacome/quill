@@ -154,15 +154,12 @@ fn the_last_shown_line_stays_on() {
 #[test]
 fn labels_and_titles_read_like_telegram_desktop() {
     let chart = linear();
-    assert_eq!(chart.day_label(0, 0), "1 October");
-    assert_eq!(
-        chart.range_title(0, 9),
-        "1 October 2024 \u{2014} 10 October 2024"
-    );
-    assert_eq!(chart.range_title(4, 4), "5 October 2024");
-    assert_eq!(chart.point_title(4, 0), "Sat, 5 October 2024");
+    assert_eq!(chart.day_label(0, 0), "1 Oct");
+    assert_eq!(chart.range_title(0, 9), "1 Oct 2024 \u{2014} 10 Oct 2024");
+    assert_eq!(chart.range_title(4, 4), "5 Oct 2024");
+    assert_eq!(chart.point_title(4, 0), "Sat, 5 Oct 2024");
     // A western time zone does not move a day label.
-    assert_eq!(chart.day_label(0, -5 * 3600), "1 October");
+    assert_eq!(chart.day_label(0, -5 * 3600), "1 Oct");
     // Hourly charts.
     let hours: Vec<f64> = (0..24).map(|h| OCT_1 + h as f64 * 3_600_000.0).collect();
     let hourly = parse_chart(&chart_json(
@@ -173,12 +170,9 @@ fn labels_and_titles_read_like_telegram_desktop() {
     .unwrap();
     assert_eq!(hourly.day_label(14, 0), "14:00");
     assert_eq!(hourly.day_label(14, 7200), "16:00");
-    assert_eq!(hourly.point_title(14, 0), "Tue, 1 October 14:00");
+    assert_eq!(hourly.point_title(14, 0), "Tue, 1 Oct 14:00");
     // tdesktop names both ends even within one day.
-    assert_eq!(
-        hourly.range_title(0, 23),
-        "1 October 2024 \u{2014} 1 October 2024"
-    );
+    assert_eq!(hourly.range_title(0, 23), "1 Oct 2024 \u{2014} 1 Oct 2024");
     // Weeks.
     let weekly = parse_chart(&chart_json(
         &days(2),
@@ -186,14 +180,8 @@ fn labels_and_titles_read_like_telegram_desktop() {
         json!({"xTooltipFormatter": "'week'"}),
     ))
     .unwrap();
-    assert_eq!(
-        weekly.point_title(0, 0),
-        "1 October \u{2014} 8 October 2024"
-    );
-    assert_eq!(
-        weekly.range_title(0, 0),
-        "1 October 2024 \u{2014} 8 October 2024"
-    );
+    assert_eq!(weekly.point_title(0, 0), "1 Oct \u{2014} 8 Oct 2024");
+    assert_eq!(weekly.range_title(0, 0), "1 Oct 2024 \u{2014} 8 Oct 2024");
     // Hour-of-day series (x is 0..23, step 1) are not dates.
     let index = parse_chart(r#"{"columns":[["x",0,1,2],["y0",1,2,3]]}"#).unwrap();
     assert_eq!(index.day_label(2, 0), "02:00");

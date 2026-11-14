@@ -2,6 +2,7 @@
 //! screens, after tdesktop `info/channel_statistics/earn/earn_format.cpp`
 //! and `info/bot/starref/info_bot_starref_common.cpp`.
 
+use crate::lang::{keys, tr_with};
 use crate::premium_hub::{StarAmount, group_digits};
 
 /// Nanotons in one TON (`chatRevenueAmount` counts in the smallest unit).
@@ -153,7 +154,12 @@ pub fn format_time_left(seconds: i64) -> String {
 /// `langDayOfMonth`): "Mar 3, 14:05".
 pub fn earn_date(unix: i64) -> String {
     let time = crate::local_time::civil_local(unix);
-    let month = crate::local_time::month_name(time.month);
-    let short = month.get(..3).unwrap_or(month);
-    format!("{short} {}, {}", time.day, crate::local_time::hhmm(&time))
+    let day = tr_with(
+        keys::MONTH_DAY,
+        &[
+            ("month", crate::local_time::short_month_name(time.month)),
+            ("day", &time.day.to_string()),
+        ],
+    );
+    format!("{day}, {}", crate::local_time::hhmm(&time))
 }

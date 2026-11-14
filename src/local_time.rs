@@ -194,6 +194,20 @@ const MONTH_KEYS: [Key; 12] = [
     keys::MONTH_DAY11,
     keys::MONTH_DAY12,
 ];
+const MONTH_NOMINATIVE_KEYS: [Key; 12] = [
+    keys::MONTH1,
+    keys::MONTH2,
+    keys::MONTH3,
+    keys::MONTH4,
+    keys::MONTH5,
+    keys::MONTH6,
+    keys::MONTH7,
+    keys::MONTH8,
+    keys::MONTH9,
+    keys::MONTH10,
+    keys::MONTH11,
+    keys::MONTH12,
+];
 const SHORT_MONTH_KEYS: [Key; 12] = [
     keys::MONTH1_SMALL,
     keys::MONTH2_SMALL,
@@ -231,6 +245,16 @@ const SHORT_WEEKDAY_KEYS: [Key; 7] = [
 pub fn month_name(month: u8) -> &'static str {
     let index = usize::from(month.clamp(1, 12)).saturating_sub(1);
     MONTH_KEYS
+        .get(index)
+        .map(|key| tr(*key))
+        .unwrap_or_default()
+}
+
+/// The full month name in the nominative, "January" / «Январь», for
+/// calendar captions and tables where no day follows.
+pub fn month_name_nominative(month: u8) -> &'static str {
+    let index = usize::from(month.clamp(1, 12)).saturating_sub(1);
+    MONTH_NOMINATIVE_KEYS
         .get(index)
         .map(|key| tr(*key))
         .unwrap_or_default()
@@ -351,22 +375,35 @@ pub fn full_stamp(time: &CivilTime) -> String {
 }
 
 /// The media viewer's date under the sender's name: "today at 14:05",
-/// "yesterday at 09:30", "12 March at 21:42" this year and
-/// "12 March 2025 at 21:42" earlier (Telegram Desktop `langDateTime`).
+/// "yesterday at 09:30", "March 12 at 21:42" this year and
+/// "March 12, 2025 at 21:42" earlier (Telegram Desktop `langDateTime`).
 pub fn viewer_stamp(date: &CivilTime, now: &CivilTime) -> String {
     let time = hhmm(date);
     match now.day_number() - date.day_number() {
-        0 => format!("today at {time}"),
-        1 => format!("yesterday at {time}"),
-        _ if !needs_year(date, now) => {
-            format!("{} {} at {time}", date.day, month_name(date.month))
+        0 => tr_with(keys::MEDIAVIEW_TODAY, &[("time", &time)]),
+        1 => tr_with(keys::MEDIAVIEW_YESTERDAY, &[("time", &time)]),
+        _ => {
+            let day = date.day.to_string();
+            let date_text = if !needs_year(date, now) {
+                tr_with(
+                    keys::MONTH_DAY,
+                    &[("month", month_name(date.month)), ("day", &day)],
+                )
+            } else {
+                tr_with(
+                    keys::MONTH_DAY_YEAR,
+                    &[
+                        ("month", month_name(date.month)),
+                        ("day", &day),
+                        ("year", &date.year.to_string()),
+                    ],
+                )
+            };
+            tr_with(
+                keys::MEDIAVIEW_DATE_TIME,
+                &[("date", &date_text), ("time", &time)],
+            )
         }
-        _ => format!(
-            "{} {} {} at {time}",
-            date.day,
-            month_name(date.month),
-            date.year
-        ),
     }
 }
 
@@ -388,11 +425,11 @@ mod tests {
         );
         assert_eq!(
             viewer_stamp(&civil_at(1_790_631_720 - 5 * 86_400, 0), &now),
-            "23 September at 21:42"
+            "September 23 at 21:42"
         );
         assert_eq!(
             viewer_stamp(&civil_at(951_782_400 + 3600, 0), &now),
-            "29 February 2000 at 01:00"
+            "February 29, 2000 at 01:00"
         );
     }
 
