@@ -14,6 +14,9 @@
 "qll_rest_could_not_use_the_gift" = "Не удалось использовать подарочный код";
 "qll_rest_wait_for_the_current_gift" = "Дождитесь текущего подарочного кода";
 "qll_rest_gift_codes_need_a_signed" = "Для подарочных кодов нужно войти в аккаунт";
+"qll_rest_gift_reason_giveaway" = "Розыгрыш";
+"qll_rest_gift_reason_incomplete_giveaway" = "Незавершённый розыгрыш";
+"qll_rest_gift_reason_selected" = "Вас выбрал канал";
 "qll_rest_gifts_on_sale" = "Подарки в продаже";
 "qll_rest_got_it" = "Понятно";
 "qll_rest_items_bought" = "Купленные товары";

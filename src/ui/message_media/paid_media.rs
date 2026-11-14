@@ -157,6 +157,10 @@ pub(in crate::ui) fn paid_media_card(
         .bg(fill_muted())
         .role(gpui_kit::Role::Button)
         .aria_label(tr_with(
+            keys::Q_MONEY_UNLOCK_FOR_STARS_ARIA,
+            &[("stars", &stars.to_string())],
+        ))
+        .aria_description(tr_with(
             keys::Q_MONEY_UNLOCK_FOR_STARS,
             &[("stars", &stars.to_string())],
         ))

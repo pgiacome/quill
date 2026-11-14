@@ -606,8 +606,8 @@ impl QuillApp {
         let theme = cx.theme();
         let muted = theme.muted_foreground;
         let group_word = match kind {
-            ChatAppearanceKind::Channel => "channel",
-            ChatAppearanceKind::Supergroup => "group",
+            ChatAppearanceKind::Channel => tr(keys::Q_MISC_CHANNEL_WORD),
+            ChatAppearanceKind::Supergroup => tr(keys::Q_MISC_GROUP_WORD),
         };
 
         let name_palette = &session.chats_state.name_accent_colors;

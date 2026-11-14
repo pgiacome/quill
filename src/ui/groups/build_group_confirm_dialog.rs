@@ -209,19 +209,16 @@ impl QuillApp {
                     ),
                     GroupConfirmAction::RemoveMember { chat_id, user_id } => {
                         let name = this.contact_display_name(user_id);
-                        let place = if this.group_flavor(chat_id)
+                        let key = if this.group_flavor(chat_id)
                             == Some(quill::moderation::GroupFlavor::Channel)
                         {
-                            "channel"
+                            keys::Q_PEOPLE_REMOVE_FROM_THE_CHANNEL
                         } else {
-                            "group"
+                            keys::Q_PEOPLE_REMOVE_FROM_THE_GROUP
                         };
                         (
                             tr(keys::Q_PEOPLE_REMOVE_MEMBER).to_string(),
-                            tr_with(
-                                keys::Q_PEOPLE_REMOVE_FROM_THE,
-                                &[("name", &name.to_string()), ("place", place)],
-                            ),
+                            tr_with(key, &[("name", &name.to_string())]),
                             tr(keys::BOX_REMOVE).to_string(),
                         )
                     }

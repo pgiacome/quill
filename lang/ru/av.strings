@@ -136,6 +136,10 @@
 "qll_av_not_downloaded_2" = "{kind_label} — не скачано";
 "qll_av_notify_me" = "Уведомить меня";
 "qll_av_notify_me_needs_a_live" = "Для уведомления о начале нужно активное подключение.";
+"qll_av_noun_animation" = "анимацию";
+"qll_av_noun_animation_gen" = "анимации";
+"qll_av_noun_video" = "видео";
+"qll_av_noun_video_gen" = "видео";
 "qll_av_now_playing" = "Сейчас играет";
 "qll_av_only_photos_can_be_copied" = "Копировать можно только фото";
 "qll_av_open_externally" = "Открыть во внешней программе";
@@ -146,6 +150,10 @@
 "qll_av_order_shuffle" = "Порядок: случайно";
 "qll_av_participant_mute_needs_a_live" = "Для выключения микрофона участника нужно активное подключение.";
 "qll_av_participant_volume" = "Громкость: {name}";
+"qll_av_participants#one" = "{count} участник";
+"qll_av_participants#few" = "{count} участника";
+"qll_av_participants#many" = "{count} участников";
+"qll_av_participants#other" = "{count} участника";
 "qll_av_pause_video_message" = "Приостановить видеосообщение";
 "qll_av_photo_copied" = "Фото скопировано";
 "qll_av_picture_in_picture" = "Картинка в картинке";

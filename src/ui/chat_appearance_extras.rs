@@ -94,8 +94,8 @@ impl QuillApp {
         let muted = cx.theme().muted_foreground;
         let levels = self.wallpaper_levels(chat_id.0);
         let word = match kind {
-            ChatAppearanceKind::Channel => "channel",
-            ChatAppearanceKind::Supergroup => "group",
+            ChatAppearanceKind::Channel => tr(keys::Q_MISC_CHANNEL_WORD),
+            ChatAppearanceKind::Supergroup => tr(keys::Q_MISC_GROUP_WORD),
         };
         div()
             .flex()

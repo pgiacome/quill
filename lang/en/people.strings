@@ -549,7 +549,8 @@
 "qll_people_refresh" = "Refresh";
 "qll_people_remove_birthday" = "Remove birthday";
 "qll_people_remove_emoji_pack" = "Remove emoji pack";
-"qll_people_remove_from_the" = "Remove {name} from the {place}?";
+"qll_people_remove_from_the_channel" = "Remove {name} from the channel?";
+"qll_people_remove_from_the_group" = "Remove {name} from the group?";
 "qll_people_remove_member" = "Remove member";
 "qll_people_remove_pack" = "Remove pack";
 "qll_people_remove_personal_channel" = "Remove personal channel";

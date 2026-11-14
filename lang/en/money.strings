@@ -841,6 +841,7 @@
 "qll_money_unknown" = "Unknown";
 "qll_money_unknown_user" = "UNKNOWN USER";
 "qll_money_unlock_for_stars" = "Unlock for {stars} Stars";
+"qll_money_unlock_for_stars_aria" = "Unlock for {stars} Stars";
 "qll_money_unpin_from_the_top" = "Unpin from the top";
 "qll_money_unsupported_button" = "Unsupported button";
 "qll_money_up_to_12_characters_add" = "Up to 12 characters. Add gifts from a gift's page.";

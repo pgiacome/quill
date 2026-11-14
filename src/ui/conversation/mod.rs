@@ -237,7 +237,7 @@ impl QuillApp {
                     if forever {
                         tr(keys::Q_CHAT_MUTED_FOREVER)
                     } else {
-                        "muted"
+                        tr(keys::Q_CHAT_MUTED)
                     }
                     .to_string(),
                 ),

@@ -378,7 +378,8 @@
 "qll_people_refresh" = "Обновить";
 "qll_people_remove_birthday" = "Удалить день рождения";
 "qll_people_remove_emoji_pack" = "Удалить набор эмодзи";
-"qll_people_remove_from_the" = "Удалить {name} из {place}?";
+"qll_people_remove_from_the_channel" = "Удалить {name} из канала?";
+"qll_people_remove_from_the_group" = "Удалить {name} из группы?";
 "qll_people_remove_member" = "Удалить участника";
 "qll_people_remove_pack" = "Удалить набор";
 "qll_people_remove_personal_channel" = "Удалить личный канал";

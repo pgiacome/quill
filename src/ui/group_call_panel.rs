@@ -28,7 +28,7 @@ use gpui_kit::*;
 use quill::state::ActiveGroupCall;
 
 use crate::ui::app_theme::call_chrome;
-use quill::lang::{keys, tr, tr_with};
+use quill::lang::{keys, tr, tr_with, trn};
 
 /// lib_ui `colors.palette`.
 pub(super) const BG: u32 = call_chrome::GROUP_SURFACE;
@@ -196,7 +196,7 @@ impl QuillApp {
         };
         let mut subtitle = match call.participant_count {
             1 => tr(keys::Q_AV_1_PARTICIPANT).to_string(),
-            n => format!("{n} participants"),
+            n => trn(keys::Q_AV_PARTICIPANTS, n),
         };
         if call.record_duration > 0 {
             subtitle.push_str(&tr_with(
@@ -813,7 +813,7 @@ impl QuillApp {
                 &[("count", &quill::premium_hub::group_digits(viewers))],
             )
         } else {
-            format!("{} participants", call.participant_count)
+            trn(keys::Q_AV_PARTICIPANTS, call.participant_count)
         };
         Some(
             div()

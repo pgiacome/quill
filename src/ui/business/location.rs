@@ -141,7 +141,7 @@ impl QuillApp {
         if wanted == base {
             return Leave::Go(None);
         }
-        self.business_send("location", |driver| {
+        self.business_send(tr(keys::Q_OPS_LOCATION), |driver| {
             driver.save_business_location(wanted.as_ref()).is_ok()
         })
     }

@@ -150,7 +150,8 @@
 "qll_chat_dismiss_all" = "Отклонить все";
 "qll_chat_divider" = "— Разделитель";
 "qll_chat_do_not_preview" = "Без предпросмотра";
-"qll_chat_do_you_want_to_add" = "Добавить в {place} всех, кто запросил вступление ({count})?";
+"qll_chat_do_you_want_to_add_channel" = "Добавить в канал всех, кто запросил вступление ({count})?";
+"qll_chat_do_you_want_to_add_group" = "Добавить в группу всех, кто запросил вступление ({count})?";
 "qll_chat_do_you_want_to_delete#one" = "Удалить {count} сообщение?";
 "qll_chat_do_you_want_to_delete#few" = "Удалить {count} сообщения?";
 "qll_chat_do_you_want_to_delete#many" = "Удалить {count} сообщений?";
@@ -210,7 +211,8 @@
 "qll_chat_inline_code" = "Код в строке";
 "qll_chat_insert_link" = "Вставить ссылку";
 "qll_chat_instant_view" = "Мгновенный просмотр";
-"qll_chat_is_an_admin_of_a" = "{name} — администратор {title}, {what}, куда вы запросили вступление.";
+"qll_chat_is_an_admin_of_a_channel" = "{name} — администратор {title}, канала, куда вы запросили вступление.";
+"qll_chat_is_an_admin_of_a_group" = "{name} — администратор {title}, группы, куда вы запросили вступление.";
 "qll_chat_is_now_blocked" = "{user_id} заблокирован(а)";
 "qll_chat_italic" = "Курсив";
 "qll_chat_join" = "Вступить";
@@ -256,6 +258,7 @@
 "qll_chat_move_down" = "Вниз";
 "qll_chat_move_up" = "Вверх";
 "qll_chat_mute_notifications" = "Выключить уведомления";
+"qll_chat_muted" = "без звука";
 "qll_chat_muted_forever" = "Без звука навсегда";
 "qll_chat_new_topic" = "Новая тема";
 "qll_chat_newer_match" = "Более новое совпадение";
@@ -277,6 +280,9 @@
 "qll_chat_not_signed_in" = "Вы не вошли в аккаунт";
 "qll_chat_nothing_matches" = "Ничего не найдено по запросу «{query}».";
 "qll_chat_off" = "Выкл.";
+"qll_chat_offline_schedule" = "Вы не в сети — сообщение будет отправлено по расписанию, когда появится подключение";
+"qll_chat_offline_send" = "Вы не в сети — сообщение отправится, когда появится подключение";
+"qll_chat_offline_when_online" = "Вы не в сети — сообщение отправится, когда собеседник будет в сети";
 "qll_chat_older_match" = "Более старое совпадение";
 "qll_chat_online" = ", {online_count} в сети";
 "qll_chat_only_restrict_they_stay_and" = "Только ограничить: останутся и смогут читать, больше ничего";
@@ -305,6 +311,7 @@
 "qll_chat_quality" = "Качество";
 "qll_chat_quality_compressed" = "Сжатое";
 "qll_chat_quality_hd" = "HD";
+"qll_chat_query" = "«{query}»";
 "qll_chat_quill_cannot_display_this_message" = "Quill не может отобразить это сообщение. Возможно, его поддержит более новая версия.";
 "qll_chat_quote" = "Цитировать";
 "qll_chat_quote_reply" = "Цитировать и ответить";

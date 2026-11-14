@@ -51,6 +51,7 @@
 "qll_misc_channel" = "Канал";
 "qll_misc_channel_emoji_status" = "Эмодзи-статус канала";
 "qll_misc_channel_wallpaper" = "Обои канала";
+"qll_misc_channel_word" = "канал";
 "qll_misc_chat_background" = "фон чата";
 "qll_misc_chat_background_2" = "Фон чата";
 "qll_misc_chat_colors_and_wallpaper" = "Цвета и обои чата";
@@ -216,6 +217,7 @@
 "qll_misc_group_emoji_pack" = "Набор эмодзи группы";
 "qll_misc_group_emoji_status" = "Эмодзи-статус группы";
 "qll_misc_group_wallpaper" = "Обои группы";
+"qll_misc_group_word" = "группа";
 "qll_misc_has_messages" = "{day} (есть сообщения)";
 "qll_misc_hebrew_with_latin_ok_and" = "שלום עולם — иврит с латиницей: OK, эмодзи 👨‍👩‍👧‍👦 👍🏽";
 "qll_misc_hello_example_com" = "hello@example.com";

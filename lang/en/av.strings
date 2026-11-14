@@ -239,6 +239,10 @@
 "qll_av_not_downloaded_2" = "{kind_label} — not downloaded";
 "qll_av_notify_me" = "Notify Me";
 "qll_av_notify_me_needs_a_live" = "Notify-me needs a live connection.";
+"qll_av_noun_animation" = "animation";
+"qll_av_noun_animation_gen" = "animation";
+"qll_av_noun_video" = "video";
+"qll_av_noun_video_gen" = "video";
 "qll_av_now_playing" = "Now playing";
 "qll_av_only_photos_can_be_copied" = "Only photos can be copied";
 "qll_av_open_externally" = "Open externally";
@@ -249,6 +253,8 @@
 "qll_av_order_shuffle" = "Order: shuffle";
 "qll_av_participant_mute_needs_a_live" = "Participant mute needs a live connection.";
 "qll_av_participant_volume" = "Volume for {name}";
+"qll_av_participants#one" = "{count} participant";
+"qll_av_participants#other" = "{count} participants";
 "qll_av_pause_video_message" = "Pause video message";
 "qll_av_photo_copied" = "Photo copied";
 "qll_av_picture_in_picture" = "Picture-in-Picture";

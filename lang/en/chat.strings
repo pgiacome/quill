@@ -268,7 +268,8 @@
 "qll_chat_dismiss_all" = "Dismiss all";
 "qll_chat_divider" = "— Divider";
 "qll_chat_do_not_preview" = "Do Not Preview";
-"qll_chat_do_you_want_to_add" = "Do you want to add {count} requested people to the {place}?";
+"qll_chat_do_you_want_to_add_channel" = "Do you want to add {count} requested people to the channel?";
+"qll_chat_do_you_want_to_add_group" = "Do you want to add {count} requested people to the group?";
 "qll_chat_do_you_want_to_delete#one" = "Do you want to delete {count} message?";
 "qll_chat_do_you_want_to_delete#other" = "Do you want to delete {count} messages?";
 "qll_chat_do_you_want_to_dismiss" = "Do you want to dismiss {count} join requests?";
@@ -324,7 +325,8 @@
 "qll_chat_inline_code" = "Inline code";
 "qll_chat_insert_link" = "Insert link";
 "qll_chat_instant_view" = "Instant View";
-"qll_chat_is_an_admin_of_a" = "{name} is an admin of {title}, a {what} you requested to join.";
+"qll_chat_is_an_admin_of_a_channel" = "{name} is an admin of {title}, a channel you requested to join.";
+"qll_chat_is_an_admin_of_a_group" = "{name} is an admin of {title}, a group you requested to join.";
 "qll_chat_is_now_blocked" = "{user_id} is now blocked";
 "qll_chat_italic" = "Italic";
 "qll_chat_join" = "Join";
@@ -370,6 +372,7 @@
 "qll_chat_move_down" = "Move Down";
 "qll_chat_move_up" = "Move Up";
 "qll_chat_mute_notifications" = "Mute notifications";
+"qll_chat_muted" = "muted";
 "qll_chat_muted_forever" = "muted forever";
 "qll_chat_new_topic" = "New Topic";
 "qll_chat_newer_match" = "Newer match";
@@ -391,6 +394,9 @@
 "qll_chat_not_signed_in" = "Not signed in";
 "qll_chat_nothing_matches" = "Nothing matches “{query}”.";
 "qll_chat_off" = "Off";
+"qll_chat_offline_schedule" = "You're offline — will schedule when you reconnect";
+"qll_chat_offline_send" = "You're offline — will send when you reconnect";
+"qll_chat_offline_when_online" = "You're offline — will send when they're online";
 "qll_chat_older_match" = "Older match";
 "qll_chat_online" = ", {online_count} online";
 "qll_chat_only_restrict_they_stay_and" = "Only restrict: they stay and can read, nothing else";
@@ -421,6 +427,7 @@
 "qll_chat_quality" = "Quality";
 "qll_chat_quality_compressed" = "Compressed";
 "qll_chat_quality_hd" = "HD";
+"qll_chat_query" = "“{query}”";
 "qll_chat_quill_cannot_display_this_message" = "Quill cannot display this message. A newer release may support it.";
 "qll_chat_quote" = "Quote";
 "qll_chat_quote_reply" = "Quote & Reply";

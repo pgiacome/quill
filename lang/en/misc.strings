@@ -137,6 +137,7 @@
 "qll_misc_channel" = "Channel";
 "qll_misc_channel_emoji_status" = "Channel emoji status";
 "qll_misc_channel_wallpaper" = "Channel wallpaper";
+"qll_misc_channel_word" = "channel";
 "qll_misc_chat_background" = "chat background";
 "qll_misc_chat_background_2" = "Chat background";
 "qll_misc_chat_colors_and_wallpaper" = "Chat colors and wallpaper";
@@ -302,6 +303,7 @@
 "qll_misc_group_emoji_pack" = "Group emoji pack";
 "qll_misc_group_emoji_status" = "Group emoji status";
 "qll_misc_group_wallpaper" = "Group wallpaper";
+"qll_misc_group_word" = "group";
 "qll_misc_has_messages" = "{day} (has messages)";
 "qll_misc_hebrew_with_latin_ok_and" = "שלום עולם — Hebrew with Latin OK and emoji 👨‍👩‍👧‍👦 👍🏽";
 "qll_misc_hello_example_com" = "hello@example.com";

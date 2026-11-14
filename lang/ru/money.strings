@@ -497,6 +497,7 @@
 "qll_money_unknown" = "Неизвестно";
 "qll_money_unknown_user" = "НЕИЗВЕСТНЫЙ ПОЛЬЗОВАТЕЛЬ";
 "qll_money_unlock_for_stars" = "Разблокировать за {stars} ⭐";
+"qll_money_unlock_for_stars_aria" = "Разблокировать за {stars} звёзд";
 "qll_money_unpin_from_the_top" = "Открепить";
 "qll_money_unsupported_button" = "Неподдерживаемая кнопка";
 "qll_money_up_to_12_characters_add" = "Не более 12 символов. Добавляйте подарки со страницы подарка.";

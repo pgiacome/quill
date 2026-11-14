@@ -550,14 +550,26 @@ pub(in crate::ui) fn format_phone(raw: &str) -> String {
     format!("+{digits}")
 }
 
-/// "Jul 30, 1965 (61 years old)" — Telegram Desktop's birthday row.
+/// "July 30, 1965 (61 years old)" — Telegram Desktop's birthday row.
 pub(super) fn format_birthday(date: quill::telegram::envelope::Birthdate) -> String {
-    const MONTHS: [&str; 12] = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    const MONTHS: [quill::lang::Key; 12] = [
+        keys::MONTH_DAY1,
+        keys::MONTH_DAY2,
+        keys::MONTH_DAY3,
+        keys::MONTH_DAY4,
+        keys::MONTH_DAY5,
+        keys::MONTH_DAY6,
+        keys::MONTH_DAY7,
+        keys::MONTH_DAY8,
+        keys::MONTH_DAY9,
+        keys::MONTH_DAY10,
+        keys::MONTH_DAY11,
+        keys::MONTH_DAY12,
     ];
     let month = MONTHS
         .get(usize::from(date.month.clamp(1, 12)) - 1)
         .copied()
+        .map(tr)
         .unwrap_or_default();
     match date.year {
         Some(year) => {
