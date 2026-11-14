@@ -7,6 +7,7 @@
 //! unblocks, TGX `Tdlib.unblockSender`).
 
 use crate::ids::RequestId;
+use crate::lang::{keys, tr};
 use crate::telegram::requests::PrivacyWho;
 use serde_json::{Value, json};
 
@@ -80,20 +81,24 @@ impl PrivacySettingKey {
     /// Screen row labels (tdesktop `lng_settings_*` privacy rows).
     pub fn label(self) -> &'static str {
         match self {
-            PrivacySettingKey::ShowStatus => "Last Seen & Online",
-            PrivacySettingKey::ShowPhoneNumber => "Phone Number",
-            PrivacySettingKey::ShowProfilePhoto => "Profile Photos",
-            PrivacySettingKey::ShowLinkInForwardedMessages => "Forwarded Messages",
-            PrivacySettingKey::AllowChatInvites => "Groups & Channels",
-            PrivacySettingKey::ShowBio => "Bio",
-            PrivacySettingKey::ShowBirthdate => "Date of Birth",
-            PrivacySettingKey::ShowProfileAudio => "Saved Music",
-            PrivacySettingKey::AllowFindingByPhoneNumber => "Who can find me by my number",
-            PrivacySettingKey::AllowVoiceMessages => "Voice Messages",
-            PrivacySettingKey::AutosaveGifts => "Gifts",
-            PrivacySettingKey::AllowCalls => "Who can call me",
-            PrivacySettingKey::PeerToPeer => "Peer-to-peer calls",
-            PrivacySettingKey::AllowUnpaidMessages => "Remove fee",
+            PrivacySettingKey::ShowStatus => tr(keys::Q_PREFS_PRIVACY_LAST_SEEN),
+            PrivacySettingKey::ShowPhoneNumber => tr(keys::Q_PREFS_PRIVACY_PHONE_NUMBER),
+            PrivacySettingKey::ShowProfilePhoto => tr(keys::Q_PREFS_PRIVACY_PROFILE_PHOTOS),
+            PrivacySettingKey::ShowLinkInForwardedMessages => {
+                tr(keys::Q_PREFS_PRIVACY_FORWARDED_MESSAGES)
+            }
+            PrivacySettingKey::AllowChatInvites => tr(keys::Q_PREFS_PRIVACY_GROUPS_CHANNELS),
+            PrivacySettingKey::ShowBio => tr(keys::Q_PREFS_PRIVACY_BIO),
+            PrivacySettingKey::ShowBirthdate => tr(keys::Q_PREFS_PRIVACY_BIRTHDATE),
+            PrivacySettingKey::ShowProfileAudio => tr(keys::Q_PREFS_PRIVACY_SAVED_MUSIC),
+            PrivacySettingKey::AllowFindingByPhoneNumber => {
+                tr(keys::Q_PREFS_PRIVACY_FIND_BY_NUMBER)
+            }
+            PrivacySettingKey::AllowVoiceMessages => tr(keys::Q_PREFS_PRIVACY_VOICE_MESSAGES),
+            PrivacySettingKey::AutosaveGifts => tr(keys::Q_PREFS_PRIVACY_GIFTS),
+            PrivacySettingKey::AllowCalls => tr(keys::Q_PREFS_PRIVACY_CALLS),
+            PrivacySettingKey::PeerToPeer => tr(keys::Q_PREFS_PRIVACY_P2P_CALLS),
+            PrivacySettingKey::AllowUnpaidMessages => tr(keys::Q_PREFS_PRIVACY_REMOVE_FEE),
         }
     }
 

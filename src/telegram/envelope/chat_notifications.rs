@@ -1,4 +1,5 @@
 use super::*;
+use crate::lang::{keys, tr};
 use serde_json::Value;
 
 /// tdesktop default mute submenu (`SessionSettings::mutePeriods` when unset /
@@ -113,9 +114,9 @@ impl NotificationSettingsScope {
     /// Human label for the scope-defaults settings UI.
     pub fn label(&self) -> &'static str {
         match self {
-            NotificationSettingsScope::PrivateChats => "Private chats",
-            NotificationSettingsScope::GroupChats => "Groups",
-            NotificationSettingsScope::ChannelChats => "Channels",
+            NotificationSettingsScope::PrivateChats => tr(keys::Q_PREFS_SCOPE_PRIVATE_CHATS),
+            NotificationSettingsScope::GroupChats => tr(keys::Q_PREFS_SCOPE_GROUPS),
+            NotificationSettingsScope::ChannelChats => tr(keys::Q_PREFS_SCOPE_CHANNELS),
         }
     }
 
