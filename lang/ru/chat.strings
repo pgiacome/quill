@@ -529,3 +529,5 @@
 "qll_chat_send_or_remove_the_attachments_before" = "Отправьте или уберите вложения, прежде чем редактировать сообщение.";
 "qll_chat_the_draft_changed_the_ai_answer" = "Черновик изменился, поэтому ответ ИИ не применён.";
 "qll_chat_emoji_word_lookup_failed" = "Не удалось найти эмодзи для этого слова.";
+"qll_chat_hide_search_results" = "Скрыть результаты";
+"qll_chat_show_search_results" = "Показать результаты";
