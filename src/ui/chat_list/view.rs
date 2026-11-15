@@ -29,13 +29,15 @@ impl ChatListView {
 }
 
 impl ChatListUi {
-    /// Shows another folder or category: the multi-select and the pinned
-    /// drag belong to the view they were made in and end with it.
+    /// Shows another folder or category: the multi-select, the pinned drag
+    /// and a top row waiting to be put back belong to the view they were
+    /// made in and end with it.
     pub(in crate::ui) fn show_view(&mut self, filter: ChatListFilter, folder: Option<i32>) {
         let next = ChatListView { filter, folder };
         if self.view != next {
             self.selected.clear();
             self.pin.end_drag();
+            self.keep_top = None;
         }
         self.view = next;
     }
@@ -52,10 +54,12 @@ impl ChatListUi {
     }
 
     /// The rows are not on screen any more (another tab, the search): the
-    /// pinned drag ends unsaved and the laid-out rows are forgotten.
+    /// pinned drag ends unsaved, and the laid-out rows and the top row noted
+    /// in them are forgotten.
     pub(in crate::ui) fn leave_rows(&mut self) {
         self.pin.end_drag();
         self.items.clear();
+        self.keep_top = None;
     }
 
     /// A pinned reorder begins (or fails to).

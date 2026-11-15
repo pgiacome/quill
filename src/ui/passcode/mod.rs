@@ -784,6 +784,7 @@ impl QuillApp {
         Button::new("lock-app")
             .icon(gpui_kit::assets::IconName::Lock)
             .ghost()
+            .with_size(self.control_size())
             .tooltip(tr(keys::Q_PREFS_LOCK_QUILL))
             .accessibility_label(tr(keys::Q_PREFS_LOCK_QUILL))
             .on_click(cx.listener(|this, _, _, cx| this.lock_by_passcode(cx)))

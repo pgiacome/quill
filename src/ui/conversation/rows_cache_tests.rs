@@ -56,6 +56,43 @@ fn apply(app: &Entity<QuillApp>, cx: &mut VisualTestContext, updates: &[&str]) {
 
 const GROUP: i64 = 31;
 
+#[gpui_kit::test]
+fn compact_spacing_remeasures_the_open_history_without_replacing_rows(cx: &mut TestAppContext) {
+    use quill::density::Density;
+    let _prefs = crate::ui::appearance::own_appearance_prefs("quill-density-history");
+    let (app, mut vcx) = new_app(cx, "ready-chats");
+    open_group(&app, &mut vcx);
+    let heights = |vcx: &mut VisualTestContext| {
+        app.read_with(vcx, |app, cx| {
+            app.history.scroller.read(cx).estimated_row_heights(0..3)
+        })
+        .expect("three measured rows")
+    };
+    let initial = heights(&mut vcx);
+    let rebuilds = counts(&app, &mut vcx).0;
+    for density in [Density::Compact, Density::Standard] {
+        app.update(&mut vcx, |app, cx| {
+            app.set_appearance(cx, |appearance| appearance.density = density);
+        });
+        frames(&mut vcx);
+        let now = heights(&mut vcx);
+        if density == Density::Compact {
+            assert!(
+                now.iter()
+                    .zip(&initial)
+                    .all(|(compact, standard)| compact < standard),
+                "{now:?} vs {initial:?}"
+            );
+        } else {
+            assert_eq!(now, initial);
+        }
+        assert_eq!(counts(&app, &mut vcx).0, rebuilds);
+        assert!(app.read_with(&vcx, |app, cx| {
+            app.history.scroller.read(cx).is_following_tail()
+        }));
+    }
+}
+
 fn open_group(app: &Entity<QuillApp>, cx: &mut VisualTestContext) {
     apply(
         app,

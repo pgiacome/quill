@@ -388,10 +388,17 @@ impl QuillApp {
         cx: &mut Context<Self>,
         mut f: impl FnMut(&mut Self, &mut Context<Self>),
     ) {
-        let chats: Vec<ChatId> = self.windows.open_windows().map(|(chat, _)| chat).collect();
-        for window in std::iter::once(None).chain(chats.into_iter().map(Some)) {
+        for window in self.every_window() {
             self.in_window_scope(window, cx, &mut f);
         }
+    }
+
+    /// Every window's scope for [`Self::in_window_scope`]: the main
+    /// window's (`None`), then each chat window's.
+    pub(in crate::ui) fn every_window(&self) -> Vec<Option<ChatId>> {
+        std::iter::once(None)
+            .chain(self.windows.open_windows().map(|(chat, _)| Some(chat)))
+            .collect()
     }
 
     /// The lock started: every window's passcode field, the one in place

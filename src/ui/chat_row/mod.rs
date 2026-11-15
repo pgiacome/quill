@@ -90,18 +90,33 @@ pub(super) enum ChatListItem {
     StoryStrip,
 }
 
+impl ChatListItem {
+    pub(super) fn height(&self) -> Pixels {
+        match self {
+            Self::Chat { height, .. }
+            | Self::ArchiveRow { height }
+            | Self::Community { height, .. } => *height,
+            Self::ArchiveBar => px(quill::chatlist_archive::COLLAPSED_BAR_HEIGHT),
+            Self::StoryStrip => px(quill::stories_strip::FULL_HEIGHT),
+        }
+    }
+}
+
 /// kit Phase 9: a loading placeholder row for the chat list — a kit
-/// `Skeleton` avatar circle plus two skeleton text lines, matching the
-/// shape of a chat row.
-pub(super) fn chat_list_skeleton_row(index: usize) -> impl IntoElement {
+/// `Skeleton` avatar circle plus two skeleton text lines, in the shape and
+/// sizes of the two-line chat row it stands for.
+pub(super) fn chat_list_skeleton_row(
+    index: usize,
+    m: &quill::density::DensityMetrics,
+) -> impl IntoElement {
     div()
         .id(("chat-list-skeleton", index))
         .flex()
         .items_center()
-        .gap_3()
-        .px_3()
-        .py_2()
-        .child(Skeleton::new().w(px(40.)).h(px(40.)).rounded_full())
+        .gap(px(m.row_gap))
+        .px(px(m.row_inset))
+        .h(px(m.row_base))
+        .child(Skeleton::new().size(px(m.avatar)).rounded_full())
         .child(
             div()
                 .flex()
@@ -269,23 +284,32 @@ pub(super) fn chat_row_has_tags(
     )
 }
 
-/// [`chat_row_height`] from whether the row has tag chips.
-pub(super) fn chat_row_height_tagged(has_tags: bool, preview_lines: u8) -> Pixels {
+/// Row extent shared by the renderer, virtual list and pin reordering
+/// (`quill::chatlist_style::chat_row_height_px`).
+pub(super) fn chat_row_height(
+    has_tags: bool,
+    preview_lines: u8,
+    m: &quill::density::DensityMetrics,
+) -> Pixels {
     px(quill::chatlist_style::chat_row_height_px(
         has_tags,
         preview_lines,
+        m,
     ))
 }
 
-/// kit Phase 3: chat rows render at a fixed height so the kit
-/// `VirtualList` can position them from declared sizes — 56px base
-/// (avatar 40 + the old py_2), 80px when the folder-tag strip is present.
-/// `session_chat_row` enforces the same height on the element.
-pub(super) fn chat_row_height(tags: &[FolderTag], preview_lines: u8) -> Pixels {
-    chat_row_height_tagged(!tags.is_empty(), preview_lines)
+/// A list row's text column, title over preview, at the density's line
+/// height and gap (the row heights fit them). Chat, archive and community
+/// rows share it.
+pub(super) fn row_text_lines(m: &quill::density::DensityMetrics) -> Div {
+    div()
+        .flex()
+        .flex_col()
+        .gap(px(m.row_lines_gap))
+        .when_some(m.line_height, |lines, line| lines.line_height(px(line)))
+        .min_w_0()
+        .flex_1()
 }
-
-impl QuillApp {}
 
 /// The open chat's row under the pointer (or the keyboard selection).
 pub(super) fn open_row_hover_fill(theme: &Theme) -> Hsla {
@@ -326,8 +350,11 @@ pub(super) fn session_chat_row(
     // The verifying bot's icon before the title, once downloaded.
     verify_icon: Option<std::path::PathBuf>,
     // Slice chatlist-list-style: preview line count, media icons, and
-    // formatted preview (Settings → Appearance → Chat list rows).
+    // formatted preview (Settings → Appearance → Chat list rows), and the
+    // density.
     row_style: ChatListRowStyle,
+    // The height declared to the `VirtualList` (`chat_row_height`).
+    height: Pixels,
     // The chat with yourself: "Saved Messages" with a bookmark avatar.
     saved: bool,
     // Group previews lead with the sender ("Dad: …", "You: …").
@@ -473,18 +500,21 @@ pub(super) fn session_chat_row(
     // kit Phase 3: tag chips via the shared helper — the row height
     // (declared to the `VirtualList`) is derived from the same list.
     let tags = chat_row_tags(chat, folders, show_tags, viewing_folder);
+    let m = row_style.density.metrics();
+    let avatar_size = m.avatar;
     div()
         .id(("chat-row", id.0 as u64))
         .a11y_tag(quill::agent::ui_driver::redact::chat_tag(id.0))
         .w_full()
-        .px_2()
+        .px(px(m.row_inset))
         .role(Role::Button)
         .aria_label(row_label)
-        // kit Phase 3: fixed height (see `chat_row_height`) — the
-        // `VirtualList` positions rows from declared sizes, so the row
-        // enforces the same height and centers its content. Title and
-        // preview truncate to one line so content can never overflow it.
-        .h(chat_row_height(&tags, row_style.preview_lines))
+        // kit Phase 3: fixed height (`chat_row_height`) — the `VirtualList`
+        // positions rows from declared sizes, so the row enforces the same
+        // height and centers its content. Title and preview truncate to one
+        // line each, so content can never overflow it; the heights fit the
+        // density's line height (`DensityMetrics::line_height`).
+        .h(height)
         .flex()
         .flex_col()
         .justify_center()
@@ -569,7 +599,7 @@ pub(super) fn session_chat_row(
             div()
                 .flex()
                 .items_center()
-                .gap_3()
+                .gap(px(m.row_gap))
                 // Parity slice: circular chat photo or colored initials for
                 // every chat-list row / chat type.
                 // Slice CL3: the select-mode check circle precedes the
@@ -591,14 +621,14 @@ pub(super) fn session_chat_row(
                                 }
                             },
                             ring,
-                            CHAT_ROW_AVATAR,
+                            avatar_size,
                             muted_fg,
                         ),
-                        None if saved => saved_messages_avatar(CHAT_ROW_AVATAR),
+                        None if saved => saved_messages_avatar(avatar_size),
                         None => UserpicFrame::over(
                             video.as_ref(),
-                            chat_avatar(&title, photo_path, CHAT_ROW_AVATAR).into_any_element(),
-                            CHAT_ROW_AVATAR,
+                            chat_avatar(&title, photo_path, avatar_size).into_any_element(),
+                            avatar_size,
                         ),
                     },
                     quill::peer_badge::shows_call_badge(chat.video_chat.as_ref()),
@@ -609,12 +639,7 @@ pub(super) fn session_chat_row(
                     cx,
                 ))
                 .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_0p5()
-                        .min_w_0()
-                        .flex_1()
+                    row_text_lines(m)
                         .child(
                             div()
                                 .flex()

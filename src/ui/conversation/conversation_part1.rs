@@ -195,7 +195,8 @@ impl QuillApp {
                                     .child(super::anim_layer::occluder(circle)),
                             )
                         })
-                        .p_3()
+                        .px_3()
+                        .py(px(self.density().composer_inset_y))
                         .border_t_1()
                         .border_color(cx.theme().border)
                         .flex()
@@ -304,7 +305,7 @@ impl QuillApp {
                         )
                         // kit Phase 5: the composer input row — attach and
                         // emoji/sticker pickers, the borderless growing
-                        // kit Textarea (auto_grow(2, 6) on the state sizes
+                        // kit Textarea (auto_grow on the state sizes
                         // it; no fixed height, no custom focus ring or
                         // placeholder machinery), the voice/video record
                         // button, and the round send button.
@@ -314,7 +315,7 @@ impl QuillApp {
                                 .relative()
                                 .flex()
                                 .items_end()
-                                .gap_2()
+                                .gap(px(self.density().composer_gap))
                                 .when(show_attach, |row| {
                                     row.when_some(self.bot_menu_button(cx), |row, button| {
                                         row.child(button)
@@ -398,7 +399,8 @@ impl QuillApp {
                 this.child(
                     div()
                         .id("composer-note")
-                        .p_3()
+                        .px_3()
+                        .py(px(self.density().composer_inset_y))
                         .border_t_1()
                         .border_color(cx.theme().border)
                         .text_sm()

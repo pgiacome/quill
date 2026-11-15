@@ -182,3 +182,14 @@ fn native_choice_follows_the_saved_value_where_the_platform_allows_it() {
         cfg!(target_os = "linux").then_some(WindowDecorations::Client)
     );
 }
+
+#[test]
+fn traffic_lights_stay_centred_on_a_shorter_bar() {
+    use gpui_kit::component::TITLE_BAR_HEIGHT;
+    let default = gpui_kit::point(px(12.), px(17.));
+    assert_eq!(super::traffic_lights_at(default, TITLE_BAR_HEIGHT), default);
+    assert_eq!(
+        super::traffic_lights_at(default, TITLE_BAR_HEIGHT - px(8.)),
+        gpui_kit::point(px(12.), px(13.))
+    );
+}
