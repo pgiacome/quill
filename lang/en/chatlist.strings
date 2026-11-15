@@ -236,3 +236,6 @@
 "qll_chatlist_you_are_all_caught_up" = "You are all caught up.";
 "qll_chatlist_topics_could_not_load" = "Could not load the topics.";
 "qll_chatlist_could_not_remove_from_folder" = "Could not remove the chat from the folder";
+"qll_chatlist_view_profile" = "View profile";
+"qll_chatlist_group_info" = "View group info";
+"qll_chatlist_channel_info" = "View channel info";

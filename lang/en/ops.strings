@@ -1235,3 +1235,15 @@
 "qll_ops_export_account_about_stories" = "All stories you posted from Telegram mobile apps.";
 "qll_ops_export_account_about_music" = "All tracks you saved to your playlist.";
 "qll_ops_export_account_about_sessions" = "Telegram keeps this to show your connected devices in Active sessions.";
+"qll_ops_clear_all" = "Clear all";
+"qll_ops_call_cancelled" = "Cancelled";
+"qll_ops_call_missed" = "Missed";
+"qll_ops_call_busy" = "Busy";
+"qll_ops_call_declined" = "Declined";
+"qll_ops_call_incoming" = "Incoming";
+"qll_ops_call_outgoing" = "Outgoing";
+"qll_ops_call_voice" = "call";
+"qll_ops_call_video" = "video call";
+"qll_ops_clear_calls" = "Clear calls";
+"qll_ops_clear_calls_about" = "Are you sure you want to completely clear your calls log?";
+"qll_ops_could_not_clear_the_call_history" = "could not clear the call history (error {code})";

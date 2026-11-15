@@ -3,6 +3,7 @@
 //! group / channel info), the "mark as read" entries for unread mentions,
 //! reactions and poll votes, and Export chat history.
 #![deny(clippy::indexing_slicing)]
+use crate::lang::{keys, tr};
 
 use crate::telegram::envelope::ChatKind;
 
@@ -37,12 +38,14 @@ pub fn profile_label(kind: &ChatKind, is_saved_messages: bool) -> Option<&'stati
         return None;
     }
     match kind {
-        ChatKind::Private { .. } | ChatKind::Secret { .. } => Some("View profile"),
-        ChatKind::BasicGroup { .. } => Some("View group info"),
+        ChatKind::Private { .. } | ChatKind::Secret { .. } => {
+            Some(tr(keys::Q_CHATLIST_VIEW_PROFILE))
+        }
+        ChatKind::BasicGroup { .. } => Some(tr(keys::Q_CHATLIST_GROUP_INFO)),
         ChatKind::Supergroup { is_channel, .. } => Some(if *is_channel {
-            "View channel info"
+            tr(keys::Q_CHATLIST_CHANNEL_INFO)
         } else {
-            "View group info"
+            tr(keys::Q_CHATLIST_GROUP_INFO)
         }),
         ChatKind::Unknown => None,
     }

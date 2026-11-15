@@ -907,3 +907,15 @@
 "qll_ops_export_account_about_stories" = "Все истории, опубликованные вами из мобильных приложений Telegram.";
 "qll_ops_export_account_about_music" = "Все треки, сохранённые вами в плейлист.";
 "qll_ops_export_account_about_sessions" = "Telegram хранит это, чтобы показывать подключённые устройства в активных сеансах.";
+"qll_ops_clear_all" = "Очистить всё";
+"qll_ops_call_cancelled" = "Отменённый";
+"qll_ops_call_missed" = "Пропущенный";
+"qll_ops_call_busy" = "Занятый";
+"qll_ops_call_declined" = "Отклонённый";
+"qll_ops_call_incoming" = "Входящий";
+"qll_ops_call_outgoing" = "Исходящий";
+"qll_ops_call_voice" = "звонок";
+"qll_ops_call_video" = "видеозвонок";
+"qll_ops_clear_calls" = "Очистить звонки";
+"qll_ops_clear_calls_about" = "Вы уверены, что хотите полностью очистить журнал звонков?";
+"qll_ops_could_not_clear_the_call_history" = "не удалось очистить журнал звонков (ошибка {code})";

@@ -131,7 +131,7 @@ impl QuillApp {
                     |this| {
                         this.child(
                             Button::new("calls-clear-all")
-                                .label(quill::chatlist_calls::CLEAR_ALL_LABEL)
+                                .label(tr(keys::Q_OPS_CLEAR_ALL))
                                 .ghost()
                                 .small()
                                 .on_click(cx.listener(|this, _, _, cx| this.open_clear_calls(cx))),
