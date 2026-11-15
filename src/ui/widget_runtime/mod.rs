@@ -18,6 +18,8 @@ mod paint;
 mod thread;
 
 use gpui_kit::RenderImage;
+pub use quill::message_widget::link::LinkKind;
+pub use quill::message_widget::storage::AreaName;
 use quill::wake::Signal;
 use std::collections::BTreeMap;
 use std::sync::mpsc::{Sender, channel};
@@ -89,11 +91,12 @@ pub enum RuntimeEvent {
     Stopped(String),
     /// It could not start.
     Failed(String),
-    /// `openLink` (`telegram` false) or `openTelegramLink`, after a press.
-    Link { telegram: bool, url: String },
-    /// Its storage area after a commit.
+    /// `openLink` or `openTelegramLink`, after a press; the URL is one a
+    /// widget may open as that kind ([`quill::message_widget::link`]).
+    Link { kind: LinkKind, url: String },
+    /// Its storage area after a commit, within the quota.
     Storage {
-        area: String,
+        area: AreaName,
         values: BTreeMap<String, String>,
     },
     /// What it claims of the press in progress: `hold` = a long press is its own.
@@ -143,13 +146,12 @@ impl Runtime {
             inbox: inbox.clone(),
             outbox: outbox.clone(),
         };
-        let spawned = std::thread::Builder::new()
-            .name("quill-widget".into())
-            .spawn(move || thread::run(launch, inbox, rx, outbox.clone()));
+        let spawned = quill::thread_guard::spawn_guarded("quill-widget", move || {
+            let told = outbox.clone();
+            run_told(&told, || thread::run(launch, inbox, rx, outbox));
+        });
         if let Err(err) = spawned {
-            let mut out = quill::locks::lock_or_recover(&runtime.outbox);
-            out.events.push(RuntimeEvent::Failed(err.to_string()));
-            WIDGETS.poke();
+            fail(&runtime.outbox, err.to_string());
         }
         runtime
     }
@@ -209,6 +211,23 @@ impl Drop for Runtime {
     }
 }
 
+/// Runs the runtime thread's `body`. A panic in it ends the thread, so the
+/// UI is told the widget failed instead of keeping a bubble that never
+/// answers again.
+fn run_told(outbox: &Mutex<Outbox>, body: impl FnOnce()) {
+    if quill::thread_guard::run_guarded(body).is_none() {
+        fail(outbox, "the widget runtime panicked".into());
+    }
+}
+
+/// The runtime cannot go on: the entry leaves Loading or Running.
+fn fail(outbox: &Mutex<Outbox>, reason: String) {
+    quill::locks::lock_or_recover(outbox)
+        .events
+        .push(RuntimeEvent::Failed(reason));
+    WIDGETS.poke();
+}
+
 /// Milliseconds on the widgets' clock (`performance.now()`), from the
 /// first call in the process.
 pub fn clock_ms() -> f64 {
@@ -222,3 +241,6 @@ pub fn clock_ms() -> f64 {
 
 #[cfg(test)]
 mod smoke_tests;
+
+#[cfg(test)]
+mod runtime_tests;
