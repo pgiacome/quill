@@ -3,6 +3,7 @@
 //! `boxes/star_gift_box.cpp`, `GiftBox` / `SendGiftBox`).
 
 use super::{flag, int, text};
+use crate::lang::{keys, tr, tr_with};
 use crate::premium_hub::group_digits;
 use crate::telegram::envelope::{MessageSender, ParsedFile, StickerContent, format_payment_price};
 use serde_json::Value;
@@ -98,12 +99,14 @@ impl AvailableGift {
     pub fn supply_label(&self) -> Option<String> {
         self.supply.map(|(left, total)| {
             if left <= 0 {
-                "Sold out".to_string()
+                tr(keys::Q_MONEY_GIFT_SEND_SOLD_OUT).to_string()
             } else {
-                format!(
-                    "{} of {} left",
-                    group_digits(i64::from(left)),
-                    group_digits(i64::from(total))
+                tr_with(
+                    keys::Q_MONEY_GIFT_SEND_LEFT,
+                    &[
+                        ("left", &group_digits(i64::from(left))),
+                        ("total", &group_digits(i64::from(total))),
+                    ],
                 )
             }
         })
@@ -115,12 +118,12 @@ impl SendGate {
     pub fn reason(self) -> Option<&'static str> {
         match self {
             Self::Ready => None,
-            Self::SoldOut => Some("Sold out"),
-            Self::PremiumOnly => Some("Needs Telegram Premium"),
+            Self::SoldOut => Some(tr(keys::Q_MONEY_GIFT_SEND_SOLD_OUT)),
+            Self::PremiumOnly => Some(tr(keys::Q_MONEY_GIFT_SEND_NEEDS_PREMIUM)),
             Self::Auction => None,
-            Self::Later(_) => Some("Not available yet"),
-            Self::UserLimit => Some("You bought all you can"),
-            Self::NotForChannels => Some("Not for channels"),
+            Self::Later(_) => Some(tr(keys::Q_MONEY_GIFT_SEND_NOT_AVAILABLE)),
+            Self::UserLimit => Some(tr(keys::Q_MONEY_GIFT_SEND_USER_LIMIT)),
+            Self::NotForChannels => Some(tr(keys::Q_MONEY_GIFT_SEND_NOT_FOR_CHANNELS)),
         }
     }
 }

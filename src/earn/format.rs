@@ -2,7 +2,7 @@
 //! screens, after tdesktop `info/channel_statistics/earn/earn_format.cpp`
 //! and `info/bot/starref/info_bot_starref_common.cpp`.
 
-use crate::lang::{keys, tr_with};
+use crate::lang::{keys, tr, tr_with, trn};
 use crate::premium_hub::{StarAmount, group_digits};
 
 /// Nanotons in one TON (`chatRevenueAmount` counts in the smallest unit).
@@ -95,22 +95,14 @@ pub fn format_commission(permille: i32) -> String {
     }
 }
 
-fn plural(count: i32, one: &str, many: &str) -> String {
-    if count == 1 {
-        format!("{count} {one}")
-    } else {
-        format!("{count} {many}")
-    }
-}
-
 /// tdesktop `FormatProgramDuration`: "Forever", "3 months", "2 years".
 pub fn format_program_duration(months: i32) -> String {
     if months == 0 {
-        "Forever".into()
+        tr(keys::Q_MONEY_EARN_FOREVER).into()
     } else if months < 12 {
-        plural(months, "month", "months")
+        trn(keys::MONTHS, months)
     } else {
-        plural(months / 12, "year", "years")
+        trn(keys::YEARS, months / 12)
     }
 }
 
@@ -118,11 +110,14 @@ pub fn format_program_duration(months: i32) -> String {
 /// "for lifetime", "for 3 months", "for 2 years".
 pub fn format_for_program_duration(months: i32) -> String {
     if months == 0 {
-        "for lifetime".into()
-    } else if months < 12 {
-        format!("for {}", plural(months, "month", "months"))
+        tr(keys::Q_MONEY_EARN_FOR_LIFETIME).into()
     } else {
-        format!("for {}", plural(months / 12, "year", "years"))
+        let duration = if months < 12 {
+            trn(keys::MONTHS, months)
+        } else {
+            trn(keys::YEARS, months / 12)
+        };
+        tr_with(keys::Q_MONEY_EARN_FOR_DURATION, &[("duration", &duration)])
     }
 }
 

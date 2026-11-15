@@ -1,4 +1,5 @@
 use super::*;
+use crate::lang::keys;
 use serde_json::json;
 
 #[test]
@@ -166,7 +167,10 @@ fn premium_features_keep_known_rows_and_limits() {
     assert_eq!(info.features.len(), 2);
     assert_eq!(info.features[0].title(), "Doubled limits");
     assert_eq!(info.limits.len(), 3);
-    assert_eq!(info.limits[0].title, Some("Folders"));
+    assert_eq!(
+        info.limits[0].title,
+        Some(keys::Q_MONEY_PREMIUM_LIMIT_FOLDERS)
+    );
     assert_eq!(info.limits[0].premium_value, 20);
     assert_eq!(info.limits[1].title, None);
     assert_eq!(

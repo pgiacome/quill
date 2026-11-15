@@ -9,7 +9,7 @@
 //! behind an explicit confirmation in the UI.
 #![deny(clippy::indexing_slicing)]
 
-use crate::lang::{keys, tr};
+use crate::lang::{Key, keys, tr, trn};
 use crate::state::fetch::Fetch;
 use crate::telegram::envelope::{MessageSender, StickerContent, parse_sticker_value};
 pub use feature::{BusinessFeature, PremiumFeature};
@@ -182,23 +182,15 @@ fn chat(id: i64) -> Option<MessageSender> {
 
 fn months(count: i64) -> String {
     match count {
-        1 => "1 month".to_string(),
-        n if n > 0 && n % 12 == 0 => {
-            let years = n / 12;
-            if years == 1 {
-                "1 year".to_string()
-            } else {
-                format!("{years} years")
-            }
-        }
-        n => format!("{n} months"),
+        n if n > 0 && n % 12 == 0 => trn(keys::YEARS, n / 12),
+        n => trn(keys::MONTHS, n.max(1)),
     }
 }
 
 fn period_label(seconds: i64) -> String {
     match seconds {
-        2_592_000 => "monthly".to_string(),
-        s if s > 0 && s % 86_400 == 0 => format!("every {} days", s / 86_400),
+        2_592_000 => tr(keys::Q_MONEY_TX_MONTHLY).to_string(),
+        s if s > 0 && s % 86_400 == 0 => trn(keys::Q_MONEY_TX_EVERY_DAYS, s / 86_400),
         _ => String::new(),
     }
 }
@@ -225,7 +217,7 @@ fn gift_name(value: &Value) -> String {
     }
     let stars = int(gift.get("star_count"));
     if stars > 0 {
-        format!("{} Stars", group_digits(stars))
+        trn(keys::Q_MONEY_TX_STARS, stars)
     } else {
         String::new()
     }
@@ -237,38 +229,76 @@ pub fn describe_tx_type(ty: &Value) -> (String, String, Option<MessageSender>) {
     let kind = ty.get("@type").and_then(Value::as_str).unwrap_or("");
     let s = |t: &str, d: &str, p: Option<MessageSender>| (t.to_string(), d.to_string(), p);
     match kind {
-        "starTransactionTypePremiumBotDeposit" => s("Stars top-up", "Via Premium Bot", None),
-        "starTransactionTypeAppStoreDeposit" => s("Stars top-up", "Via App Store", None),
-        "starTransactionTypeGooglePlayDeposit" => s("Stars top-up", "Via Google Play", None),
-        "starTransactionTypeFragmentDeposit" => s("Stars top-up", "Via Fragment", None),
-        "starTransactionTypeUserDeposit" => s("Gifted Stars", "", user(int(ty.get("user_id")))),
-        "starTransactionTypeGiveawayDeposit" => {
-            s("Giveaway prize", "", chat(int(ty.get("chat_id"))))
-        }
-        "starTransactionTypeFragmentWithdrawal" => s("Withdrawal", "Via Fragment", None),
-        "starTransactionTypeTelegramAdsWithdrawal" => s("Withdrawal", "To Telegram Ads", None),
-        "starTransactionTypeTelegramApiUsage" => (
-            "Paid API usage".to_string(),
-            format!("{} requests", group_digits(int(ty.get("request_count")))),
+        "starTransactionTypePremiumBotDeposit" => s(
+            tr(keys::Q_MONEY_TX_STARS_TOP_UP),
+            tr(keys::Q_MONEY_TX_VIA_PREMIUM_BOT),
             None,
         ),
-        "starTransactionTypeBotPaidMediaPurchase" => {
-            s("Paid media", "", user(int(ty.get("user_id"))))
-        }
-        "starTransactionTypeBotPaidMediaSale" => {
-            s("Paid media sale", "", user(int(ty.get("user_id"))))
-        }
-        "starTransactionTypeChannelPaidMediaPurchase" => {
-            s("Paid media", "", chat(int(ty.get("chat_id"))))
-        }
-        "starTransactionTypeChannelPaidMediaSale" => {
-            s("Paid media sale", "", user(int(ty.get("user_id"))))
-        }
+        "starTransactionTypeAppStoreDeposit" => s(
+            tr(keys::Q_MONEY_TX_STARS_TOP_UP),
+            tr(keys::Q_MONEY_TX_VIA_APP_STORE),
+            None,
+        ),
+        "starTransactionTypeGooglePlayDeposit" => s(
+            tr(keys::Q_MONEY_TX_STARS_TOP_UP),
+            tr(keys::Q_MONEY_TX_VIA_GOOGLE_PLAY),
+            None,
+        ),
+        "starTransactionTypeFragmentDeposit" => s(
+            tr(keys::Q_MONEY_TX_STARS_TOP_UP),
+            tr(keys::Q_MONEY_TX_VIA_FRAGMENT),
+            None,
+        ),
+        "starTransactionTypeUserDeposit" => s(
+            tr(keys::Q_MONEY_TX_GIFTED_STARS),
+            "",
+            user(int(ty.get("user_id"))),
+        ),
+        "starTransactionTypeGiveawayDeposit" => s(
+            tr(keys::Q_MONEY_TX_GIVEAWAY_PRIZE),
+            "",
+            chat(int(ty.get("chat_id"))),
+        ),
+        "starTransactionTypeFragmentWithdrawal" => s(
+            tr(keys::Q_MONEY_TX_WITHDRAWAL),
+            tr(keys::Q_MONEY_TX_VIA_FRAGMENT),
+            None,
+        ),
+        "starTransactionTypeTelegramAdsWithdrawal" => s(
+            tr(keys::Q_MONEY_TX_WITHDRAWAL),
+            tr(keys::Q_MONEY_TX_TO_TELEGRAM_ADS),
+            None,
+        ),
+        "starTransactionTypeTelegramApiUsage" => (
+            tr(keys::Q_MONEY_TX_PAID_API_USAGE).to_string(),
+            trn(keys::Q_MONEY_TX_REQUESTS, int(ty.get("request_count"))),
+            None,
+        ),
+        "starTransactionTypeBotPaidMediaPurchase" => s(
+            tr(keys::Q_MONEY_TX_PAID_MEDIA),
+            "",
+            user(int(ty.get("user_id"))),
+        ),
+        "starTransactionTypeBotPaidMediaSale" => s(
+            tr(keys::Q_MONEY_TX_PAID_MEDIA_SALE),
+            "",
+            user(int(ty.get("user_id"))),
+        ),
+        "starTransactionTypeChannelPaidMediaPurchase" => s(
+            tr(keys::Q_MONEY_TX_PAID_MEDIA),
+            "",
+            chat(int(ty.get("chat_id"))),
+        ),
+        "starTransactionTypeChannelPaidMediaSale" => s(
+            tr(keys::Q_MONEY_TX_PAID_MEDIA_SALE),
+            "",
+            user(int(ty.get("user_id"))),
+        ),
         "starTransactionTypeBotInvoicePurchase" => {
             let title = product_title(ty, "product_info");
             (
                 if title.is_empty() {
-                    "Purchase".into()
+                    tr(keys::Q_MONEY_TX_PURCHASE).into()
                 } else {
                     title
                 },
@@ -280,11 +310,11 @@ pub fn describe_tx_type(ty: &Value) -> (String, String, Option<MessageSender>) {
             let title = product_title(ty, "product_info");
             (
                 if title.is_empty() {
-                    "Sale".into()
+                    tr(keys::Q_MONEY_TX_SALE).into()
                 } else {
                     title
                 },
-                "Sale".into(),
+                tr(keys::Q_MONEY_TX_SALE).into(),
                 user(int(ty.get("user_id"))),
             )
         }
@@ -292,7 +322,7 @@ pub fn describe_tx_type(ty: &Value) -> (String, String, Option<MessageSender>) {
             {
                 let title = product_title(ty, "product_info");
                 if title.is_empty() {
-                    "Subscription".into()
+                    tr(keys::Q_MONEY_TX_SUBSCRIPTION).into()
                 } else {
                     title
                 }
@@ -301,118 +331,140 @@ pub fn describe_tx_type(ty: &Value) -> (String, String, Option<MessageSender>) {
             user(int(ty.get("user_id"))),
         ),
         "starTransactionTypeBotSubscriptionSale" => (
-            "Subscription sale".into(),
+            tr(keys::Q_MONEY_TX_SUBSCRIPTION_SALE).into(),
             period_label(int(ty.get("subscription_period"))),
             user(int(ty.get("user_id"))),
         ),
         "starTransactionTypeChannelSubscriptionPurchase" => (
-            "Channel subscription".into(),
+            tr(keys::Q_MONEY_TX_CHANNEL_SUBSCRIPTION).into(),
             period_label(int(ty.get("subscription_period"))),
             chat(int(ty.get("chat_id"))),
         ),
         "starTransactionTypeChannelSubscriptionSale" => (
-            "Subscription sale".into(),
+            tr(keys::Q_MONEY_TX_SUBSCRIPTION_SALE).into(),
             period_label(int(ty.get("subscription_period"))),
             user(int(ty.get("user_id"))),
         ),
         "starTransactionTypeGiftAuctionBid" => (
-            "Gift auction bid".into(),
+            tr(keys::Q_MONEY_TX_GIFT_AUCTION_BID).into(),
             gift_name(ty),
             sender_of(ty.get("owner_id")),
         ),
-        "starTransactionTypeGiftPurchase" => {
-            ("Gift".into(), gift_name(ty), sender_of(ty.get("owner_id")))
+        "starTransactionTypeGiftPurchase" => (
+            tr(keys::Q_MONEY_TX_GIFT).into(),
+            gift_name(ty),
+            sender_of(ty.get("owner_id")),
+        ),
+        "starTransactionTypeGiftPurchaseOffer" => {
+            (tr(keys::Q_MONEY_TX_GIFT_OFFER).into(), gift_name(ty), None)
         }
-        "starTransactionTypeGiftPurchaseOffer" => ("Gift offer".into(), gift_name(ty), None),
         "starTransactionTypeGiftTransfer" => (
-            "Gift transfer".into(),
+            tr(keys::Q_MONEY_TX_GIFT_TRANSFER).into(),
             gift_name(ty),
             sender_of(ty.get("owner_id")),
         ),
         "starTransactionTypeGiftOriginalDetailsDrop" => (
-            "Original details removed".into(),
+            tr(keys::Q_MONEY_TX_ORIGINAL_DETAILS_REMOVED).into(),
             gift_name(ty),
             sender_of(ty.get("owner_id")),
         ),
         "starTransactionTypeGiftSale" => (
-            "Gift converted".into(),
+            tr(keys::Q_MONEY_TX_GIFT_CONVERTED).into(),
             gift_name(ty),
             user(int(ty.get("user_id"))),
         ),
         "starTransactionTypeGiftUpgrade" => (
-            "Gift upgrade".into(),
+            tr(keys::Q_MONEY_TX_GIFT_UPGRADE).into(),
             gift_name(ty),
             user(int(ty.get("user_id"))),
         ),
         "starTransactionTypeGiftUpgradePurchase" => (
-            "Gift upgrade".into(),
+            tr(keys::Q_MONEY_TX_GIFT_UPGRADE).into(),
             gift_name(ty),
             sender_of(ty.get("owner_id")),
         ),
         "starTransactionTypeUpgradedGiftPurchase" => (
-            "Collectible gift".into(),
+            tr(keys::Q_MONEY_TX_COLLECTIBLE_GIFT).into(),
             gift_name(ty),
             user(int(ty.get("user_id"))),
         ),
         "starTransactionTypeUpgradedGiftSale" => (
-            "Collectible gift sale".into(),
+            tr(keys::Q_MONEY_TX_COLLECTIBLE_GIFT_SALE).into(),
             gift_name(ty),
             user(int(ty.get("user_id"))),
         ),
-        "starTransactionTypeChannelPaidReactionSend" => {
-            s("Reaction", "", chat(int(ty.get("chat_id"))))
-        }
-        "starTransactionTypeChannelPaidReactionReceive" => {
-            s("Reaction received", "", user(int(ty.get("user_id"))))
-        }
+        "starTransactionTypeChannelPaidReactionSend" => s(
+            tr(keys::Q_MONEY_TX_REACTION),
+            "",
+            chat(int(ty.get("chat_id"))),
+        ),
+        "starTransactionTypeChannelPaidReactionReceive" => s(
+            tr(keys::Q_MONEY_TX_REACTION_RECEIVED),
+            "",
+            user(int(ty.get("user_id"))),
+        ),
         "starTransactionTypeAffiliateProgramCommission" => (
-            "Affiliate commission".into(),
+            tr(keys::Q_MONEY_TX_AFFILIATE_COMMISSION).into(),
             String::new(),
             chat(int(ty.get("chat_id"))),
         ),
         "starTransactionTypePaidMessageSend" => (
-            "Paid message".into(),
-            format!("{} messages", int(ty.get("message_count")).max(1)),
+            tr(keys::Q_MONEY_TX_PAID_MESSAGE).into(),
+            trn(
+                keys::Q_MONEY_TX_MESSAGES,
+                int(ty.get("message_count")).max(1),
+            ),
             chat(int(ty.get("chat_id"))),
         ),
         "starTransactionTypePaidMessageReceive" => (
-            "Paid messages received".into(),
-            format!("{} messages", int(ty.get("message_count")).max(1)),
+            tr(keys::Q_MONEY_TX_PAID_MESSAGES_RECEIVED).into(),
+            trn(
+                keys::Q_MONEY_TX_MESSAGES,
+                int(ty.get("message_count")).max(1),
+            ),
             sender_of(ty.get("sender_id")),
         ),
         "starTransactionTypePaidGroupCallMessageSend"
         | "starTransactionTypePaidGroupCallReactionSend" => (
-            "Live stream message".into(),
+            tr(keys::Q_MONEY_TX_LIVE_STREAM_MESSAGE).into(),
             String::new(),
             chat(int(ty.get("chat_id"))),
         ),
         "starTransactionTypePaidGroupCallMessageReceive"
         | "starTransactionTypePaidGroupCallReactionReceive" => (
-            "Live stream message received".into(),
+            tr(keys::Q_MONEY_TX_LIVE_STREAM_MESSAGE_RECEIVED).into(),
             String::new(),
             sender_of(ty.get("sender_id")),
         ),
-        "starTransactionTypeSuggestedPostPaymentSend" => {
-            s("Suggested post", "", chat(int(ty.get("chat_id"))))
-        }
-        "starTransactionTypeSuggestedPostPaymentReceive" => {
-            s("Suggested post", "", user(int(ty.get("user_id"))))
-        }
+        "starTransactionTypeSuggestedPostPaymentSend" => s(
+            tr(keys::Q_MONEY_TX_SUGGESTED_POST),
+            "",
+            chat(int(ty.get("chat_id"))),
+        ),
+        "starTransactionTypeSuggestedPostPaymentReceive" => s(
+            tr(keys::Q_MONEY_TX_SUGGESTED_POST),
+            "",
+            user(int(ty.get("user_id"))),
+        ),
         "starTransactionTypePremiumPurchase" => (
-            "Telegram Premium".into(),
+            tr(keys::Q_MONEY_TX_TELEGRAM_PREMIUM).into(),
             months(int(ty.get("month_count"))),
             user(int(ty.get("user_id"))),
         ),
-        "starTransactionTypeBusinessBotTransferSend" => {
-            s("Business bot transfer", "", user(int(ty.get("user_id"))))
-        }
+        "starTransactionTypeBusinessBotTransferSend" => s(
+            tr(keys::Q_MONEY_TX_BUSINESS_BOT_TRANSFER),
+            "",
+            user(int(ty.get("user_id"))),
+        ),
         "starTransactionTypeBusinessBotTransferReceive" => (
-            "Business bot transfer received".into(),
+            tr(keys::Q_MONEY_TX_BUSINESS_BOT_TRANSFER_RECEIVED).into(),
             String::new(),
             user(int(ty.get("user_id"))),
         ),
-        "starTransactionTypePublicPostSearch" => s("Public post search", "", None),
-        _ => s("Transaction", "", None),
+        "starTransactionTypePublicPostSearch" => {
+            s(tr(keys::Q_MONEY_TX_PUBLIC_POST_SEARCH), "", None)
+        }
+        _ => s(tr(keys::Q_MONEY_TX_TRANSACTION), "", None),
     }
 }
 
@@ -642,28 +694,30 @@ pub fn parse_received_gifts(value: &Value) -> GiftsPage {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PremiumLimitRow {
     pub type_name: String,
-    pub title: Option<&'static str>,
+    pub title: Option<Key>,
     pub default_value: i64,
     pub premium_value: i64,
 }
 
-fn limit_title(constructor: &str) -> Option<&'static str> {
+fn limit_title(constructor: &str) -> Option<Key> {
     Some(match constructor {
-        "premiumLimitTypeSupergroupCount" => "Groups and channels",
-        "premiumLimitTypePinnedChatCount" => "Pinned chats",
-        "premiumLimitTypeCreatedPublicChatCount" => "Public links",
-        "premiumLimitTypeSavedAnimationCount" => "Saved GIFs",
-        "premiumLimitTypeFavoriteStickerCount" => "Favorite stickers",
-        "premiumLimitTypeChatFolderCount" => "Folders",
-        "premiumLimitTypeChatFolderChosenChatCount" => "Chats per folder",
-        "premiumLimitTypePinnedArchivedChatCount" => "Pins in the archive",
-        "premiumLimitTypeMessageTextLength" => "Message length",
-        "premiumLimitTypeCaptionLength" => "Caption length",
-        "premiumLimitTypeBioLength" => "Bio length",
-        "premiumLimitTypeChatFolderInviteLinkCount" => "Folder invite links",
-        "premiumLimitTypeShareableChatFolderCount" => "Shareable folders",
-        "premiumLimitTypeActiveStoryCount" => "Active stories",
-        "premiumLimitTypeSimilarChatCount" => "Similar channels",
+        "premiumLimitTypeSupergroupCount" => keys::Q_MONEY_PREMIUM_LIMIT_CHANNELS,
+        "premiumLimitTypePinnedChatCount" => keys::Q_MONEY_PREMIUM_LIMIT_PINS,
+        "premiumLimitTypeCreatedPublicChatCount" => keys::Q_MONEY_PREMIUM_LIMIT_PUBLIC_LINKS,
+        "premiumLimitTypeSavedAnimationCount" => keys::Q_MONEY_PREMIUM_LIMIT_SAVED_GIFS,
+        "premiumLimitTypeFavoriteStickerCount" => keys::Q_MONEY_PREMIUM_LIMIT_FAVORITE_STICKERS,
+        "premiumLimitTypeChatFolderCount" => keys::Q_MONEY_PREMIUM_LIMIT_FOLDERS,
+        "premiumLimitTypeChatFolderChosenChatCount" => keys::Q_MONEY_PREMIUM_LIMIT_CHATS_PER_FOLDER,
+        "premiumLimitTypePinnedArchivedChatCount" => keys::Q_MONEY_PREMIUM_LIMIT_PINS_ARCHIVE,
+        "premiumLimitTypeMessageTextLength" => keys::Q_MONEY_PREMIUM_LIMIT_MESSAGE_LENGTH,
+        "premiumLimitTypeCaptionLength" => keys::Q_MONEY_PREMIUM_LIMIT_CAPTION,
+        "premiumLimitTypeBioLength" => keys::Q_MONEY_PREMIUM_LIMIT_BIO_LENGTH,
+        "premiumLimitTypeChatFolderInviteLinkCount" => {
+            keys::Q_MONEY_PREMIUM_LIMIT_FOLDER_INVITE_LINKS
+        }
+        "premiumLimitTypeShareableChatFolderCount" => keys::Q_MONEY_PREMIUM_LIMIT_SHAREABLE_FOLDERS,
+        "premiumLimitTypeActiveStoryCount" => keys::Q_MONEY_PREMIUM_LIMIT_ACTIVE_STORIES,
+        "premiumLimitTypeSimilarChatCount" => keys::Q_MONEY_PREMIUM_LIMIT_SIMILAR_CHATS,
         _ => return None,
     })
 }

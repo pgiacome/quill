@@ -194,11 +194,15 @@ impl TonTx {
             TonTxKind::Withdrawal {
                 date: when,
                 state: WithdrawalState::Failed,
-            } => format!("{} \u{2014} Not Completed", date(*when)),
+            } => format!(
+                "{} \u{2014} {}",
+                date(*when),
+                tr(keys::Q_MONEY_EARN_NOT_COMPLETED)
+            ),
             TonTxKind::Withdrawal {
                 state: WithdrawalState::Unsettled,
                 ..
-            } => "Pending".into(),
+            } => tr(keys::Q_MONEY_EARN_PENDING).into(),
             TonTxKind::Withdrawal { date: when, .. } | TonTxKind::Refund { date: when } => {
                 date(*when)
             }

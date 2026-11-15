@@ -4,6 +4,7 @@
 
 use super::{array, flag, int, int32, text};
 use crate::gift_manage::AvailableGift;
+use crate::lang::{keys, tr, tr_with};
 use crate::premium_hub::upgraded::{GiftAttribute, GiftBackdrop};
 use crate::telegram::envelope::MessageSender;
 use serde_json::{Value, json};
@@ -564,9 +565,9 @@ pub enum BidKind {
 impl BidKind {
     pub fn title(self, started: bool) -> &'static str {
         match (self, started) {
-            (_, false) | (Self::Setting, _) => "Your bid will be",
-            (Self::Winning, true) => "You're winning",
-            (Self::Losing, true) => "You've been outbid",
+            (_, false) | (Self::Setting, _) => tr(keys::Q_MONEY_AUCTION_YOUR_BID_WILL_BE),
+            (Self::Winning, true) => tr(keys::Q_MONEY_AUCTION_WINNING),
+            (Self::Losing, true) => tr(keys::Q_MONEY_AUCTION_OUTBID_SHORT),
         }
     }
 }
@@ -601,9 +602,15 @@ impl BidAction {
     pub fn label(self, mine: i64) -> String {
         let stars = |n: i64| format!("★{}", crate::premium_hub::group_digits(n));
         match self {
-            Self::Close => "OK".into(),
-            Self::Place(n) => format!("Place a {} Bid", stars(n)),
-            Self::Increase(n) => format!("Add {} to Your Bid", stars(n.saturating_sub(mine))),
+            Self::Close => tr(keys::Q_MONEY_AUCTION_OK).into(),
+            Self::Place(n) => tr_with(
+                keys::Q_MONEY_AUCTION_PLACE_STARS_BID,
+                &[("stars", &stars(n))],
+            ),
+            Self::Increase(n) => tr_with(
+                keys::Q_MONEY_AUCTION_ADD_TO_BID,
+                &[("stars", &stars(n.saturating_sub(mine)))],
+            ),
         }
     }
 }
