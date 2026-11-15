@@ -627,6 +627,7 @@ impl QuillApp {
                     gpui_kit::assets::IconName::Shield
                 })
                 .ghost()
+                .with_size(self.control_size())
                 .tooltip(if connected {
                     tr(keys::Q_PREFS_PROXY_ENABLED)
                 } else {

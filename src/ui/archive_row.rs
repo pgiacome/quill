@@ -7,7 +7,7 @@
 
 use super::app::{ChatListFilter, QuillApp};
 use super::chat_list_keys::ListRow;
-use super::chat_row::chat_row_height;
+use super::chat_row::row_text_lines;
 use super::context_menu_keys::context_menu_item;
 use super::pressable::PressableDiv;
 use super::*;
@@ -26,9 +26,6 @@ use quill::lang::{keys, tr, tr_with};
 fn title() -> &'static str {
     tr(keys::ARCHIVED_NAME)
 }
-
-/// Avatar edge, same as a chat row's.
-const AVATAR: f32 = 46.;
 
 /// Muted unread counter (`PaintUnreadBadge` with `muted = true`).
 fn muted_badge(text: String, cx: &App) -> AnyElement {
@@ -55,9 +52,9 @@ fn muted_badge(text: String, cx: &App) -> AnyElement {
 }
 
 /// The archive userpic (`dialogsArchiveUserpic` on a grey disc).
-fn archive_avatar() -> AnyElement {
+fn archive_avatar(size: f32) -> AnyElement {
     div()
-        .size(px(AVATAR))
+        .size(px(size))
         .flex_none()
         .rounded_full()
         .bg(bg_badge_muted())
@@ -66,7 +63,7 @@ fn archive_avatar() -> AnyElement {
         .justify_center()
         .child(
             Icon::new(IconName::Archive)
-                .size(px(AVATAR * 0.5))
+                .size(px(size * 0.5))
                 .text_color(text_on_fill()),
         )
         .into_any_element()
@@ -140,18 +137,22 @@ impl QuillApp {
     }
 
     /// The full "Archived chats" row.
-    pub(super) fn archive_row_element(&mut self, cx: &mut Context<Self>) -> AnyElement {
+    pub(super) fn archive_row_element(
+        &mut self,
+        height: Pixels,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let summary = self
             .session()
             .and_then(|s| s.archive_row_summary())
             .unwrap_or_default();
         let badge = summary.badge();
-        let height = chat_row_height(&[], self.appearance.preview_lines);
+        let m = self.density();
         div()
             .id("archive-row")
             .a11y_tag(quill::agent::ui_driver::redact::ARCHIVE)
             .w_full()
-            .px_2()
+            .px(px(m.row_inset))
             .h(height)
             .flex()
             .flex_col()
@@ -174,15 +175,10 @@ impl QuillApp {
                 div()
                     .flex()
                     .items_center()
-                    .gap_3()
-                    .child(archive_avatar())
+                    .gap(px(m.row_gap))
+                    .child(archive_avatar(m.avatar))
                     .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap_0p5()
-                            .min_w_0()
-                            .flex_1()
+                        row_text_lines(m)
                             .child(div().font_semibold().min_w_0().truncate().child(title()))
                             .child(
                                 div()

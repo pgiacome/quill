@@ -128,11 +128,9 @@ impl QuillApp {
                 .checked(self.appearance.adaptive_for_wide)
                 .label(tr(keys::SETTINGS_ADAPTIVE_WIDE))
                 .on_click(cx.listener(|this, &on, _, cx| {
+                    // `set_appearance` measures every window's rows again.
                     this.set_appearance(cx, |a| a.adaptive_for_wide = on);
                     this.history.invalidate_rows();
-                    this.history
-                        .scroller
-                        .update(cx, |state, cx| state.remeasure(cx));
                 }))
                 .into_any_element()
         })

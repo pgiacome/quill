@@ -4,8 +4,6 @@ use super::*;
 use crate::ui::status_note::StatusNote;
 use quill::lang::{keys, tr, tr_with};
 
-/// The channel bar's height: one composer row.
-const CHANNEL_BAR_HEIGHT: f32 = 52.;
 /// The width of each side of the channel bar around its action.
 const CHANNEL_BAR_SIDE: f32 = 96.;
 
@@ -321,8 +319,10 @@ impl QuillApp {
         }
         let status = chat.member_status();
         let muted = chat.is_muted();
+        let m = self.density();
         let footer = div()
-            .p_3()
+            .px_3()
+            .py(px(m.composer_inset_y))
             .border_t_1()
             .border_color(cx.theme().border)
             .flex()
@@ -346,7 +346,7 @@ impl QuillApp {
         let bar = |action: AnyElement, right: Option<Button>| {
             let side = || div().w(px(CHANNEL_BAR_SIDE)).h_full().flex().items_center();
             div()
-                .h(px(CHANNEL_BAR_HEIGHT))
+                .h(px(m.channel_bar))
                 .border_t_1()
                 .border_color(cx.theme().border)
                 .flex()

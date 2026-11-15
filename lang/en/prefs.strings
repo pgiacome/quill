@@ -295,6 +295,8 @@
 "qll_prefs_close_window_2" = "Close Window";
 "qll_prefs_cmd_enter" = "⌘⏎ Cmd+Enter";
 "qll_prefs_code" = "Code";
+"qll_prefs_compact_mode" = "Compact mode";
+"qll_prefs_compact_mode_about" = "Fit more chats and messages on screen with tighter spacing.";
 "qll_prefs_composer" = "Composer";
 "qll_prefs_confirm_before_calling" = "Confirm before calling";
 "qll_prefs_confirm_new_passcode" = "Confirm new passcode";

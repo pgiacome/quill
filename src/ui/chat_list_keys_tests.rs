@@ -173,7 +173,11 @@ fn page_keys_move_by_a_page(cx: &mut TestAppContext) {
     let page = app.update(vcx, |app, _| {
         crate::ui::chat_list_keys::rows_per_page(
             app.chat_list.scroll.bounds().size.height,
-            crate::ui::chat_row::chat_row_height(&[], app.appearance.preview_lines),
+            crate::ui::chat_row::chat_row_height(
+                false,
+                app.appearance.preview_lines,
+                app.density(),
+            ),
         )
     });
     assert!(page >= 2, "page of {page} rows");
