@@ -2,8 +2,8 @@
 #![deny(clippy::indexing_slicing)]
 
 use super::app::QuillApp;
+use super::chat_row::chat_avatar;
 use super::chat_row::initials_avatar;
-use super::chat_row::{chat_avatar, compact_count};
 use super::pressable::action_row;
 use super::profile_panels::{CopyAction, copy_menu};
 use super::*;
@@ -309,7 +309,7 @@ impl QuillApp {
             SharedMediaTab::Gifs,
         ];
         let mut rows: Vec<AnyElement> = Vec::new();
-        for (index, (_, one, many)) in quill::telegram::requests::MEDIA_COUNT_FILTERS
+        for (index, (_, key)) in quill::telegram::requests::MEDIA_COUNT_FILTERS
             .iter()
             .enumerate()
         {
@@ -326,11 +326,7 @@ impl QuillApp {
                 action_row(
                     ("info-media-count", index as u64),
                     Some(icon),
-                    format!(
-                        "{} {}",
-                        compact_count(count),
-                        if count == 1 { *one } else { *many }
-                    ),
+                    trn(*key, count),
                     false,
                     cx,
                 )

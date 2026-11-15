@@ -838,3 +838,17 @@
 "qll_media_shared_tab_stories" = "Stories";
 "qll_media_shared_tab_gifts" = "Gifts";
 "qll_media_emoji_set_system" = "System";
+"qll_media_count_photos#one" = "{count} photo";
+"qll_media_count_photos#other" = "{count} photos";
+"qll_media_count_videos#one" = "{count} video";
+"qll_media_count_videos#other" = "{count} videos";
+"qll_media_count_files#one" = "{count} file";
+"qll_media_count_files#other" = "{count} files";
+"qll_media_count_audio#one" = "{count} audio file";
+"qll_media_count_audio#other" = "{count} audio files";
+"qll_media_count_links#one" = "{count} shared link";
+"qll_media_count_links#other" = "{count} shared links";
+"qll_media_count_voice#one" = "{count} voice message";
+"qll_media_count_voice#other" = "{count} voice messages";
+"qll_media_count_gifs#one" = "{count} GIF";
+"qll_media_count_gifs#other" = "{count} GIFs";

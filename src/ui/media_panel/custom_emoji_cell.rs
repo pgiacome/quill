@@ -376,7 +376,7 @@ impl QuillApp {
             [
                 (PanelTab::Emoji, tr(keys::SWITCH_EMOJI)),
                 (PanelTab::Stickers, tr(keys::Q_MEDIA_STICKERS_2)),
-                (PanelTab::Gifs, "GIFs"),
+                (PanelTab::Gifs, tr(keys::Q_MEDIA_SHARED_TAB_GIFS)),
             ]
             .into_iter()
             .filter(|(value, _)| !emoji_only || *value == PanelTab::Emoji)

@@ -508,7 +508,7 @@ impl QuillApp {
                     }
                 })
                 .item(
-                    PopupMenuItem::new("GIFs")
+                    PopupMenuItem::new(tr(keys::Q_MEDIA_SHARED_TAB_GIFS))
                         .icon(IconName::SquarePlay)
                         .checked(gifs_open)
                         .on_click(move |_, _, cx| {
