@@ -110,3 +110,17 @@ Quill's `QuitGate` must close only its own "Stop and quit?" alert, never a box
 that opened on top of it (`src/ui/export_quit.rs`). Closing a dialog by id
 moves focus only when it was the newest; otherwise it hands its saved focus
 handle to the dialog above. Re-apply when re-vendoring.
+
+`src/theme/mod.rs`, `src/title_bar.rs`, `src/dialog/dialog.rs`: the title-bar
+height is a theme value, `Theme::title_bar_height` (default
+`TITLE_BAR_HEIGHT`, not serialized), changed with
+`Theme::set_title_bar_height`. `TitleBar` draws at that height and a dialog's
+backdrop leaves the band above it alone (`dismiss_below_y`). The setter also
+moves `sheet.margin_top` and `notification.margins.top` by the same amount,
+so sheets and notifications keep their distance from a shorter bar; it is a
+plain `&mut self` setter, so callers change it through `Theme::global_mut`
+and refresh the windows themselves. Quill's Compact mode sets a 26px bar from
+`DensityMetrics::title_bar` in `apply_appearance`
+(`docs/decisions/compact-mode-density.md`). Write the height only through the
+setter: the field is public, and writing it directly leaves the sheet and
+notification margins behind. Re-apply when re-vendoring.

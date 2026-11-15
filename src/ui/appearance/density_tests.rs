@@ -173,6 +173,58 @@ fn the_chat_list_keeps_its_top_row_through_a_density_change(cx: &mut TestAppCont
     }
 }
 
+/// The top row is noted in one list and belongs to it: a density change
+/// that lands while the list is not rebuilt (no frame yet, or the rows are
+/// off screen) is never put back on top of another folder, category or tab.
+#[gpui_kit::test]
+fn a_noted_top_row_ends_with_the_list_it_was_noted_in(cx: &mut TestAppContext) {
+    let _prefs = own_appearance_prefs("quill-density-top-row-view");
+    let (app, mut vcx) = new_app(cx, 600.);
+    let vcx = &mut vcx;
+    app.update(vcx, |app, cx| {
+        if let Some(session) = app.demo_session.as_mut() {
+            crate::ui::demo::add_stress_chats(session, 60);
+        }
+        app.notify_sidebar(cx);
+        cx.notify();
+    });
+    frames(vcx);
+    let scroll_down = |app: &Entity<QuillApp>, vcx: &mut VisualTestContext| {
+        app.update(vcx, |app, _| {
+            app.chat_list
+                .scroll
+                .set_offset(gpui_kit::point(px(0.), px(-1_000.)));
+        });
+        frames(vcx);
+    };
+    let noted = |app: &Entity<QuillApp>, vcx: &mut VisualTestContext| {
+        app.read_with(vcx, |app, _| app.chat_list.keep_top.is_some())
+    };
+    scroll_down(&app, vcx);
+
+    // Another category before the list is built again.
+    app.update(vcx, |app, cx| {
+        app.set_appearance(cx, |appearance| appearance.density = Density::Compact);
+        assert!(app.chat_list.keep_top.is_some(), "the top row is noted");
+        app.set_chat_list_view(crate::ui::app::ChatListFilter::Unread, None);
+    });
+    assert!(!noted(&app, vcx), "another view drops it");
+
+    // The rows leave the screen (another tab) before they are built again.
+    app.update(vcx, |app, _| {
+        app.set_chat_list_view(crate::ui::app::ChatListFilter::All, None);
+    });
+    frames(vcx);
+    scroll_down(&app, vcx);
+    app.update(vcx, |app, cx| {
+        app.set_appearance(cx, |appearance| appearance.density = Density::Standard);
+        assert!(app.chat_list.keep_top.is_some(), "the top row is noted");
+        app.chat_list
+            .show_tab(crate::ui::chat_list_state::SidebarTab::Contacts);
+    });
+    assert!(!noted(&app, vcx), "leaving the rows drops it");
+}
+
 #[gpui_kit::test]
 fn the_header_fit_reckons_with_the_sizes_the_kit_draws(cx: &mut TestAppContext) {
     let _prefs = own_appearance_prefs("quill-density-header");

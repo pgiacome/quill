@@ -117,12 +117,17 @@ fn sync_traffic_lights(window: &mut Window, cx: &App, height: Pixels) {
     if before.is_some_and(|before| before != height)
         && let Some(position) = TitleBar::title_bar_options().traffic_light_position
     {
+        #[cfg(target_os = "macos")]
         window.set_traffic_light_position(traffic_lights_at(position, height));
+        // `Window::set_traffic_light_position` exists only on macOS.
+        #[cfg(not(target_os = "macos"))]
+        let _ = (position, &window);
     }
 }
 
 /// The kit's traffic-light position for its default bar, moved to stay
 /// centred on a bar `height` tall.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn traffic_lights_at(default: Point<Pixels>, height: Pixels) -> Point<Pixels> {
     point(default.x, default.y - (TITLE_BAR_HEIGHT - height) / 2.)
 }
