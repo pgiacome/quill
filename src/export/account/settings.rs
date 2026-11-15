@@ -2,6 +2,7 @@
 //! `fullChats` in `export/export_settings.h`, and the options of
 //! `export/view/export_view_settings.cpp`).
 use crate::export::settings::{DEFAULT_SIZE_LIMIT, ExportFormat, MediaKind, MediaTypes, Skip};
+use crate::lang::{keys, tr};
 use std::path::PathBuf;
 
 /// The parts of the account an export can include. tdesktop's
@@ -45,35 +46,28 @@ impl Section {
     /// The checkbox label (tdesktop's wording).
     pub fn label(self) -> &'static str {
         match self {
-            Self::PersonalInfo | Self::Userpics => "Account information",
-            Self::Contacts => "Contacts list",
-            Self::Stories => "Story archive",
-            Self::ProfileMusic => "Music on Profiles",
-            Self::Sessions => "Active sessions",
-            Self::PersonalChats => "Personal chats",
-            Self::BotChats => "Bot chats",
-            Self::PrivateGroups => "Private groups",
-            Self::PrivateChannels => "Private channels",
-            Self::PublicGroups => "Public groups",
-            Self::PublicChannels => "Public channels",
+            Self::PersonalInfo | Self::Userpics => tr(keys::Q_OPS_EXPORT_ACCOUNT_INFORMATION),
+            Self::Contacts => tr(keys::Q_OPS_EXPORT_ACCOUNT_CONTACTS),
+            Self::Stories => tr(keys::Q_OPS_EXPORT_ACCOUNT_STORIES),
+            Self::ProfileMusic => tr(keys::Q_OPS_EXPORT_ACCOUNT_PROFILE_MUSIC),
+            Self::Sessions => tr(keys::Q_OPS_EXPORT_ACCOUNT_SESSIONS),
+            Self::PersonalChats => tr(keys::Q_OPS_EXPORT_ACCOUNT_PERSONAL_CHATS),
+            Self::BotChats => tr(keys::Q_OPS_EXPORT_ACCOUNT_BOT_CHATS),
+            Self::PrivateGroups => tr(keys::Q_OPS_EXPORT_ACCOUNT_PRIVATE_GROUPS),
+            Self::PrivateChannels => tr(keys::Q_OPS_EXPORT_ACCOUNT_PRIVATE_CHANNELS),
+            Self::PublicGroups => tr(keys::Q_OPS_EXPORT_ACCOUNT_PUBLIC_GROUPS),
+            Self::PublicChannels => tr(keys::Q_OPS_EXPORT_ACCOUNT_PUBLIC_CHANNELS),
         }
     }
 
     /// The line under the checkbox, for the sections that have one.
     pub fn about(self) -> Option<&'static str> {
         Some(match self {
-            Self::PersonalInfo | Self::Userpics => {
-                "Your chosen display name, username, phone number and profile photos."
-            }
-            Self::Contacts => {
-                "If you allow access, contacts are continuously synced with Telegram. You can \
-                 adjust this in Settings › Privacy & Security on mobile devices."
-            }
-            Self::Stories => "All stories you posted from Telegram mobile apps.",
-            Self::ProfileMusic => "All tracks you saved to your playlist.",
-            Self::Sessions => {
-                "Telegram keeps this to show your connected devices in Active sessions."
-            }
+            Self::PersonalInfo | Self::Userpics => tr(keys::Q_OPS_EXPORT_ACCOUNT_ABOUT_ACCOUNT),
+            Self::Contacts => tr(keys::Q_OPS_EXPORT_ACCOUNT_ABOUT_CONTACTS),
+            Self::Stories => tr(keys::Q_OPS_EXPORT_ACCOUNT_ABOUT_STORIES),
+            Self::ProfileMusic => tr(keys::Q_OPS_EXPORT_ACCOUNT_ABOUT_MUSIC),
+            Self::Sessions => tr(keys::Q_OPS_EXPORT_ACCOUNT_ABOUT_SESSIONS),
             _ => return None,
         })
     }

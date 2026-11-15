@@ -9,6 +9,7 @@
 //! behind an explicit confirmation in the UI.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use crate::state::fetch::Fetch;
 use crate::telegram::envelope::{MessageSender, StickerContent, parse_sticker_value};
 pub use feature::{BusinessFeature, PremiumFeature};
@@ -130,9 +131,9 @@ impl TxFilter {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::All => "All transactions",
-            Self::Incoming => "Incoming",
-            Self::Outgoing => "Outgoing",
+            Self::All => tr(keys::Q_MONEY_TX_ALL),
+            Self::Incoming => tr(keys::Q_MONEY_TX_INCOMING),
+            Self::Outgoing => tr(keys::Q_MONEY_TX_OUTGOING),
         }
     }
 

@@ -720,3 +720,11 @@
 "qll_people_import_unreadable" = "Couldn't read {file}.";
 "qll_people_import_too_large" = "{file} is too large to be a contact list.";
 "qll_people_import_unnamed" = "Unnamed";
+"qll_people_profile_tab_posts" = "Posts";
+"qll_people_profile_tab_gifts" = "Gifts";
+"qll_people_profile_tab_media" = "Media";
+"qll_people_profile_tab_files" = "Files";
+"qll_people_profile_tab_links" = "Links";
+"qll_people_profile_tab_music" = "Music";
+"qll_people_profile_tab_voice" = "Voice messages";
+"qll_people_profile_tab_gifs" = "GIFs";

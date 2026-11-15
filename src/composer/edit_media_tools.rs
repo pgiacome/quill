@@ -12,6 +12,7 @@
 
 use super::*;
 use crate::ids::FileId;
+use crate::lang::{keys, tr};
 use crate::telegram::envelope::{ChatKind, VideoContent};
 
 /// One entry of the edit-media menu.
@@ -30,9 +31,9 @@ impl EditMediaTool {
     /// Menu label (tdesktop `lng_context_draw` is "Edit Image").
     pub fn label(self) -> &'static str {
         match self {
-            Self::EditImage => "Edit Image",
-            Self::EditCover => "Edit Cover",
-            Self::EditVideo => "Edit Video",
+            Self::EditImage => tr(keys::Q_CHAT_EDIT_IMAGE),
+            Self::EditCover => tr(keys::Q_CHAT_EDIT_COVER),
+            Self::EditVideo => tr(keys::Q_CHAT_EDIT_VIDEO),
         }
     }
 }

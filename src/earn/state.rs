@@ -4,6 +4,7 @@
 //! and bot edit rows.
 
 use super::*;
+use crate::lang::{keys, tr};
 use crate::premium_hub::{StarAmount, StarTx, StarTxPage, TxFilter};
 use crate::state::fetch::Fetch;
 use std::collections::HashMap;
@@ -305,10 +306,10 @@ impl EarnPanel {
             Self::Revenue {
                 screen: EarnScreen::Monetization,
                 ..
-            } => "Monetization",
-            Self::Revenue { .. } => "Stars Balance",
-            Self::Setup { .. } => "Affiliate Program",
-            Self::Join { .. } => "Affiliate Programs",
+            } => tr(keys::Q_MONEY_EARN_MONETIZATION),
+            Self::Revenue { .. } => tr(keys::Q_MONEY_EARN_STARS_BALANCE),
+            Self::Setup { .. } => tr(keys::Q_MONEY_EARN_AFFILIATE_PROGRAM),
+            Self::Join { .. } => tr(keys::Q_MONEY_EARN_AFFILIATE_PROGRAMS),
         }
     }
 }

@@ -15,6 +15,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::RequestId;
+use crate::lang::{keys, tr};
 use crate::telegram::envelope::ChatKind;
 
 /// tdesktop `lng_group_invite_bad_link`.
@@ -108,48 +109,40 @@ pub struct CallLinkConfirm {
 impl CallLinkConfirm {
     pub fn text(&self) -> &'static str {
         match (self.leave, self.target_is_channel) {
-            (LeaveKind::PrivateCall, false) => "End your active call and join this video chat?",
-            (LeaveKind::PrivateCall, true) => {
-                "Do you want to end your active call and join a live stream in this channel?"
-            }
+            (LeaveKind::PrivateCall, false) => tr(keys::Q_OPS_CALL_LINK_LEAVE_PRIVATE_VIDEO),
+            (LeaveKind::PrivateCall, true) => tr(keys::Q_OPS_CALL_LINK_LEAVE_PRIVATE_STREAM),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: false,
                 },
                 false,
-            ) => "Leave your currently active video chat and join this video chat?",
+            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_GROUP_VIDEO),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: false,
                 },
                 true,
-            ) => {
-                "Do you want to leave your active video chat and join a live stream in this channel?"
-            }
+            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_GROUP_STREAM),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: true,
                 },
                 false,
-            ) => {
-                "Do you want to leave your active live stream and join a video chat in this group?"
-            }
+            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_STREAM_VIDEO),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: true,
                 },
                 true,
-            ) => {
-                "Do you want to leave your active live stream and join a live stream in this channel?"
-            }
+            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_STREAM_STREAM),
         }
     }
 
     /// The confirm button (`lng_call_bar_hangup`, `lng_group_call_leave`).
     pub fn button(&self) -> &'static str {
         match self.leave {
-            LeaveKind::PrivateCall => "End call",
-            LeaveKind::GroupCall { .. } => "Leave",
+            LeaveKind::PrivateCall => tr(keys::CALL_BAR_HANGUP),
+            LeaveKind::GroupCall { .. } => tr(keys::GROUP_CALL_LEAVE),
         }
     }
 }

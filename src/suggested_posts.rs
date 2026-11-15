@@ -204,10 +204,6 @@ impl SuggestTerms {
 pub fn bar_title() -> &'static str {
     tr(keys::Q_MONEY_SUGGEST_A_POST_BELOW)
 }
-/// The bar's and the price box's title when changing an offer
-/// (`lng_suggest_options_change`).
-pub const CHANGE_TITLE: &str = "Suggest Changes";
-
 /// The suggest bar's second line (`SuggestOptionsBar::composeText`). The
 /// amount is drawn as the currency icon followed by the number, so the
 /// line comes in parts.
@@ -304,15 +300,15 @@ impl SuggestMode {
     pub fn price_title(self) -> &'static str {
         match self {
             Self::New | Self::Publish => "Suggest a Message",
-            Self::Change => CHANGE_TITLE,
+            Self::Change => tr(keys::Q_MONEY_SUGGEST_CHANGES),
         }
     }
 
     /// The time box title ("Time" / "Edit Time").
     pub fn time_title(self) -> &'static str {
         match self {
-            Self::New | Self::Publish => "Time",
-            Self::Change => "Edit Time",
+            Self::New | Self::Publish => tr(keys::Q_MONEY_SUGGEST_TIME),
+            Self::Change => tr(keys::Q_MONEY_SUGGEST_EDIT_TIME),
         }
     }
 
@@ -735,7 +731,7 @@ impl SuggestBar {
 
     pub fn title(&self) -> &'static str {
         match self.mode() {
-            SuggestMode::Change => CHANGE_TITLE,
+            SuggestMode::Change => tr(keys::Q_MONEY_SUGGEST_CHANGES),
             SuggestMode::New | SuggestMode::Publish => bar_title(),
         }
     }

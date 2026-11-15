@@ -1,6 +1,7 @@
 //! What a chat export includes: media kinds, the size cap, the output
 //! format and the date range (tdesktop `export/export_settings.h` and the
 //! size steps in `export/view/export_view_settings.cpp`).
+use crate::lang::{keys, tr};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -42,13 +43,13 @@ impl MediaKind {
     /// The checkbox label in the export box.
     pub fn label(self) -> &'static str {
         match self {
-            Self::Photo => "Photos",
-            Self::Video => "Videos",
-            Self::VoiceMessage => "Voice messages",
-            Self::VideoMessage => "Video messages",
-            Self::Sticker => "Stickers",
-            Self::Gif => "GIFs",
-            Self::File => "Files",
+            Self::Photo => tr(keys::Q_OPS_EXPORT_PHOTOS),
+            Self::Video => tr(keys::Q_OPS_EXPORT_VIDEOS),
+            Self::VoiceMessage => tr(keys::Q_OPS_EXPORT_VOICE_MESSAGES),
+            Self::VideoMessage => tr(keys::Q_OPS_EXPORT_VIDEO_MESSAGES),
+            Self::Sticker => tr(keys::Q_OPS_EXPORT_STICKERS),
+            Self::Gif => tr(keys::Q_OPS_EXPORT_GIFS),
+            Self::File => tr(keys::Q_OPS_EXPORT_FILES),
         }
     }
 

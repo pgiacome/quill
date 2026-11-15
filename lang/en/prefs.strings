@@ -862,3 +862,16 @@
 "qll_prefs_tabs_text_only" = "Text only";
 "qll_prefs_tabs_text_and_icons" = "Text and icons";
 "qll_prefs_tabs_icons_only" = "Icons only";
+"qll_prefs_network_mobile" = "Mobile data";
+"qll_prefs_network_roaming" = "Roaming";
+"qll_prefs_network_wifi" = "Wi-Fi";
+"qll_prefs_usage_mobile" = "Mobile network";
+"qll_prefs_usage_wifi" = "Wi-Fi";
+"qll_prefs_usage_roaming" = "Roaming";
+"qll_prefs_usage_other" = "Other networks";
+"qll_prefs_notification_open" = "Open";
+"qll_prefs_notification_reply" = "Reply";
+"qll_prefs_notification_mark_read" = "Mark as read";
+"qll_prefs_call_notification_open" = "Open";
+"qll_prefs_call_notification_accept" = "Accept";
+"qll_prefs_call_notification_decline" = "Decline";

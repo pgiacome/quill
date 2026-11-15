@@ -649,3 +649,15 @@
 "qll_chat_emoji_word_lookup_failed" = "Couldn't look up emoji for that word.";
 "qll_chat_hide_search_results" = "Hide results";
 "qll_chat_show_search_results" = "Show results";
+"qll_chat_bottom_restart" = "Restart";
+"qll_chat_bottom_unblock" = "Unblock";
+"qll_chat_bottom_join_channel" = "Join channel";
+"qll_chat_bottom_join_group" = "Join group";
+"qll_chat_bottom_apply_join_group" = "Apply to join group";
+"qll_chat_bottom_unmute" = "Unmute";
+"qll_chat_bottom_mute" = "Mute";
+"qll_chat_bottom_start" = "Start";
+"qll_chat_bottom_go_premium" = "Go Premium";
+"qll_chat_edit_image" = "Edit Image";
+"qll_chat_edit_cover" = "Edit Cover";
+"qll_chat_edit_video" = "Edit Video";

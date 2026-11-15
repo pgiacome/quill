@@ -12,6 +12,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::AccountKey;
+use crate::lang::{keys, tr};
 use crate::notify::{NotificationCommand, NotifyBackend, current_backend};
 
 /// What the user picked on a call notification.
@@ -42,9 +43,9 @@ impl CallNotificationAction {
 
     pub fn label(self) -> &'static str {
         match self {
-            CallNotificationAction::Open => "Open",
-            CallNotificationAction::Accept => "Accept",
-            CallNotificationAction::Decline => "Decline",
+            CallNotificationAction::Open => tr(keys::Q_PREFS_CALL_NOTIFICATION_OPEN),
+            CallNotificationAction::Accept => tr(keys::Q_PREFS_CALL_NOTIFICATION_ACCEPT),
+            CallNotificationAction::Decline => tr(keys::Q_PREFS_CALL_NOTIFICATION_DECLINE),
         }
     }
 

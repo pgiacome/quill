@@ -1,5 +1,6 @@
 //! Connection indicator: how the TDLib connection state renders.
 use super::*;
+use crate::lang::{keys, tr};
 
 /// Slice parity:platform-offline-indicator — what the UI renders for a
 /// TDLib connection state. Only `Ready` is "connected" (no indicator);
@@ -20,7 +21,7 @@ impl ConnectionIndicator {
     /// The label the connection strip renders for this indicator.
     pub fn label(&self) -> &'static str {
         match self {
-            ConnectionIndicator::Offline => "Waiting for network…",
+            ConnectionIndicator::Offline => tr(keys::Q_MISC_CONNECTION_WAITING),
             ConnectionIndicator::Transitioning(label) => label,
         }
     }
@@ -32,12 +33,18 @@ pub fn connection_indicator(state: ConnectionState) -> Option<ConnectionIndicato
     match state {
         ConnectionState::Ready | ConnectionState::Initial => None,
         ConnectionState::WaitingForNetwork => Some(ConnectionIndicator::Offline),
-        ConnectionState::ConnectingToProxy => {
-            Some(ConnectionIndicator::Transitioning("Connecting to proxy…"))
-        }
-        ConnectionState::Connecting => Some(ConnectionIndicator::Transitioning("Connecting…")),
-        ConnectionState::Updating => Some(ConnectionIndicator::Transitioning("Updating…")),
-        ConnectionState::Unknown => Some(ConnectionIndicator::Transitioning("Connecting…")),
+        ConnectionState::ConnectingToProxy => Some(ConnectionIndicator::Transitioning(tr(
+            keys::Q_MISC_CONNECTION_PROXY,
+        ))),
+        ConnectionState::Connecting => Some(ConnectionIndicator::Transitioning(tr(
+            keys::Q_MISC_CONNECTION_CONNECTING,
+        ))),
+        ConnectionState::Updating => Some(ConnectionIndicator::Transitioning(tr(
+            keys::Q_MISC_CONNECTION_UPDATING,
+        ))),
+        ConnectionState::Unknown => Some(ConnectionIndicator::Transitioning(tr(
+            keys::Q_MISC_CONNECTION_CONNECTING,
+        ))),
     }
 }
 

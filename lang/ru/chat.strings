@@ -531,3 +531,15 @@
 "qll_chat_emoji_word_lookup_failed" = "Не удалось найти эмодзи для этого слова.";
 "qll_chat_hide_search_results" = "Скрыть результаты";
 "qll_chat_show_search_results" = "Показать результаты";
+"qll_chat_bottom_restart" = "Перезапустить";
+"qll_chat_bottom_unblock" = "Разблокировать";
+"qll_chat_bottom_join_channel" = "Вступить в канал";
+"qll_chat_bottom_join_group" = "Вступить в группу";
+"qll_chat_bottom_apply_join_group" = "Подать заявку на вступление";
+"qll_chat_bottom_unmute" = "Включить звук";
+"qll_chat_bottom_mute" = "Выключить звук";
+"qll_chat_bottom_start" = "Начать";
+"qll_chat_bottom_go_premium" = "Оформить Premium";
+"qll_chat_edit_image" = "Изменить изображение";
+"qll_chat_edit_cover" = "Изменить обложку";
+"qll_chat_edit_video" = "Изменить видео";

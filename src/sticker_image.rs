@@ -7,6 +7,7 @@
 #![deny(clippy::indexing_slicing)]
 
 #[cfg(feature = "ui")]
+use crate::lang::{keys, tr};
 use image::RgbaImage;
 
 /// Side of the editor's transparent canvas. tdesktop prepares the scene at
@@ -39,10 +40,10 @@ impl Corners {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Large => "Large",
-            Self::Medium => "Medium",
-            Self::Small => "Small",
-            Self::None => "None",
+            Self::Large => tr(keys::Q_MISC_CORNERS_LARGE),
+            Self::Medium => tr(keys::Q_MISC_CORNERS_MEDIUM),
+            Self::Small => tr(keys::Q_MISC_CORNERS_SMALL),
+            Self::None => tr(keys::Q_MISC_CORNERS_NONE),
         }
     }
 

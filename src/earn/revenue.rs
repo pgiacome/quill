@@ -4,6 +4,7 @@
 //! `info/channel_statistics/earn` and `info/bot/earn` screens.
 
 use super::{int, text};
+use crate::lang::{keys, tr};
 use crate::premium_hub::StarAmount;
 use crate::telegram::envelope::StatisticalGraph;
 use serde_json::Value;
@@ -144,9 +145,9 @@ impl TonTx {
     /// The row's headline (`lng_channel_earn_history_*`).
     pub fn title(&self) -> &'static str {
         match self.kind {
-            TonTxKind::Refund { .. } => "Refund",
-            TonTxKind::Withdrawal { .. } => "Collection",
-            _ => "Rewards from ads",
+            TonTxKind::Refund { .. } => tr(keys::Q_MONEY_TON_TX_REFUND),
+            TonTxKind::Withdrawal { .. } => tr(keys::Q_MONEY_TON_TX_COLLECTION),
+            _ => tr(keys::Q_MONEY_TON_TX_REWARDS),
         }
     }
 

@@ -632,3 +632,16 @@
 "qll_prefs_tabs_text_only" = "Только текст";
 "qll_prefs_tabs_text_and_icons" = "Текст и значки";
 "qll_prefs_tabs_icons_only" = "Только значки";
+"qll_prefs_network_mobile" = "Мобильные данные";
+"qll_prefs_network_roaming" = "Роуминг";
+"qll_prefs_network_wifi" = "Wi-Fi";
+"qll_prefs_usage_mobile" = "Мобильная сеть";
+"qll_prefs_usage_wifi" = "Wi-Fi";
+"qll_prefs_usage_roaming" = "Роуминг";
+"qll_prefs_usage_other" = "Другие сети";
+"qll_prefs_notification_open" = "Открыть";
+"qll_prefs_notification_reply" = "Ответить";
+"qll_prefs_notification_mark_read" = "Отметить прочитанным";
+"qll_prefs_call_notification_open" = "Открыть";
+"qll_prefs_call_notification_accept" = "Принять";
+"qll_prefs_call_notification_decline" = "Отклонить";
