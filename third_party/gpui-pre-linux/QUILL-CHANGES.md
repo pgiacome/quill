@@ -70,6 +70,25 @@ no longer crashes the app (step 7 of `docs/decisions/no-crash-audit.md`):
 Type-checked with `cargo check --target x86_64-unknown-linux-gnu` on macOS;
 not built or run on Linux. See `docs/decisions/gpui-fork-panics.md`.
 
+The Quill project also changed it in 2026 so an X11 window follows the
+desktop's scale instead of the monitor's pixel density
+(`docs/decisions/x11-desktop-scale.md`):
+
+- `src/linux/x11/xsettings_scale.rs` (new): reads the scale from an
+  `_XSETTINGS_SETTINGS` property the way GTK 3 does
+  (`Gdk/WindowScalingFactor` times `Gdk/UnscaledDPI`, else `Xft/DPI`, over
+  96). A manager that publishes no scale key asks for 1.0. Unit tests run
+  with `scripts/test-x11-scale.sh`.
+- `src/linux/x11/client.rs`: `get_scale_factor` asks the XSETTINGS manager
+  (`get_xsettings_scale_factor`) after `GPUI_X11_SCALE_FACTOR` and `Xft.dpi`
+  and before the RandR physical-size guess, which is now only reached when
+  no XSETTINGS manager runs. This replaces upstream's
+  `TODO: Use scale factor from XSettings here`.
+- `src/linux/x11.rs`: declares the new module.
+
+Built and run on Xfce (Ubuntu 24.04, X11): the default window opens at
+scale 1.0 where the RandR guess gave 1.75. Not run on other desktops.
+
 The Quill project also changed it in 2026 for Agent access's screenshots
 (`docs/decisions/agent-access.md`, phase 5 step 3):
 
