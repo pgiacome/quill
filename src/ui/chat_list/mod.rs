@@ -6,7 +6,7 @@ use super::app::{ChatListFilter, PaneMode};
 use super::chat_row::PinnedChatDrag;
 use super::chat_row::{
     ChatListItem, chat_list_caption, chat_list_skeleton_row, chat_row_has_tags, chat_row_height,
-    chat_row_height_tagged, chat_row_tags, static_chat_row,
+    static_chat_row,
 };
 use super::notifications::notification_settings_json;
 use super::*;
@@ -648,8 +648,9 @@ impl QuillApp {
                 .filter_map(|id| {
                     let chat = session.chats.get(id)?;
                     let height = chat_row_height(
-                        &chat_row_tags(chat, &names, tags, viewing),
+                        chat_row_has_tags(chat, &names, tags, viewing),
                         session.chat_row_lines(chat.id, setting),
+                        self.density(),
                     );
                     Some((*id, f32::from(height)))
                 })
@@ -827,6 +828,8 @@ mod pin_drag_tests;
 pub(in crate::ui) use drop_on_row::DropOnRow;
 pub(in crate::ui) use drop_topic::DropTopic;
 mod header_fit;
+mod keep_top;
+pub(in crate::ui) use keep_top::ListTop;
 mod listed;
 mod view;
 pub(in crate::ui) use view::ChatListView;

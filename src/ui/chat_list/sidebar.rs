@@ -73,6 +73,7 @@ impl QuillApp {
     /// The column itself: its frame, the header and the list caption.
     #[inline(never)]
     fn sidebar_column(&self, mode: PaneMode, cx: &mut Context<Self>) -> Stateful<Div> {
+        let m = self.density();
         div()
             .id("sidebar")
             .when(mode != PaneMode::Ready, |this| this.overflow_y_scroll())
@@ -81,13 +82,14 @@ impl QuillApp {
             .w(self.list_width())
             .flex_none()
             .h_full()
-            .p_3()
+            .px(px(m.sidebar_inset_x))
+            .py(px(m.sidebar_inset_y))
             .border_r_1()
             .border_color(cx.theme().border)
             .bg(cx.theme().sidebar)
             .flex()
             .flex_col()
-            .gap_2()
+            .gap(px(m.sidebar_gap))
             .child(self.sidebar_header(mode, cx))
             .when_some(
                 (self.chat_list.tab == SidebarTab::Chats)
@@ -175,6 +177,7 @@ impl QuillApp {
         let mut chats: Vec<&ChatSummary> = self.listed_main_chats();
         // Slice CL2: the Archived category shows only the archive section.
         let show_main_list = filter != ChatListFilter::Archived;
+        let m = self.density();
         // Slice CL3: multi-select mode — rows toggle the check instead of
         // opening the chat. Defined once here so the select bar, the main
         // loop, and the archive loop all see it.
@@ -197,7 +200,7 @@ impl QuillApp {
                 // still loading.
                 let mut loading_list = list;
                 for i in 0..4 {
-                    loading_list = loading_list.child(chat_list_skeleton_row(i));
+                    loading_list = loading_list.child(chat_list_skeleton_row(i, m));
                 }
                 loading_list
             } else {
@@ -210,13 +213,15 @@ impl QuillApp {
         // per visible row in `chat_list_item_element`. Rebuilt every
         // render; the list below only reads it.
         let row_height = |chat: &ChatSummary| {
-            chat_row_height_tagged(
+            chat_row_height(
                 chat_row_has_tags(chat, &folder_tags.names, folder_tags.show, folder),
                 self.session().map_or(self.appearance.preview_lines, |s| {
                     s.chat_row_lines(chat.id, self.appearance.preview_lines)
                 }),
+                m,
             )
         };
+        let default_height = chat_row_height(false, self.appearance.preview_lines, m);
         let mut items: Vec<ChatListItem> = Vec::with_capacity(chats.len() + 2);
         // tdesktop: "Archived chats" is a pinned-top entry of the
         // unfiltered main list, a full row or (with `archiveCollapsed`) a
@@ -238,7 +243,7 @@ impl QuillApp {
         ) {
             quill::chatlist_archive::ArchiveRowMode::Row => {
                 items.push(ChatListItem::ArchiveRow {
-                    height: chat_row_height(&[], self.appearance.preview_lines),
+                    height: default_height,
                 });
             }
             quill::chatlist_archive::ArchiveRowMode::Collapsed => {
@@ -288,7 +293,7 @@ impl QuillApp {
                         if let Some(row) = communities.get(index) {
                             items.push(ChatListItem::Community {
                                 community_id: row.community_id,
-                                height: chat_row_height(&[], self.appearance.preview_lines),
+                                height: default_height,
                             });
                         }
                     }
@@ -340,20 +345,10 @@ impl QuillApp {
         let sizes: Rc<Vec<ItemSize<Pixels>>> = Rc::new(
             items
                 .iter()
-                .map(|item| {
-                    let height = match item {
-                        ChatListItem::Chat { height, .. } => *height,
-                        ChatListItem::ArchiveRow { height }
-                        | ChatListItem::Community { height, .. } => *height,
-                        ChatListItem::ArchiveBar => {
-                            px(quill::chatlist_archive::COLLAPSED_BAR_HEIGHT)
-                        }
-                        ChatListItem::StoryStrip => px(quill::stories_strip::FULL_HEIGHT),
-                    };
-                    ItemSize::new(px(0.), height)
-                })
+                .map(|item| ItemSize::new(px(0.), item.height()))
                 .collect(),
         );
+        self.restore_chat_list_top(&items);
         self.chat_list.begin_row_pass();
         self.chat_list.items = items;
         self.chat_list.folder_tags = folder_tags;

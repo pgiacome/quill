@@ -406,6 +406,10 @@ pub(crate) struct ChatListUi {
     pub(super) drop_topic: Option<super::chat_list::DropTopic>,
     /// The keyboard selection in the list and in its search results.
     pub(super) keys: super::chat_list_keys::ChatListKeys,
+    /// The row that was on top when a setting changed how tall rows are,
+    /// put back on top by the next build of the list. Another view or
+    /// leaving the rows (`show_view`, `leave_rows`) drops it.
+    pub(super) keep_top: Option<super::chat_list::ListTop>,
 }
 
 /// Which list the sidebar shows (the tab strip under its header).
@@ -439,6 +443,7 @@ impl ChatListUi {
             drop_on_row: Default::default(),
             drop_topic: None,
             keys: Default::default(),
+            keep_top: None,
         }
     }
 }

@@ -69,11 +69,11 @@ fn a_forum_row_is_three_lines_and_a_plain_row_keeps_its_height(cx: &mut TestAppC
     let vcx = &mut vcx;
     let forum = shown(vcx, ("chat-row", 71));
     let plain = shown(vcx, ("chat-row", 11));
-    let line = quill::chatlist_style::chat_row_height_px(false, 3);
+    let line = quill::chatlist_style::chat_row_height_px(false, 3, &quill::density::STANDARD);
     assert_eq!(f32::from(forum.size.height), line);
     assert_eq!(
         f32::from(plain.size.height),
-        quill::chatlist_style::chat_row_height_px(false, 2)
+        quill::chatlist_style::chat_row_height_px(false, 2, &quill::density::STANDARD)
     );
     // The topics line sits between the name and the message line.
     let titles = shown(vcx, ("forum-titles", 71));
@@ -81,6 +81,49 @@ fn a_forum_row_is_three_lines_and_a_plain_row_keeps_its_height(cx: &mut TestAppC
     assert!(titles.bottom() < forum.bottom() - px(14.));
     // Titles that do not fit end in an ellipsis inside the row, never past it.
     assert!(titles.right() <= forum.right());
+}
+
+/// The height the chat list declared to its `VirtualList` for `chat`'s row.
+fn declared(app: &Entity<QuillApp>, vcx: &mut VisualTestContext, chat: i64) -> Pixels {
+    app.read_with(vcx, |app, _| {
+        app.chat_list
+            .items
+            .iter()
+            .find(|item| {
+                item.list_row() == Some(crate::ui::chat_list_keys::ListRow::Chat(ChatId(chat)))
+            })
+            .map(|item| item.height())
+            .expect("the chat is listed")
+    })
+}
+
+#[gpui_kit::test]
+fn compact_rows_keep_forum_controls_within_the_virtual_list_height(cx: &mut TestAppContext) {
+    let _prefs = crate::ui::appearance::own_appearance_prefs("quill-density-forum-row");
+    let (app, mut vcx) = open(cx);
+    let standard = (
+        shown(&mut vcx, ("chat-row", 71)).size.height,
+        shown(&mut vcx, ("chat-row", 11)).size.height,
+    );
+    app.update(&mut vcx, |app, cx| {
+        app.set_appearance(cx, |appearance| {
+            appearance.density = quill::density::Density::Compact;
+        });
+    });
+    frames(&mut vcx);
+
+    let forum = shown(&mut vcx, ("chat-row", 71));
+    let badge = shown(&mut vcx, ("unread-pill", 71));
+    let message = shown(&mut vcx, ("forum-jump-message", 71));
+    let next = shown(&mut vcx, ("chat-row", 72));
+    let plain = shown(&mut vcx, ("chat-row", 11));
+    // Drawn at the height the list positions them by, and shorter than in
+    // Standard.
+    assert_eq!(forum.size.height, declared(&app, &mut vcx, 71));
+    assert_eq!(plain.size.height, declared(&app, &mut vcx, 11));
+    assert!(forum.size.height < standard.0 && plain.size.height < standard.1);
+    assert!(badge.top() >= forum.top() && badge.bottom() <= forum.bottom());
+    assert!(message.top() >= badge.bottom() && message.bottom() <= next.top());
 }
 
 #[gpui_kit::test]

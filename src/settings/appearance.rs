@@ -224,6 +224,10 @@ pub struct AppearancePrefs {
     /// in fixed pixels do not.
     #[serde(default = "default_interface_scale")]
     pub interface_scale_pct: u16,
+    /// How tightly the chat list and conversation are laid out
+    /// (Appearance → Compact mode).
+    #[serde(default)]
+    pub density: crate::density::Density,
     /// Message text size in px.
     #[serde(default = "default_font_size")]
     pub font_size_px: u8,
@@ -325,6 +329,7 @@ impl Default for AppearancePrefs {
             adaptive_for_wide: false,
             follow_omarchy: true,
             interface_scale_pct: INTERFACE_SCALE_DEFAULT,
+            density: crate::density::Density::Standard,
             font_size_px: FONT_SIZE_DEFAULT,
             bubbles: true,
             preview_lines: crate::chatlist_style::PREVIEW_LINES_DEFAULT,
@@ -512,6 +517,8 @@ mod tests {
         assert_eq!(defaults.auto_night, AutoNight::Off);
         assert_eq!(defaults.font_size_px, FONT_SIZE_DEFAULT);
         assert!(defaults.bubbles);
+        let old: AppearancePrefs = serde_json::from_str("{}").unwrap();
+        assert_eq!(old.density, crate::density::Density::Standard);
 
         let prefs = AppearancePrefs {
             theme: ThemeChoice::Dark,
@@ -532,6 +539,7 @@ mod tests {
             adaptive_for_wide: true,
             follow_omarchy: false,
             interface_scale_pct: 150,
+            density: crate::density::Density::Compact,
             font_size_px: 17,
             bubbles: false,
             preview_lines: 3,

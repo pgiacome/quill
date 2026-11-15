@@ -514,10 +514,12 @@ impl QuillApp {
                         .unwrap_or_else(|_| div().into_any_element())
                 })
                 // The kit's default row wrapper pads every non-last row with
-                // pb_8 (32px); override to pb_1 to restore the old gap_1
-                // density. The kit also supplies row px and list py, so the
-                // outer div needs neither.
-                .with_row_style(StyleRefinement::default().pb_1())
+                // pb_8 (32px); override it with the density's gap under a
+                // message (pb_1, the old gap_1 density, in Standard; none in
+                // Compact, where bubbles keep their own inset). The kit also
+                // supplies row px and list py, so the outer div needs
+                // neither.
+                .with_row_style(StyleRefinement::default().pb(px(self.density().message_gap)))
                 // Jump to latest: shows the unread count, and replaces a
                 // window that stops short of the latest message instead of
                 // only scrolling to its end.

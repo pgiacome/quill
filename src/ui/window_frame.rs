@@ -80,6 +80,58 @@ pub(crate) fn sync(window: &mut Window, cx: &App, native: bool) {
     }
 }
 
+thread_local! {
+    /// The title-bar height each open window's macOS traffic lights were last
+    /// centred on. Kept per window, outside any element, so a frame that
+    /// draws no title bar (the lock screen) forgets nothing.
+    static LIGHTS_ON: RefCell<HashMap<WindowId, Pixels>> = RefCell::new(HashMap::new());
+}
+
+/// Centre `window`'s macOS traffic lights on a title bar `height` tall. A
+/// window opens with them centred on the kit's default bar
+/// (`TitleBar::title_bar_options`), so it is asked only when the height
+/// differs from the one the lights were last centred on. Cheap when nothing
+/// changed, so every title bar calls it from its render.
+fn sync_traffic_lights(window: &mut Window, cx: &App, height: Pixels) {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
+    let id = window.window_handle().window_id();
+    let (before, first) = LIGHTS_ON.with(|lights| {
+        let Ok(mut lights) = lights.try_borrow_mut() else {
+            return (None, false);
+        };
+        let before = lights.insert(id, height);
+        (Some(before.unwrap_or(TITLE_BAR_HEIGHT)), before.is_none())
+    });
+    if first {
+        // The entry goes with its window.
+        super::window_control::when_window_goes(window, cx, move |_| {
+            LIGHTS_ON.with(|lights| {
+                if let Ok(mut lights) = lights.try_borrow_mut() {
+                    lights.remove(&id);
+                }
+            });
+        });
+    }
+    if before.is_some_and(|before| before != height)
+        && let Some(position) = TitleBar::title_bar_options().traffic_light_position
+    {
+        #[cfg(target_os = "macos")]
+        window.set_traffic_light_position(traffic_lights_at(position, height));
+        // `Window::set_traffic_light_position` exists only on macOS.
+        #[cfg(not(target_os = "macos"))]
+        let _ = (position, &window);
+    }
+}
+
+/// The kit's traffic-light position for its default bar, moved to stay
+/// centred on a bar `height` tall.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn traffic_lights_at(default: Point<Pixels>, height: Pixels) -> Point<Pixels> {
+    point(default.x, default.y - (TITLE_BAR_HEIGHT - height) / 2.)
+}
+
 #[cfg(target_os = "linux")]
 mod platform {
     use super::*;
@@ -250,7 +302,9 @@ impl ParentElement for FrameTitleBar {
 }
 
 impl RenderOnce for FrameTitleBar {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        // Every bar is as tall as the density's (`Theme::title_bar_height`).
+        let height = cx.theme().title_bar_height;
         // The menu fills the free width so its trailing space still drags.
         let menu = self.menu.map(|menu| {
             div()
@@ -273,7 +327,7 @@ impl RenderOnce for FrameTitleBar {
             let theme = cx.theme();
             return div()
                 .flex_shrink_0()
-                .h(TITLE_BAR_HEIGHT)
+                .h(height)
                 .px_3()
                 .flex()
                 .items_center()
@@ -286,6 +340,7 @@ impl RenderOnce for FrameTitleBar {
                 .children(self.children)
                 .into_any_element();
         }
+        sync_traffic_lights(window, cx, height);
         let on_close = self.on_close_window;
         let lead = match menu {
             Some(menu) => Some(menu.into_any_element()),

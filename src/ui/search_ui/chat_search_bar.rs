@@ -534,7 +534,7 @@ impl QuillApp {
                     .child(
                         Textarea::new(&self.search_ui.input)
                             .aria_label(tr(keys::Q_CHAT_SEARCH))
-                            .h(px(40.)),
+                            .h(px(self.density().search_field)),
                     ),
             )
             .children(story_stack)

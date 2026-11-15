@@ -10,7 +10,7 @@ use super::actions::{
 };
 use super::app::QuillApp;
 use super::command_shortcuts::CommandActions;
-use super::shell::title_bar;
+use super::main_title_bar::main_title_bar;
 use super::window_actions::WindowActions;
 use crate::ui::dismiss_layer::DismissLayer;
 use gpui_kit::component::alert::Alert;
@@ -332,9 +332,9 @@ impl Render for QuillApp {
             .on_action(cx.listener(|this, _: &SubmitPassword, window, cx| {
                 this.submit_password(window, cx);
             }))
-            .child(title_bar(
+            .child(main_title_bar(
                 self.pane_mode(),
-                self.live.is_some(),
+                self.control_size(),
                 self.search_is_open(),
                 self.title_bar_update_button(cx),
                 // kit Phase 7: the in-window menu bar on Linux/Windows leads
