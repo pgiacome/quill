@@ -31,6 +31,11 @@ register_demos![
         "screenshot demo — forum topic with no messages"
     )
     .setup(QuillApp::demo_topic_empty),
+    DemoSpec::chats(
+        "ready-forum-topics",
+        "screenshot demo — forum topic list"
+    )
+    .setup(QuillApp::demo_forum_topics),
 ];
 
 fn topic_json(id: i32, name: &str, unread: i32, outgoing: bool, said: &str, date: i64) -> String {
@@ -133,6 +138,15 @@ impl QuillApp {
 
     fn demo_topic_loading(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
         self.demo_topic_session(|_| {});
+    }
+
+    /// The topic list itself: the forum column instead of the topic tabs,
+    /// with the seeded rows. `has_forum_tabs` would draw the tabs instead.
+    fn demo_forum_topics(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+        self.demo_topic_session(|session| {
+            session.threads.forum_tabs_supergroups.remove(&16);
+            session.deselect_topic();
+        });
     }
 
     fn demo_topic_failed(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
