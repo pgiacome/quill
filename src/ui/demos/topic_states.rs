@@ -33,9 +33,9 @@ register_demos![
     .setup(QuillApp::demo_topic_empty),
 ];
 
-fn topic_json(id: i32, name: &str) -> String {
+fn topic_json(id: i32, name: &str, unread: i32, outgoing: bool, said: &str, date: i64) -> String {
     format!(
-        r#"{{"info":{{"@type":"forumTopicInfo","chat_id":{FORUM},"forum_topic_id":{id},"name":"{name}","icon":{{"@type":"forumTopicIcon","color":16766590,"custom_emoji_id":"0"}},"is_general":false,"is_closed":false,"is_hidden":false}},"last_message":{{"id":{last},"chat_id":{FORUM},"is_outgoing":false,"content":{{"@type":"messageText","text":{{"@type":"formattedText","text":"x","entities":[]}}}}}},"order":"{id}","is_pinned":false,"unread_count":0,"last_read_inbox_message_id":0,"notification_settings":{{"@type":"chatNotificationSettings","use_default_mute_for":true,"mute_for":0}}}}"#,
+        r#"{{"info":{{"@type":"forumTopicInfo","chat_id":{FORUM},"forum_topic_id":{id},"name":"{name}","icon":{{"@type":"forumTopicIcon","color":16766590,"custom_emoji_id":"0"}},"is_general":false,"is_closed":false,"is_hidden":false,"is_outgoing":{outgoing}}},"last_message":{{"id":{last},"chat_id":{FORUM},"date":{date},"is_outgoing":{outgoing},"sender_id":{{"@type":"messageSenderUser","user_id":81}},"content":{{"@type":"messageText","text":{{"@type":"formattedText","text":"{said}","entities":[]}}}}}},"order":"{id}","is_pinned":false,"unread_count":{unread},"last_read_inbox_message_id":0,"notification_settings":{{"@type":"chatNotificationSettings","use_default_mute_for":true,"mute_for":0}}}}"#,
         last = 100 + id
     )
 }
@@ -45,6 +45,9 @@ fn seed_forum(session: &mut Session, app: &QuillApp) {
     let seq = &app.demo_ui.seq;
     seq.store(session.last_seq, Ordering::SeqCst);
     let dyn_sink: std::sync::Arc<dyn quill::diagnostics::DiagnosticSink> = sink;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs() as i64);
     for json in [
         format!(
             r#"{{"@type":"updateNewChat","chat":{{"id":{FORUM},"title":"Dev Forum","type":{{"@type":"chatTypeSupergroup","supergroup_id":{FORUM},"is_channel":false}},"unread_count":0}}}}"#
@@ -52,27 +55,56 @@ fn seed_forum(session: &mut Session, app: &QuillApp) {
         format!(
             r#"{{"@type":"updateSupergroup","supergroup":{{"@type":"supergroup","id":{FORUM},"is_forum":true,"has_forum_tabs":true}}}}"#
         ),
+        r#"{"@type":"updateUser","user":{"id":81,"first_name":"Maya","last_name":"","type":{"@type":"userTypeRegular"}}}"#.to_owned(),
     ] {
         if let Some(owned) = copy_and_parse(&json, seq, &dyn_sink) {
             session.apply(owned);
         }
     }
+    // (id, name, unread, last message outgoing, preview, age in seconds)
     let names = [
-        (2, "Announcements"),
+        (
+            2,
+            "Announcements",
+            0,
+            false,
+            "Rules are up for the quarter",
+            600,
+        ),
         (
             3,
             "Release planning and roadmap discussion for the next quarter",
+            3,
+            false,
+            "Push the milestone to Friday?",
+            300,
         ),
-        (4, "Design"),
-        (5, "Backend"),
-        (6, "Frontend"),
-        (7, "Off topic"),
-        (8, "Questions and answers"),
-        (OPEN_TOPIC, "Build infrastructure"),
+        (4, "Design", 0, false, "New icon set is ready", 1_800),
+        (5, "Backend", 1, false, "Rate limits look stable", 2_400),
+        (6, "Frontend", 0, true, "Fixed the truncation bug", 3_600),
+        (7, "Off topic", 8, false, "Coffee machine is fixed", 7_200),
+        (
+            8,
+            "Questions and answers",
+            0,
+            false,
+            "Thread about topics is open",
+            9_000,
+        ),
+        (
+            OPEN_TOPIC,
+            "Build infrastructure",
+            0,
+            false,
+            "Cache hit rate went up",
+            12_000,
+        ),
     ];
     let topics: Vec<String> = names
         .iter()
-        .map(|(id, name)| topic_json(*id, name))
+        .map(|(id, name, unread, outgoing, said, ago)| {
+            topic_json(*id, name, *unread, *outgoing, said, now - ago)
+        })
         .collect();
     let extra = session.ask_forum_topics(ChatId(FORUM));
     let answer = format!(

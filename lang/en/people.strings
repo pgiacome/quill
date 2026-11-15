@@ -651,6 +651,8 @@
 "qll_people_topic_selected" = "Topic selected";
 "qll_people_topic_updated" = "Topic updated";
 "qll_people_topics" = "‹ Topics";
+"qll_people_topics_count#one" = "{count} topic";
+"qll_people_topics_count#other" = "{count} topics";
 "qll_people_topics_need_a_live_connection" = "Topics need a live connection (demo)";
 "qll_people_transfer_channel_ownership" = "Transfer channel ownership";
 "qll_people_unavailable" = "Unavailable";

@@ -963,3 +963,8 @@ mod forum_editor_tests {
 #[cfg(feature = "demo-capture")]
 #[path = "topic_editor_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[cfg(feature = "demo-capture")]
+#[path = "forum_topics_pane_tests.rs"]
+mod forum_topics_pane_tests;
