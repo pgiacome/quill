@@ -46,10 +46,30 @@ impl Session {
                 }
         );
         let last = chat.last_message().copied().filter(|_| group)?;
-        if last.is_outgoing {
+        self.preview_sender(last.is_outgoing, last.sender)
+    }
+
+    /// Who wrote a forum topic's last message, by the same rule as
+    /// [`Self::chat_preview_sender`]: `None` for a service message, which
+    /// names its actor itself.
+    pub fn topic_preview_sender(
+        &self,
+        last: &crate::telegram::envelope::TopicLastMessage,
+    ) -> Option<String> {
+        if last.style.service {
+            return None;
+        }
+        self.preview_sender(last.is_outgoing, last.sender)
+    }
+
+    /// "You" for your own message, else the sender's first name (the full
+    /// name when it has none) or the sending chat's title; `None` when the
+    /// sender isn't known yet.
+    fn preview_sender(&self, is_outgoing: bool, sender: Option<MessageSender>) -> Option<String> {
+        if is_outgoing {
             return Some("You".to_string());
         }
-        match last.sender? {
+        match sender? {
             MessageSender::User { user_id } => self.users.get(&user_id).map(|user| {
                 if user.first_name.trim().is_empty() {
                     user.display_name()

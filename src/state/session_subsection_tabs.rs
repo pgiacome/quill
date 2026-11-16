@@ -6,7 +6,9 @@
 //! `data_peer.cpp`).
 use super::*;
 use crate::subsection_tabs::SubsectionTabsMode;
-use crate::telegram::envelope::{ForumTopicInfoUpdate, ForumTopicUpdate, ParsedMessage};
+use crate::telegram::envelope::{
+    ForumTopicInfoUpdate, ForumTopicUpdate, ParsedMessage, TopicLastMessage,
+};
 
 /// `QUILL_TRACE_TOPICS=1`: print every write of a topic's unread count with
 /// its source, to compare Quill's badges with TDLib's answers. Temporary.
@@ -220,6 +222,17 @@ impl Session {
         }
     }
 
+    /// Whether `topic` of the forum `chat_id` is muted: its own setting, or
+    /// the forum's when it uses the default (tdesktop `Thread::muted`).
+    pub fn topic_is_muted(&self, chat_id: ChatId, topic: &ForumTopic) -> bool {
+        let settings = &topic.notification_settings;
+        if settings.use_default_mute_for {
+            self.chats.get(&chat_id.0).is_some_and(|c| c.is_muted())
+        } else {
+            settings.is_muted()
+        }
+    }
+
     /// Unread messages across the chat's topics as the badge counts them
     /// (tdesktop `History::chatListUnreadState` for a forum sums the topics'
     /// `displayedUnreadCount`): only topics with a trustworthy count, see
@@ -268,7 +281,6 @@ impl Session {
             return None;
         }
         let topics = self.chat_row_topics(chat_id);
-        let chat = self.chats.get(&chat_id.0);
         let (mut unmuted, mut muted) = (0usize, 0usize);
         for t in self
             .threads
@@ -280,13 +292,7 @@ impl Session {
             if t.is_hidden || matches!(self.topic_badge(chat_id, t), TopicBadge::None) {
                 continue;
             }
-            let settings = &t.notification_settings;
-            let is_muted = if settings.use_default_mute_for {
-                chat.is_some_and(|c| c.is_muted())
-            } else {
-                settings.is_muted()
-            };
-            if is_muted {
+            if self.topic_is_muted(chat_id, t) {
                 muted += 1;
             } else {
                 unmuted += 1;
@@ -437,6 +443,7 @@ fn apply_topic_info(topics: &mut Vec<ForumTopic>, info: ForumTopicInfoUpdate) {
         unread_count: 0,
         order,
         last_message_preview: String::new(),
+        last_message: None,
         icon_color: info.icon_color,
         icon_custom_emoji_id: info.icon_custom_emoji_id,
         last_message_id: 0,
@@ -499,9 +506,15 @@ impl Session {
                 let Some(topic) = topics.iter_mut().find(|t| t.forum_topic_id == topic_id) else {
                     return;
                 };
-                topic.last_message_preview =
-                    effective_content(&message.content, message.ephemeral.as_ref()).preview();
-                topic.last_message_id = topic.last_message_id.max(message.id.0);
+                // The row describes the newest message only: its text,
+                // sender, date and style move together.
+                if message.id.0 >= topic.last_message_id {
+                    let preview =
+                        effective_content(&message.content, message.ephemeral.as_ref()).preview();
+                    topic.last_message = Some(TopicLastMessage::of(message, &preview));
+                    topic.last_message_preview = preview;
+                    topic.last_message_id = message.id.0;
+                }
                 if !topic.is_pinned && topic.order != top {
                     topic.order = top.saturating_add(1);
                 }

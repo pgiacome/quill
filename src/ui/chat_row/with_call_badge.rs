@@ -47,7 +47,7 @@ pub(in crate::ui) fn with_call_badge(avatar: AnyElement, active: bool, cx: &App)
 }
 
 /// Small inline icon in a chat row (lock, muted bell, pin, receipts).
-pub(super) fn row_glyph(name: IconName, color: Hsla) -> impl IntoElement {
+pub(in crate::ui) fn row_glyph(name: IconName, color: Hsla) -> impl IntoElement {
     Icon::new(name).size(px(14.)).flex_none().text_color(color)
 }
 
@@ -63,13 +63,8 @@ pub(super) fn pinned_here(chat: &ChatSummary, archived: bool) -> bool {
 /// Trailing title-line stamp: `(status mark for an outgoing last
 /// message, local time/day label)`, or `None` for an empty chat.
 pub(super) fn row_stamp(chat: &ChatSummary) -> Option<(RowStatusIcon, String)> {
-    let last = chat.last_message().filter(|last| last.date > 0)?;
-    let now = quill::local_time::civil_local(quill::local_time::now_unix());
-    let date = quill::local_time::civil_local(i64::from(last.date));
-    Some((
-        chat.row_status(),
-        quill::local_time::chat_list_stamp(&date, &now),
-    ))
+    let stamp = quill::local_time::list_stamp(chat.last_message()?.date)?;
+    Some((chat.row_status(), stamp))
 }
 
 /// The mark beside the date: a clock while sending, a red "!" when the
@@ -189,7 +184,7 @@ pub(in crate::ui) fn title_badge_element(
 /// Unread counter at the row's trailing edge: accent for active chats,
 /// neutral for muted ones; a bare dot for marked-as-unread.
 pub(super) fn unread_pill(
-    chat_id: ChatId,
+    id: ElementId,
     count: i32,
     dot: bool,
     muted: bool,
@@ -212,7 +207,7 @@ pub(super) fn unread_pill(
     let animating = scale < 1.;
     let k = 0.6 + 0.4 * scale;
     div()
-        .id(("unread-pill", chat_id.0 as u64))
+        .id(id)
         .test_support()
         .flex_none()
         .h(px(20.))
