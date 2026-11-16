@@ -437,6 +437,7 @@ mod tests {
             name: "Submenu".into(),
             items: vec![],
             disabled: true,
+            role: super::MenuRole::Plain,
         });
         assert_eq!(
             match &submenu {
