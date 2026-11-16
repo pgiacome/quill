@@ -1,4 +1,5 @@
 use super::*;
+use crate::lang::{keys, tr};
 use crate::rich::{RichBlock, parse_rich_message};
 use crate::text::{TextEntity, TextEntityKind, utf16_to_utf8_offset};
 use serde_json::Value;
@@ -245,27 +246,31 @@ pub fn call_entry_label(
     duration: i32,
     is_outgoing: bool,
 ) -> String {
-    let kind = if is_video { "video call" } else { "call" };
+    let kind = if is_video {
+        tr(keys::Q_OPS_CALL_VIDEO)
+    } else {
+        tr(keys::Q_OPS_CALL_VOICE)
+    };
     let base = match reason {
         CallDiscardReason::Missed => {
             if is_outgoing {
-                "Cancelled"
+                tr(keys::Q_OPS_CALL_CANCELLED)
             } else {
-                "Missed"
+                tr(keys::Q_OPS_CALL_MISSED)
             }
         }
         CallDiscardReason::Declined => {
             if is_outgoing {
-                "Busy"
+                tr(keys::Q_OPS_CALL_BUSY)
             } else {
-                "Declined"
+                tr(keys::Q_OPS_CALL_DECLINED)
             }
         }
         _ => {
             if is_outgoing {
-                "Outgoing"
+                tr(keys::Q_OPS_CALL_OUTGOING)
             } else {
-                "Incoming"
+                tr(keys::Q_OPS_CALL_INCOMING)
             }
         }
     };

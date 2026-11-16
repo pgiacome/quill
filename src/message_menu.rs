@@ -11,6 +11,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::FileId;
+use crate::lang::{keys, tr, tr_with};
 use crate::local_time::{CivilTime, day_label, hhmm};
 use crate::telegram::envelope::{MessageContent, MessageReadDate};
 
@@ -390,9 +391,12 @@ pub fn emoji_pack_footer(packs: usize, name: Option<&str>) -> Option<(String, St
 pub fn sent_label(date: &CivilTime, now: &CivilTime) -> String {
     let time = hhmm(date);
     match now.day_number() - date.day_number() {
-        0 => format!("Sent today at {time}"),
-        1 => format!("Sent yesterday at {time}"),
-        _ => format!("Sent {} at {time}", day_label(date, now)),
+        0 => tr_with(keys::Q_CHAT_SENT_TODAY, &[("time", &time)]),
+        1 => tr_with(keys::Q_CHAT_SENT_YESTERDAY, &[("time", &time)]),
+        _ => tr_with(
+            keys::Q_CHAT_SENT_DATE,
+            &[("date", &day_label(date, now)), ("time", &time)],
+        ),
     }
 }
 
@@ -425,9 +429,9 @@ pub fn suggested_save_name(target: &MediaTarget, local_name: &str) -> String {
 /// (`lng_context_copy_message_link` / `lng_context_copy_post_link`).
 pub fn copy_link_label(is_channel: bool) -> &'static str {
     if is_channel {
-        "Copy Post Link"
+        tr(keys::Q_CHAT_COPY_POST_LINK)
     } else {
-        "Copy Message Link"
+        tr(keys::Q_CHAT_COPY_MESSAGE_LINK)
     }
 }
 
@@ -435,9 +439,9 @@ pub fn copy_link_label(is_channel: bool) -> &'static str {
 /// (`lng_context_add_factcheck` / `lng_context_edit_factcheck`).
 pub fn fact_check_label(has_fact_check: bool) -> &'static str {
     if has_fact_check {
-        "Edit Fact Check"
+        tr(keys::Q_CHAT_EDIT_FACT_CHECK)
     } else {
-        "Add Fact Check"
+        tr(keys::Q_CHAT_ADD_FACT_CHECK)
     }
 }
 
@@ -717,7 +721,7 @@ mod tests {
                 "View Sticker Set",
                 "Remove from Favorites",
                 "Show in Folder",
-                "Save As..."
+                "Save As…"
             ]
         );
         // A sticker without a set offers neither.

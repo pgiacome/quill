@@ -224,7 +224,7 @@ impl<S: JsonSender> ConnectDriver<S> {
                 .chat_media_counts
                 .insert(chat_id.0, Default::default());
         }
-        for (index, (filter, _, _)) in crate::telegram::requests::MEDIA_COUNT_FILTERS
+        for (index, (filter, _)) in crate::telegram::requests::MEDIA_COUNT_FILTERS
             .iter()
             .enumerate()
         {

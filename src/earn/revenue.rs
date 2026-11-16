@@ -4,6 +4,7 @@
 //! `info/channel_statistics/earn` and `info/bot/earn` screens.
 
 use super::{int, text};
+use crate::lang::{keys, tr};
 use crate::premium_hub::StarAmount;
 use crate::telegram::envelope::StatisticalGraph;
 use serde_json::Value;
@@ -144,9 +145,9 @@ impl TonTx {
     /// The row's headline (`lng_channel_earn_history_*`).
     pub fn title(&self) -> &'static str {
         match self.kind {
-            TonTxKind::Refund { .. } => "Refund",
-            TonTxKind::Withdrawal { .. } => "Collection",
-            _ => "Rewards from ads",
+            TonTxKind::Refund { .. } => tr(keys::CHANNEL_EARN_HISTORY_RETURN),
+            TonTxKind::Withdrawal { .. } => tr(keys::CHANNEL_EARN_HISTORY_OUT),
+            _ => tr(keys::Q_MONEY_TON_TX_REWARDS),
         }
     }
 
@@ -193,11 +194,15 @@ impl TonTx {
             TonTxKind::Withdrawal {
                 date: when,
                 state: WithdrawalState::Failed,
-            } => format!("{} \u{2014} Not Completed", date(*when)),
+            } => format!(
+                "{} \u{2014} {}",
+                date(*when),
+                tr(keys::Q_MONEY_EARN_NOT_COMPLETED)
+            ),
             TonTxKind::Withdrawal {
                 state: WithdrawalState::Unsettled,
                 ..
-            } => "Pending".into(),
+            } => tr(keys::CHANNEL_EARN_HISTORY_PENDING).into(),
             TonTxKind::Withdrawal { date: when, .. } | TonTxKind::Refund { date: when } => {
                 date(*when)
             }

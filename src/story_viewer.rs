@@ -15,6 +15,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::{ChatId, FileId};
+use crate::lang::{keys, tr};
 use crate::story_tray_walk::{StoryStep, TrayWalk, plan_step};
 use crate::telegram::envelope::{
     ChatActiveStoriesView, ParsedStory, StoryAreaView, StoryContentView,
@@ -149,8 +150,8 @@ pub enum StoryViewerKind {
 impl StoryViewerKind {
     pub fn label(&self) -> &'static str {
         match self {
-            StoryViewerKind::Live(_) => "Live story",
-            _ => "Story",
+            StoryViewerKind::Live(_) => tr(keys::Q_MEDIA_STORY_VIEWER_LIVE),
+            _ => tr(keys::IN_DLG_STORY),
         }
     }
 }

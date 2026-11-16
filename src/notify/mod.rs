@@ -30,6 +30,7 @@ pub mod custom;
 pub mod dbus;
 
 use crate::ids::{ChatId, FileId, MessageId};
+use crate::lang::{keys, tr};
 use crate::telegram::envelope::{ParsedMessage, ReactionNotificationSource, effective_content};
 
 /// Generic body used when the message text is hidden (the "Show message
@@ -522,9 +523,9 @@ impl NotificationAction {
 
     pub fn label(self) -> &'static str {
         match self {
-            NotificationAction::Open => "Open",
-            NotificationAction::Reply => "Reply",
-            NotificationAction::MarkRead => "Mark as read",
+            NotificationAction::Open => tr(keys::Q_PREFS_NOTIFICATION_OPEN),
+            NotificationAction::Reply => tr(keys::Q_PREFS_NOTIFICATION_REPLY),
+            NotificationAction::MarkRead => tr(keys::CONTEXT_MARK_READ),
         }
     }
 

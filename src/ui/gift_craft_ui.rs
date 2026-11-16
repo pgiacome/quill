@@ -26,7 +26,7 @@ use quill::gift_market::{
 };
 use quill::ids::RequestId;
 use quill::lang::{keys, tr, tr_with};
-use quill::local_time::{civil_local, hhmm, month_name, now_unix};
+use quill::local_time::{civil_local, hhmm, now_unix, short_month_name};
 use quill::premium_hub::ReceivedGift;
 use quill::telegram::envelope::StickerContent;
 use std::time::Instant;
@@ -63,8 +63,14 @@ pub(super) fn craft_gift_of(gift: &ReceivedGift) -> Option<CraftGift> {
 /// tdesktop `langDayOfMonthShort` and the short time: ("Oct 14", "15:10").
 fn craft_when(unix: i32) -> (String, String) {
     let time = civil_local(i64::from(unix));
-    let month: String = month_name(time.month).chars().take(3).collect();
-    (format!("{month} {}", time.day), hhmm(&time))
+    let day = tr_with(
+        keys::MONTH_DAY,
+        &[
+            ("month", short_month_name(time.month)),
+            ("day", &time.day.to_string()),
+        ],
+    );
+    (day, hhmm(&time))
 }
 
 /// The "Crafting unavailable" text for a gate, if it blocks.

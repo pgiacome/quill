@@ -227,3 +227,6 @@ frame sooner (`docs/decisions/launch-time-macos-appkit.md`):
   launch steps (`ns_run`, `will_finish`, `did_finish`, `window_ordered`,
   `first_display`, `writing_tools`, and `first_key` and `first_text` from
   `window.rs`) for Quill's startup trace.
+- `src/platform.rs`: `create_menu_bar` passes the menu whose `role` is
+  `MenuRole::Window` to `setWindowsMenu`, instead of the menu named "Window",
+  so AppKit keeps the window list in a translated Window menu.

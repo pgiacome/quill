@@ -449,10 +449,13 @@ impl QuillApp {
                             &[("name", &name.to_string()), ("org", &org.to_string())],
                         )
                     } else {
-                        format!(
-                            "Verify {name} as a {} on behalf of {org}? A verification mark \
-                             appears next to the name.",
-                            target.noun()
+                        tr_with(
+                            keys::Q_MEDIA_VERIFY_NAME_AS_A_ON_BEHALF,
+                            &[
+                                ("name", &name.to_string()),
+                                ("noun", target.noun()),
+                                ("org", &org.to_string()),
+                            ],
                         )
                     };
                     let mut body = div()
@@ -470,9 +473,13 @@ impl QuillApp {
                                 div()
                                     .text_xs()
                                     .text_color(if too_long { cx.theme().danger } else { muted })
-                                    .child(format!(
-                                        "{typed_len}/{DESCRIPTION_LIMIT_DEFAULT}. Shown on the \
-                                         profile of {name}."
+                                    .child(tr_with(
+                                        keys::Q_MEDIA_DESCRIPTION_LIMIT_SHOWN_ON,
+                                        &[
+                                            ("typed", &typed_len.to_string()),
+                                            ("limit", &DESCRIPTION_LIMIT_DEFAULT.to_string()),
+                                            ("name", &name.to_string()),
+                                        ],
                                     )),
                             );
                     }

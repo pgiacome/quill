@@ -10,6 +10,7 @@
 //! passed in as milliseconds so every transition is deterministic.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use serde::{Deserialize, Serialize};
 
 /// `kThresholdWidth` (swipe_handler.cpp:77): travel for ratio 1.
@@ -70,12 +71,12 @@ impl SwipeAction {
     /// "disabled" string reads "Change folder" there).
     pub fn settings_label(self) -> &'static str {
         match self {
-            SwipeAction::Mute => "Mute",
-            SwipeAction::Pin => "Pin",
-            SwipeAction::Read => "Read",
-            SwipeAction::Archive => "Archive",
-            SwipeAction::Delete => "Delete",
-            SwipeAction::Disabled => "Disabled",
+            SwipeAction::Mute => tr(keys::MUTE_MENU_MUTE),
+            SwipeAction::Pin => tr(keys::Q_PREFS_SWIPE_PIN),
+            SwipeAction::Read => tr(keys::Q_PREFS_SWIPE_READ),
+            SwipeAction::Archive => tr(keys::Q_PREFS_SWIPE_ARCHIVE),
+            SwipeAction::Delete => tr(keys::SETTINGS_QUICK_DIALOG_ACTION_DELETE),
+            SwipeAction::Disabled => tr(keys::Q_PREFS_SWIPE_DISABLED),
         }
     }
 }
@@ -100,30 +101,30 @@ impl SwipeLabel {
     /// `lng_settings_quick_dialog_action_*` strings.
     pub fn text(self) -> &'static str {
         match self {
-            SwipeLabel::Mute => "Mute",
-            SwipeLabel::Unmute => "Unmute",
-            SwipeLabel::Pin => "Pin",
-            SwipeLabel::Unpin => "Unpin",
-            SwipeLabel::Read => "Read",
-            SwipeLabel::Unread => "Unread",
-            SwipeLabel::Archive => "Archive",
-            SwipeLabel::Unarchive => "Unarchive",
-            SwipeLabel::Delete => "Delete",
-            SwipeLabel::Disabled => "Disabled",
+            SwipeLabel::Mute => tr(keys::MUTE_MENU_MUTE),
+            SwipeLabel::Unmute => tr(keys::SETTINGS_QUICK_DIALOG_ACTION_UNMUTE),
+            SwipeLabel::Pin => tr(keys::Q_PREFS_SWIPE_PIN),
+            SwipeLabel::Unpin => tr(keys::Q_PREFS_SWIPE_UNPIN),
+            SwipeLabel::Read => tr(keys::Q_PREFS_SWIPE_READ),
+            SwipeLabel::Unread => tr(keys::Q_PREFS_SWIPE_UNREAD),
+            SwipeLabel::Archive => tr(keys::Q_PREFS_SWIPE_ARCHIVE),
+            SwipeLabel::Unarchive => tr(keys::Q_PREFS_SWIPE_UNARCHIVE),
+            SwipeLabel::Delete => tr(keys::SETTINGS_QUICK_DIALOG_ACTION_DELETE),
+            SwipeLabel::Disabled => tr(keys::Q_PREFS_SWIPE_DISABLED),
         }
     }
 
     /// `lng_quick_dialog_action_toast_*_success` (shown after the action).
     pub fn toast(self) -> &'static str {
         match self {
-            SwipeLabel::Mute => "Notifications for this chat have been muted.",
-            SwipeLabel::Unmute => "Notifications enabled for this chat.",
-            SwipeLabel::Pin => "The chat has been pinned.",
-            SwipeLabel::Unpin => "The chat has been unpinned.",
-            SwipeLabel::Read => "The chat has been marked as read.",
-            SwipeLabel::Unread => "The chat has been marked as unread.",
-            SwipeLabel::Archive => "The chat has been archived.",
-            SwipeLabel::Unarchive => "The chat has been unarchived.",
+            SwipeLabel::Mute => tr(keys::Q_PREFS_SWIPE_TOAST_MUTE),
+            SwipeLabel::Unmute => tr(keys::Q_PREFS_SWIPE_TOAST_UNMUTE),
+            SwipeLabel::Pin => tr(keys::Q_PREFS_SWIPE_TOAST_PIN),
+            SwipeLabel::Unpin => tr(keys::Q_PREFS_SWIPE_TOAST_UNPIN),
+            SwipeLabel::Read => tr(keys::Q_PREFS_SWIPE_TOAST_READ),
+            SwipeLabel::Unread => tr(keys::Q_PREFS_SWIPE_TOAST_UNREAD),
+            SwipeLabel::Archive => tr(keys::Q_PREFS_SWIPE_TOAST_ARCHIVE),
+            SwipeLabel::Unarchive => tr(keys::Q_PREFS_SWIPE_TOAST_UNARCHIVE),
             SwipeLabel::Delete | SwipeLabel::Disabled => "",
         }
     }

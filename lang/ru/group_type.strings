@@ -1,0 +1,6 @@
+// group_type: the group and channel Type box (tdesktop edit_peer_type_box.cpp, edit_peer_usernames_list.cpp).
+"qll_group_type_link_check_failed" = "Не удалось проверить эту ссылку. Нажмите «Сохранить», чтобы повторить.";
+"qll_group_type_revoke_failed" = "Не удалось отозвать ссылку";
+"qll_group_upgraded_link_not_saved" = "Группа обновлена, но её ссылку не удалось сохранить";
+"qll_group_ownership_check_failed" = "Не удалось проверить, можете ли вы передать право владения: {reason}";
+"qll_group_setting_change_failed" = "Не удалось изменить настройку группы (ошибка {code})";

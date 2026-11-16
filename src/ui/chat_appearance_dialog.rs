@@ -115,15 +115,18 @@ impl QuillApp {
         &self,
         chat_id: ChatId,
         level: Option<i32>,
-        group_word: &str,
+        kind: ChatAppearanceKind,
         cx: &mut Context<Self>,
     ) -> Div {
         let line = div().flex().items_center().gap_2().text_sm();
         let muted = cx.theme().muted_foreground;
         if let Some(level) = level {
             return line.text_color(muted).child(tr_with(
-                keys::Q_MISC_THIS_IS_AT_BOOST_LEVEL,
-                &[("group_word", group_word), ("level", &level.to_string())],
+                kind.pick(
+                    keys::Q_MISC_THIS_IS_AT_BOOST_LEVEL_CHANNEL,
+                    keys::Q_MISC_THIS_IS_AT_BOOST_LEVEL_GROUP,
+                ),
+                &[("level", &level.to_string())],
             ));
         }
         let asking = self.session().is_some_and(|session| {
@@ -133,10 +136,10 @@ impl QuillApp {
                 .is_some_and(|fetch| fetch.shows_loading())
         });
         if asking {
-            return line.text_color(muted).child(tr_with(
-                keys::Q_MISC_CHECKING_THIS_S_BOOST_LEVEL,
-                &[("group_word", group_word)],
-            ));
+            return line.text_color(muted).child(tr(kind.pick(
+                keys::Q_MISC_CHECKING_THIS_S_BOOST_LEVEL_CHANNEL,
+                keys::Q_MISC_CHECKING_THIS_S_BOOST_LEVEL_GROUP,
+            )));
         }
         line.child(
             div()
@@ -605,10 +608,6 @@ impl QuillApp {
         let dark = super::chat_theme::is_dark_palette();
         let theme = cx.theme();
         let muted = theme.muted_foreground;
-        let group_word = match kind {
-            ChatAppearanceKind::Channel => "channel",
-            ChatAppearanceKind::Supergroup => "group",
-        };
 
         let name_palette = &session.chats_state.name_accent_colors;
         let profile_palette = &session.chats_state.profile_accent_colors;
@@ -796,23 +795,26 @@ impl QuillApp {
 
         let (about, icon_title, icon_about, icon_required, selected_icon) = match tab {
             ChatAppearanceTab::Name => (
-                tr_with(
-                    keys::Q_MISC_THIS_COLOR_IS_USED_FOR,
-                    &[("group_word", group_word)],
-                ),
+                tr(kind.pick(
+                    keys::Q_MISC_THIS_COLOR_IS_USED_FOR_CHANNEL,
+                    keys::Q_MISC_THIS_COLOR_IS_USED_FOR_GROUP,
+                ))
+                .to_string(),
                 tr(keys::SETTINGS_COLOR_EMOJI),
-                tr_with(
-                    keys::Q_MISC_MAKE_REPLIES_TO_THIS_STAND,
-                    &[("group_word", group_word)],
-                ),
+                tr(kind.pick(
+                    keys::Q_MISC_MAKE_REPLIES_TO_THIS_STAND_CHANNEL,
+                    keys::Q_MISC_MAKE_REPLIES_TO_THIS_STAND_GROUP,
+                ))
+                .to_string(),
                 features.reply_icon,
                 draft.name_emoji_id,
             ),
             ChatAppearanceTab::Profile => (
-                tr_with(
-                    keys::Q_MISC_THIS_COLOR_IS_USED_FOR_2,
-                    &[("group_word", group_word)],
-                ),
+                tr(kind.pick(
+                    keys::Q_MISC_THIS_COLOR_IS_USED_FOR_2_CHANNEL,
+                    keys::Q_MISC_THIS_COLOR_IS_USED_FOR_2_GROUP,
+                ))
+                .to_string(),
                 tr(keys::SETTINGS_COLOR_PROFILE_EMOJI),
                 tr(keys::Q_MISC_CHOOSE_AN_ICON_TO_REPEAT).to_string(),
                 features.profile_icon,
@@ -845,7 +847,7 @@ impl QuillApp {
             .flex()
             .flex_col()
             .gap_3()
-            .child(self.chat_appearance_level_line(chat_id, level, group_word, cx))
+            .child(self.chat_appearance_level_line(chat_id, level, kind, cx))
             .child(tabs)
             .child(preview)
             .child(swatches);
@@ -908,10 +910,10 @@ impl QuillApp {
                         .child(tr(keys::Q_MISC_LOADING_STATUSES)),
                 )
             })
-            .child(div().text_xs().text_color(muted).child(tr_with(
-                keys::Q_MISC_THE_EMOJI_STATUS_IS_SHOWN,
-                &[("group_word", group_word)],
-            )));
+            .child(div().text_xs().text_color(muted).child(tr(kind.pick(
+                keys::Q_MISC_THE_EMOJI_STATUS_IS_SHOWN_CHANNEL,
+                keys::Q_MISC_THE_EMOJI_STATUS_IS_SHOWN_GROUP,
+            ))));
 
         if kind == ChatAppearanceKind::Supergroup {
             panel = panel.child(self.chat_appearance_pack_section(
@@ -930,10 +932,12 @@ impl QuillApp {
                     .flex_col()
                     .gap_2()
                     .child(div().text_sm().text_color(danger()).child(tr_with(
-                        keys::Q_LEFTOVERS_LEVEL_REQUIRED,
+                        kind.pick(
+                            keys::Q_LEFTOVERS_LEVEL_REQUIRED_CHANNEL,
+                            keys::Q_LEFTOVERS_LEVEL_REQUIRED_GROUP,
+                        ),
                         &[
                             ("required", &required.to_string()),
-                            ("group_word", group_word),
                             ("have", &have.to_string()),
                         ],
                     )))

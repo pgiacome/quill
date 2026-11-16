@@ -15,6 +15,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::{ChatId, FileId, MessageId};
+use crate::lang::{keys, tr};
 use crate::state::{HistoryMessage, PhotoOwner};
 use crate::telegram::envelope::{MessageActions, MessageContent, PhotoContent, ServiceAction};
 use crate::text::TextEntity;
@@ -101,10 +102,10 @@ pub enum MediaViewerKind {
 impl MediaViewerKind {
     pub fn label(&self) -> &'static str {
         match self {
-            MediaViewerKind::Photo => "Photo",
-            MediaViewerKind::Video => "Video",
-            MediaViewerKind::Animation => "GIF",
-            MediaViewerKind::ImageFile | MediaViewerKind::File => "File",
+            MediaViewerKind::Photo => tr(keys::IN_DLG_PHOTO),
+            MediaViewerKind::Video => tr(keys::IN_DLG_VIDEO),
+            MediaViewerKind::Animation => tr(keys::Q_MEDIA_KIND_GIF),
+            MediaViewerKind::ImageFile | MediaViewerKind::File => tr(keys::IN_DLG_FILE),
         }
     }
 

@@ -4,6 +4,8 @@
 //! theme file sets that Quill does not use are kept in the file but not
 //! applied.
 
+use crate::lang::{keys, tr};
+
 /// Where a key shows up, for grouping in the theme editor.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KeyGroup {
@@ -23,10 +25,10 @@ impl KeyGroup {
 
     pub fn title(self) -> &'static str {
         match self {
-            KeyGroup::Window => "Window",
-            KeyGroup::Controls => "Buttons, menus and fields",
-            KeyGroup::ChatList => "Chat list",
-            KeyGroup::Messages => "Messages",
+            KeyGroup::Window => tr(keys::Q_MISC_KEY_GROUP_WINDOW),
+            KeyGroup::Controls => tr(keys::Q_MISC_KEY_GROUP_CONTROLS),
+            KeyGroup::ChatList => tr(keys::Q_MISC_KEY_GROUP_CHAT_LIST),
+            KeyGroup::Messages => tr(keys::Q_MISC_KEY_GROUP_MESSAGES),
         }
     }
 }

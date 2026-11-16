@@ -101,7 +101,7 @@ fn a_song_menu_lists_media_actions_before_copy_text_and_translate(cx: &mut TestA
     let expected = [
         folder,
         "Save for Notifications",
-        "Save to...",
+        "Save to…",
         "Copy Filename",
         "Copy Text",
         "Translate",

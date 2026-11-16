@@ -8,6 +8,7 @@
 //! sends `chatActionCancel` once an action expires, so no local timer is
 //! kept.
 
+use crate::lang::{Key, keys, tr, tr_with, trn};
 use crate::telegram::envelope::{ChatAction, MessageSender};
 
 /// One active action of one sender in a chat.
@@ -43,20 +44,47 @@ fn is_typing(action: ChatAction) -> bool {
     )
 }
 
-/// The phrase for a single non-typing action (`lng_send_action_*`,
-/// `lng_user_action_*`); `None` for actions tdesktop does not label.
-fn action_phrase(action: ChatAction) -> Option<&'static str> {
+/// The named and bare phrases for a single non-typing action
+/// (`lng_send_action_*`, `lng_user_action_*`); `None` for actions tdesktop
+/// does not label.
+fn action_keys(action: ChatAction) -> Option<(Key, Key)> {
     Some(match action {
-        ChatAction::RecordingVideo => "recording a video",
-        ChatAction::UploadingVideo => "sending a video",
-        ChatAction::RecordingVoice => "recording a voice message",
-        ChatAction::UploadingVoice => "sending a voice message",
-        ChatAction::RecordingRound => "recording a video message",
-        ChatAction::UploadingRound => "sending a video message",
-        ChatAction::UploadingPhoto => "sending a photo",
-        ChatAction::UploadingDocument => "sending a file",
-        ChatAction::ChoosingSticker => "choosing a sticker",
-        ChatAction::PlayingGame => "playing a game",
+        ChatAction::RecordingVideo => (
+            keys::Q_CHAT_IS_RECORDING_A_VIDEO,
+            keys::Q_CHAT_RECORDING_A_VIDEO,
+        ),
+        ChatAction::UploadingVideo => (
+            keys::Q_CHAT_IS_SENDING_A_VIDEO,
+            keys::Q_CHAT_SENDING_A_VIDEO,
+        ),
+        ChatAction::RecordingVoice => (
+            keys::Q_CHAT_IS_RECORDING_A_VOICE_MESSAGE,
+            keys::Q_CHAT_RECORDING_A_VOICE_MESSAGE,
+        ),
+        ChatAction::UploadingVoice => (
+            keys::Q_CHAT_IS_SENDING_A_VOICE_MESSAGE,
+            keys::Q_CHAT_SENDING_A_VOICE_MESSAGE,
+        ),
+        ChatAction::RecordingRound => (
+            keys::Q_CHAT_IS_RECORDING_A_VIDEO_MESSAGE,
+            keys::Q_CHAT_RECORDING_A_VIDEO_MESSAGE,
+        ),
+        ChatAction::UploadingRound => (
+            keys::Q_CHAT_IS_SENDING_A_VIDEO_MESSAGE,
+            keys::Q_CHAT_SENDING_A_VIDEO_MESSAGE,
+        ),
+        ChatAction::UploadingPhoto => (
+            keys::Q_CHAT_IS_SENDING_A_PHOTO,
+            keys::Q_CHAT_SENDING_A_PHOTO,
+        ),
+        ChatAction::UploadingDocument => {
+            (keys::Q_CHAT_IS_SENDING_A_FILE, keys::Q_CHAT_SENDING_A_FILE)
+        }
+        ChatAction::ChoosingSticker => (
+            keys::Q_CHAT_IS_CHOOSING_A_STICKER,
+            keys::Q_CHAT_CHOOSING_A_STICKER,
+        ),
+        ChatAction::PlayingGame => (keys::Q_CHAT_IS_PLAYING_A_GAME, keys::Q_CHAT_PLAYING_A_GAME),
         _ => return None,
     })
 }
@@ -71,20 +99,23 @@ pub fn activity_line(actions: &[SenderAction], named: bool) -> Option<ActivityLi
             [only] => {
                 let name = name_of(only);
                 if named && !name.is_empty() {
-                    format!("{name} is typing")
+                    tr_with(keys::Q_CHAT_IS_TYPING, &[("name", name.as_str())])
                 } else {
-                    "typing".to_string()
+                    tr(keys::Q_CHAT_TYPING).to_string()
                 }
             }
             [one, two] => {
                 let (first, second) = (name_of(one), name_of(two));
                 if first.is_empty() || second.is_empty() {
-                    "2 people are typing".to_string()
+                    trn(keys::Q_CHAT_PEOPLE_ARE_TYPING, 2)
                 } else {
-                    format!("{first} and {second} are typing")
+                    tr_with(
+                        keys::Q_CHAT_AND_ARE_TYPING,
+                        &[("first", first.as_str()), ("second", second.as_str())],
+                    )
                 }
             }
-            _ => format!("{} people are typing", typers.len()),
+            _ => trn(keys::Q_CHAT_PEOPLE_ARE_TYPING, typers.len()),
         };
         return Some(ActivityLine {
             text,
@@ -93,12 +124,12 @@ pub fn activity_line(actions: &[SenderAction], named: bool) -> Option<ActivityLi
     }
     // Otherwise the first labelled action wins, as in tdesktop.
     actions.iter().find_map(|a| {
-        let phrase = action_phrase(a.action)?;
+        let (named_key, bare_key) = action_keys(a.action)?;
         let name = name_of(a);
         let text = if named && !name.is_empty() {
-            format!("{name} is {phrase}")
+            tr_with(named_key, &[("name", name.as_str())])
         } else {
-            phrase.to_string()
+            tr(bare_key).to_string()
         };
         Some(ActivityLine {
             text,

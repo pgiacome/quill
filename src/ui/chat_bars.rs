@@ -237,14 +237,14 @@ impl QuillApp {
             title, is_channel, ..
         } = &bar
         {
-            let what = if *is_channel { "channel" } else { "group" };
+            let key = if *is_channel {
+                keys::Q_CHAT_IS_AN_ADMIN_OF_A_CHANNEL
+            } else {
+                keys::Q_CHAT_IS_AN_ADMIN_OF_A_GROUP
+            };
             let text = tr_with(
-                keys::Q_CHAT_IS_AN_ADMIN_OF_A,
-                &[
-                    ("name", &name.to_string()),
-                    ("title", &title.to_string()),
-                    ("what", what),
-                ],
+                key,
+                &[("name", &name.to_string()), ("title", &title.to_string())],
             );
             let (title, date) = (title.clone(), bar_request_date(&bar));
             return Some(

@@ -6,7 +6,7 @@
 //! keys every upsell and every preview page by these types instead of by
 //! a row title.
 
-use crate::lang::{Key, keys};
+use crate::lang::{Key, keys, tr};
 
 /// One `premiumFeature*` constructor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -45,8 +45,8 @@ pub enum PremiumFeature {
 /// What Quill knows about one Premium feature.
 struct PremiumEntry {
     td_type: &'static str,
-    title: &'static str,
-    about: &'static str,
+    title: Key,
+    about: Key,
     /// tdesktop `EntryMap` key (`LookupPremiumRef`), the `/start` ref of
     /// the subscribe button.
     start_ref: Option<&'static str>,
@@ -54,8 +54,8 @@ struct PremiumEntry {
 
 const fn entry(
     td_type: &'static str,
-    title: &'static str,
-    about: &'static str,
+    title: Key,
+    about: Key,
     start_ref: Option<&'static str>,
 ) -> PremiumEntry {
     PremiumEntry {
@@ -104,176 +104,176 @@ impl PremiumFeature {
         match self {
             Self::IncreasedLimits => entry(
                 "premiumFeatureIncreasedLimits",
-                "Doubled limits",
-                "Up to 1000 channels, 20 folders, 10 pins, 20 public links and more.",
+                keys::Q_MONEY_PREMIUM_FEATURE_INCREASED_LIMITS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_INCREASED_LIMITS_ABOUT,
                 Some("double_limits"),
             ),
             Self::IncreasedUploadFileSize => entry(
                 "premiumFeatureIncreasedUploadFileSize",
-                "Files up to 4 GB",
-                "Upload documents and media of up to 4 GB each.",
+                keys::Q_MONEY_PREMIUM_FEATURE_UPLOAD_SIZE_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_UPLOAD_SIZE_ABOUT,
                 Some("more_upload"),
             ),
             Self::ImprovedDownloadSpeed => entry(
                 "premiumFeatureImprovedDownloadSpeed",
-                "Faster download speed",
-                "No speed limits when downloading media and documents.",
+                keys::Q_MONEY_PREMIUM_FEATURE_DOWNLOAD_SPEED_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_DOWNLOAD_SPEED_ABOUT,
                 Some("faster_download"),
             ),
             Self::VoiceRecognition => entry(
                 "premiumFeatureVoiceRecognition",
-                "Voice-to-text conversion",
-                "Read the transcript of any incoming voice message.",
+                keys::Q_MONEY_PREMIUM_FEATURE_VOICE_RECOGNITION_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_VOICE_RECOGNITION_ABOUT,
                 Some("voice_to_text"),
             ),
             Self::DisabledAds => entry(
                 "premiumFeatureDisabledAds",
-                "No ads",
-                "Sponsored messages in public channels are no longer shown.",
+                keys::Q_MONEY_PREMIUM_FEATURE_NO_ADS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_NO_ADS_ABOUT,
                 Some("no_ads"),
             ),
             Self::UniqueReactions => entry(
                 "premiumFeatureUniqueReactions",
-                "Unique reactions",
-                "Add more reactions to messages, including exclusive ones.",
+                keys::Q_MONEY_PREMIUM_FEATURE_UNIQUE_REACTIONS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_UNIQUE_REACTIONS_ABOUT,
                 Some("infinite_reactions"),
             ),
             Self::UniqueStickers => entry(
                 "premiumFeatureUniqueStickers",
-                "Premium stickers",
-                "Exclusive stickers with fullscreen effects.",
+                keys::Q_MONEY_PREMIUM_FEATURE_PREMIUM_STICKERS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_PREMIUM_STICKERS_ABOUT,
                 Some("premium_stickers"),
             ),
             Self::CustomEmoji => entry(
                 "premiumFeatureCustomEmoji",
-                "Animated emoji",
-                "Use custom emoji from any pack in your messages.",
+                keys::Q_MONEY_PREMIUM_FEATURE_ANIMATED_EMOJI_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_ANIMATED_EMOJI_ABOUT,
                 Some("animated_emoji"),
             ),
             Self::AdvancedChatManagement => entry(
                 "premiumFeatureAdvancedChatManagement",
-                "Advanced chat management",
-                "Tools to organize your chats: auto-archive and more.",
+                keys::Q_MONEY_PREMIUM_FEATURE_ADVANCED_CHAT_MANAGEMENT_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_ADVANCED_CHAT_MANAGEMENT_ABOUT,
                 Some("advanced_chat_management"),
             ),
             Self::ProfileBadge => entry(
                 "premiumFeatureProfileBadge",
-                "Profile badge",
-                "A badge next to your name shows you are subscribed.",
+                keys::Q_MONEY_PREMIUM_FEATURE_PROFILE_BADGE_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_PROFILE_BADGE_ABOUT,
                 Some("profile_badge"),
             ),
             Self::EmojiStatus => entry(
                 "premiumFeatureEmojiStatus",
-                "Emoji status",
-                "Choose an emoji status to show next to your name.",
+                keys::Q_MONEY_PREMIUM_FEATURE_EMOJI_STATUS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_EMOJI_STATUS_ABOUT,
                 Some("emoji_status"),
             ),
             Self::AnimatedProfilePhoto => entry(
                 "premiumFeatureAnimatedProfilePhoto",
-                "Animated profile pictures",
-                "Video avatars that play in chat lists and profiles.",
+                keys::Q_MONEY_PREMIUM_FEATURE_ANIMATED_PROFILE_PHOTO_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_ANIMATED_PROFILE_PHOTO_ABOUT,
                 Some("animated_userpics"),
             ),
             Self::ForumTopicIcon => entry(
                 "premiumFeatureForumTopicIcon",
-                "Topic icons",
-                "Create topics with any custom emoji as the icon.",
+                keys::Q_MONEY_PREMIUM_FEATURE_TOPIC_ICONS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_TOPIC_ICONS_ABOUT,
                 None,
             ),
             Self::AppIcons => entry(
                 "premiumFeatureAppIcons",
-                "Special app icons",
-                "Choose from a selection of Premium app icons.",
+                keys::Q_MONEY_PREMIUM_FEATURE_APP_ICONS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_APP_ICONS_ABOUT,
                 None,
             ),
             Self::RealTimeChatTranslation => entry(
                 "premiumFeatureRealTimeChatTranslation",
-                "Real-time translation",
-                "Translate entire chats in real time.",
+                keys::Q_MONEY_PREMIUM_FEATURE_TRANSLATION_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_TRANSLATION_ABOUT,
                 Some("translations"),
             ),
             Self::UpgradedStories => entry(
                 "premiumFeatureUpgradedStories",
-                "Upgraded stories",
-                "Longer stories, more captions, link and permanent options.",
+                keys::Q_MONEY_PREMIUM_FEATURE_STORIES_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_STORIES_ABOUT,
                 Some("stories"),
             ),
             Self::ChatBoost => entry(
                 "premiumFeatureChatBoost",
-                "Boosts for channels",
-                "Boost channels to unlock perks for everyone.",
+                keys::Q_MONEY_PREMIUM_FEATURE_BOOSTS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_BOOSTS_ABOUT,
                 None,
             ),
             Self::AccentColor => entry(
                 "premiumFeatureAccentColor",
-                "Name and profile colors",
-                "Pick a color and logo for your name, replies and profile.",
+                keys::Q_MONEY_PREMIUM_FEATURE_PEER_COLORS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_PEER_COLORS_ABOUT,
                 Some("peer_colors"),
             ),
             Self::BackgroundForBoth => entry(
                 "premiumFeatureBackgroundForBoth",
-                "Wallpapers for both sides",
-                "Set a wallpaper for both you and your chat partner.",
+                keys::Q_MONEY_PREMIUM_FEATURE_WALLPAPERS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_WALLPAPERS_ABOUT,
                 Some("wallpapers"),
             ),
             Self::SavedMessagesTags => entry(
                 "premiumFeatureSavedMessagesTags",
-                "Tags for Saved Messages",
-                "Organize saved messages with tags.",
+                keys::Q_MONEY_PREMIUM_FEATURE_SAVED_TAGS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_SAVED_TAGS_ABOUT,
                 Some("saved_tags"),
             ),
             Self::MessagePrivacy => entry(
                 "premiumFeatureMessagePrivacy",
-                "Message privacy",
-                "Choose who can send you messages.",
+                keys::Q_MONEY_PREMIUM_FEATURE_MESSAGE_PRIVACY_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_MESSAGE_PRIVACY_ABOUT,
                 Some("message_privacy"),
             ),
             Self::LastSeenTimes => entry(
                 "premiumFeatureLastSeenTimes",
-                "Last seen times",
-                "See the last seen time of people who hid it.",
+                keys::Q_MONEY_PREMIUM_FEATURE_LAST_SEEN_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_LAST_SEEN_ABOUT,
                 Some("last_seen"),
             ),
             Self::Business => entry(
                 "premiumFeatureBusiness",
-                "Telegram Business",
-                "Business hours, quick replies, chatbots and more.",
+                keys::BUSINESS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_BUSINESS_ABOUT,
                 Some("business"),
             ),
             Self::MessageEffects => entry(
                 "premiumFeatureMessageEffects",
-                "Message effects",
-                "Add animated effects to private messages.",
+                keys::Q_MONEY_PREMIUM_FEATURE_MESSAGE_EFFECTS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_MESSAGE_EFFECTS_ABOUT,
                 Some("effects"),
             ),
             Self::Checklists => entry(
                 "premiumFeatureChecklists",
-                "Checklists",
-                "Create checklists in chats.",
+                keys::Q_MONEY_PREMIUM_FEATURE_CHECKLISTS_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_CHECKLISTS_ABOUT,
                 Some("todo"),
             ),
             Self::PaidMessages => entry(
                 "premiumFeaturePaidMessages",
-                "Paid messages",
-                "Charge Stars for messages from people outside your contacts.",
+                keys::Q_MONEY_PREMIUM_FEATURE_PAID_MESSAGES_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_PAID_MESSAGES_ABOUT,
                 None,
             ),
             Self::ProtectPrivateChatContent => entry(
                 "premiumFeatureProtectPrivateChatContent",
-                "Protect private chat content",
-                "Restrict forwarding and saving of your private chats.",
+                keys::Q_MONEY_PREMIUM_FEATURE_PROTECT_PRIVATE_CONTENT_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_PROTECT_PRIVATE_CONTENT_ABOUT,
                 Some("no_forwards"),
             ),
             Self::TextComposition => entry(
                 "premiumFeatureTextComposition",
-                "AI text tools",
-                "Rewrite, translate and fix your messages while typing.",
+                keys::Q_MONEY_PREMIUM_FEATURE_TEXT_COMPOSITION_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_TEXT_COMPOSITION_ABOUT,
                 Some("ai_compose"),
             ),
             Self::RichMessages => entry(
                 "premiumFeatureRichMessages",
-                "Rich messages",
-                "Send messages with extended formatting.",
+                keys::Q_MONEY_PREMIUM_FEATURE_RICH_MESSAGES_TITLE,
+                keys::Q_MONEY_PREMIUM_FEATURE_RICH_MESSAGES_ABOUT,
                 Some("rich_formatting"),
             ),
         }
@@ -293,12 +293,12 @@ impl PremiumFeature {
 
     /// Row and preview title.
     pub fn title(self) -> &'static str {
-        self.entry().title
+        tr(self.entry().title)
     }
 
     /// Row and preview description.
     pub fn about(self) -> &'static str {
-        self.entry().about
+        tr(self.entry().about)
     }
 
     /// tdesktop `LookupPremiumRef`: the `/start` ref the subscribe button

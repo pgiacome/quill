@@ -178,6 +178,8 @@
 "lng_switch_emoji" = "Emoji";
 "qll_people_1_more_boost" = "1 more boost";
 "qll_people_a_title_that_members_will" = "A title that members will see instead of 'Admin'. Empty removes it.";
+"qll_people_age_years#one" = "{count} year old";
+"qll_people_age_years#other" = "{count} years old";
 "qll_people_abort" = "Abort";
 "qll_people_about_copied" = "Description copied to clipboard";
 "qll_people_action_failed" = "action failed";
@@ -548,7 +550,8 @@
 "qll_people_refresh" = "Refresh";
 "qll_people_remove_birthday" = "Remove birthday";
 "qll_people_remove_emoji_pack" = "Remove emoji pack";
-"qll_people_remove_from_the" = "Remove {name} from the {place}?";
+"qll_people_remove_from_the_channel" = "Remove {name} from the channel?";
+"qll_people_remove_from_the_group" = "Remove {name} from the group?";
 "qll_people_remove_member" = "Remove member";
 "qll_people_remove_pack" = "Remove pack";
 "qll_people_remove_personal_channel" = "Remove personal channel";
@@ -685,7 +688,7 @@
 "qll_people_welcome_messages_need_a_live" = "Welcome messages need a live connection (demo)";
 "qll_people_why_are_you_reporting_this" = "Why are you reporting this photo?";
 "qll_people_year" = "Year";
-"qll_people_years_old" = "{month} {day}, {year} ({age} years old)";
+"qll_people_years_old" = "{month} {day}, {year} ({age})";
 "qll_people_you_are_an_admin_but" = "You are an admin, but posting is disabled for you.";
 "qll_people_you_are_banned_from_this" = "You are banned from this channel.";
 "qll_people_you_cant_change_the_discussion" = "You can't change the discussion group here.";
@@ -718,3 +721,8 @@
 "qll_people_import_unreadable" = "Couldn't read {file}.";
 "qll_people_import_too_large" = "{file} is too large to be a contact list.";
 "qll_people_import_unnamed" = "Unnamed";
+"qll_people_profile_tab_posts" = "Posts";
+"qll_people_profile_tab_gifts" = "Gifts";
+"qll_people_profile_tab_links" = "Links";
+"qll_people_profile_tab_music" = "Music";
+"qll_people_profile_tab_voice" = "Voice messages";

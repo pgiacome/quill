@@ -31,6 +31,32 @@ use quill::telegram::envelope::{ChatKind, format_payment_price};
 /// Rows drawn at once; the search narrows the rest.
 const ROWS_MAX: usize = 150;
 
+/// The giveaway sentences that name the boosted chat, in the group or
+/// the channel wording.
+struct PlaceKeys {
+    receive: quill::lang::Key,
+    only_new: quill::lang::Key,
+    winners: quill::lang::Key,
+}
+
+impl PlaceKeys {
+    fn for_group(group: bool) -> Self {
+        if group {
+            Self {
+                receive: keys::Q_MONEY_THIS_WILL_RECEIVE_GROUP,
+                only_new: keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_GROUP,
+                winners: keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_GROUP,
+            }
+        } else {
+            Self {
+                receive: keys::Q_MONEY_THIS_WILL_RECEIVE_CHANNEL,
+                only_new: keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_CHANNEL,
+                winners: keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_CHANNEL,
+            }
+        }
+    }
+}
+
 impl QuillApp {
     /// Everything of the form that only a random giveaway has: the extra
     /// channels, who may take part, the extra prize, the end date and
@@ -45,7 +71,7 @@ impl QuillApp {
     ) -> Div {
         let options = &session.payments.giveaway.options;
         let group = Self::giveaway_group(session, draft.boosted_chat_id);
-        let place = if group { "group" } else { "channel" };
+        let place = PlaceKeys::for_group(group);
         let chat_name = session
             .chats
             .get(&draft.boosted_chat_id)
@@ -58,10 +84,9 @@ impl QuillApp {
         body = body
             .child(section_title(tr(keys::GIVEAWAY_CHANNELS_TITLE)))
             .child(div().text_sm().child(tr_with(
-                keys::Q_MONEY_THIS_WILL_RECEIVE,
+                place.receive,
                 &[
                     ("chat_name", &chat_name.to_string()),
-                    ("place", place),
                     ("boosts_text", &(boosts_text(boosts)).to_string()),
                 ],
             )));
@@ -124,10 +149,7 @@ impl QuillApp {
                         })),
                     ),
             )
-            .child(about_line(tr_with(
-                keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO,
-                &[("place", place)],
-            )));
+            .child(about_line(tr(place.only_new)));
         body = self.giveaway_countries_row(body, draft, session, cx);
 
         // Additional prize.
@@ -187,8 +209,8 @@ impl QuillApp {
                     ),
             )
             .child(about_line(tr_with(
-                keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR,
-                &[("place", place), ("max_days", &max_days.to_string())],
+                place.winners,
+                &[("max_days", &max_days.to_string())],
             )));
 
         // Show winners.

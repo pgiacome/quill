@@ -8,7 +8,7 @@
 //! date" is a Monday-first month grid computed from civil dates.
 #![deny(clippy::indexing_slicing)]
 
-use crate::lang::{keys, tr};
+use crate::lang::{keys, tr, tr_with};
 use crate::local_time::{CivilTime, civil_local, utc_offset_at};
 use crate::search_tabs::SearchTab;
 
@@ -356,10 +356,16 @@ impl YearMonth {
 
     /// "October 2026" (tdesktop's calendar caption).
     pub fn title(self) -> String {
-        format!(
-            "{} {}",
-            crate::local_time::month_name(self.month),
-            self.year
+        let year = self.year.to_string();
+        tr_with(
+            keys::MONTH_YEAR,
+            &[
+                (
+                    "month",
+                    crate::local_time::month_name_nominative(self.month),
+                ),
+                ("year", &year),
+            ],
         )
     }
 

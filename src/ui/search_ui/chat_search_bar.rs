@@ -49,7 +49,7 @@ impl QuillApp {
             })
             .unwrap_or_default();
         let subject = if !query.is_empty() {
-            format!("“{query}”")
+            tr_with(keys::Q_CHAT_QUERY, &[("query", &query)])
         } else if let Some(name) = &sender_label {
             tr_with(keys::Q_CHAT_MESSAGES_FROM, &[("name", &name.to_string())])
         } else {

@@ -524,7 +524,7 @@ pub fn birthday_table(day: i32, month: i32, year: i32) -> Vec<(&'static str, Str
         ("Day", day.to_string()),
         (
             "Month",
-            crate::local_time::month_name(month.clamp(1, 12) as u8).to_string(),
+            crate::local_time::month_name_nominative(month.clamp(1, 12) as u8).to_string(),
         ),
     ];
     if year > 0 {

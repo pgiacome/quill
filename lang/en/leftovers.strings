@@ -102,7 +102,8 @@
 "qll_leftovers_gift_stars_for" = "Gift {count} Stars for {price}";
 "qll_leftovers_giveaway_prizes_about" = "Turn this on if you want to give the winners your own prizes in addition to {prize}. Up to {max} characters.";
 "qll_leftovers_last_active" = "Last active: {date}";
-"qll_leftovers_level_required" = "Level {required} required. This {group_word} is at level {have}.";
+"qll_leftovers_level_required_channel" = "Level {required} required. This channel is at level {have}.";
+"qll_leftovers_level_required_group" = "Level {required} required. This group is at level {have}.";
 "qll_leftovers_loading_older_messages" = "Loading older messages";
 "qll_leftovers_logout_warning" = "Remember, logging out kills all your Secret Chats. Downloaded media will be erased from this device.";
 "qll_leftovers_mark_option_correct" = "Mark option {number} as the correct answer";
@@ -116,6 +117,7 @@
 "qll_leftovers_pinned" = "Pinned";
 "qll_leftovers_price_up_to_stars" = "The price can be up to {count} Stars.";
 "qll_leftovers_push_to_talk_release_delay" = "Push-to-talk release delay";
+"qll_leftovers_quick_action_react" = "React with the quick reaction";
 "qll_leftovers_read_only_mode" = "Read-Only Mode";
 "qll_leftovers_replacing_attachment_with" = "Replacing attachment with {name}";
 "qll_leftovers_reply_requested" = "↩ Reply requested";
@@ -129,6 +131,8 @@
 "qll_leftovers_terms_delete_warning" = "Warning, this will irreversibly delete your Telegram account and all the data you store in the Telegram cloud.\n\nImportant: You can Cancel now and export your data first instead of losing it. (To do this, open Settings › Data & Storage › Export Telegram data.)";
 "qll_leftovers_thinking" = "Thinking…";
 "qll_leftovers_timer_set" = "timer {time}";
+"qll_leftovers_type#one" = "type";
+"qll_leftovers_type#other" = "types";
 "qll_leftovers_unmuted" = "Unmuted";
 "qll_leftovers_unpinned" = "Unpinned";
 "qll_leftovers_video_name_size" = "Video {name} ({size})";

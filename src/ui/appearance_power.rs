@@ -239,14 +239,14 @@ impl QuillApp {
         for group in &GROUPS {
             let mut block = div().flex().flex_col().gap_1();
             if let Some(title) = group.title {
-                block = block.child(div().text_xs().text_color(muted).child(title));
+                block = block.child(div().text_xs().text_color(muted).child(tr(title)));
             }
             for &(flag, label) in group.items {
                 let playing = bits & flag.bit() == 0;
                 let row = self.appearance_switch_row(
                     cx,
                     flag_id(flag),
-                    label,
+                    tr(label),
                     "",
                     playing,
                     move |prefs, on| prefs.power_saving = with_flag(prefs.power_saving, flag, !on),

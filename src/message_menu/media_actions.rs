@@ -2,6 +2,7 @@
 //! and labels.
 
 use super::order;
+use crate::lang::{keys, tr};
 
 /// Declares [`MediaAction`] and [`MediaAction::ALL`] from one list. Each
 /// entry is a variant plus the slots it owns, as `pattern => value` pairs: a
@@ -84,23 +85,23 @@ impl MediaAction {
 impl MediaAction {
     pub fn label(self, finder: bool) -> &'static str {
         match self {
-            Self::CancelDownload => "Cancel Download",
-            Self::OpenGif => "Open GIF",
-            Self::SaveGif => "Add to GIFs",
-            Self::ViewStickerSet { installed: true } => "View Sticker Set",
-            Self::ViewStickerSet { installed: false } => "Add Stickers",
+            Self::CancelDownload => tr(keys::Q_CHAT_MENU_CANCEL_DOWNLOAD),
+            Self::OpenGif => tr(keys::Q_CHAT_MENU_OPEN_GIF),
+            Self::SaveGif => tr(keys::Q_CHAT_MENU_ADD_GIF),
+            Self::ViewStickerSet { installed: true } => tr(keys::Q_CHAT_MENU_VIEW_STICKER_SET),
+            Self::ViewStickerSet { installed: false } => tr(keys::Q_CHAT_MENU_ADD_STICKERS),
             Self::AddToSet { emoji } => {
                 crate::sticker_set_box::SetKind::of(emoji).add_to_set_label()
             }
-            Self::ToggleFavorite { remove: false } => "Add to Favorites",
-            Self::ToggleFavorite { remove: true } => "Remove from Favorites",
-            Self::ShowInFolder if finder => "Show in Finder",
-            Self::ShowInFolder => "Show in Folder",
-            Self::SaveForNotifications => "Save for Notifications",
-            Self::SaveTo => "Save to...",
-            Self::SaveAs => "Save As...",
-            Self::CopyImage => "Copy Image",
-            Self::CopyFilename => "Copy Filename",
+            Self::ToggleFavorite { remove: false } => tr(keys::FAVED_STICKERS_ADD),
+            Self::ToggleFavorite { remove: true } => tr(keys::FAVED_STICKERS_REMOVE),
+            Self::ShowInFolder if finder => tr(keys::Q_CHAT_MENU_SHOW_IN_FINDER),
+            Self::ShowInFolder => tr(keys::Q_CHAT_MENU_SHOW_IN_FOLDER),
+            Self::SaveForNotifications => tr(keys::Q_CHAT_MENU_SAVE_FOR_NOTIFICATIONS),
+            Self::SaveTo => tr(keys::Q_CHAT_MENU_SAVE_TO),
+            Self::SaveAs => tr(keys::Q_CHAT_MENU_SAVE_AS),
+            Self::CopyImage => tr(keys::Q_CHAT_MENU_COPY_IMAGE),
+            Self::CopyFilename => tr(keys::Q_CHAT_MENU_COPY_FILENAME),
         }
     }
 

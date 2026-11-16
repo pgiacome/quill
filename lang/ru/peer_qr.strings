@@ -1,0 +1,3 @@
+// The QR code box (tdesktop ui/boxes/peer_qr_box.cpp, ui/effects/peer_qr_*.cpp).
+"qll_qr_box_changed_try_again" = "Код изменился, пока создавалось его изображение. Повторите попытку.";
+"qll_qr_box_gifts_failed" = "Не удалось загрузить подарки";
