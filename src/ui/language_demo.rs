@@ -199,8 +199,7 @@ impl QuillApp {
         };
         let pack = demo_ru_pack();
         let snapshot = quill::lang::prefs::build_snapshot(&choice, &[], &pack);
-        super::language_ui::install_pack(Some(snapshot));
-        super::setup_app_menus(cx);
+        super::language_ui::install_pack(Some(snapshot), cx);
         self.open_language_box(window, cx);
     }
 }

@@ -2,8 +2,8 @@
 #![deny(clippy::indexing_slicing)]
 
 use super::app::QuillApp;
-use super::chat_row::chat_avatar;
 use super::chat_row::initials_avatar;
+use super::chat_row::{chat_avatar, compact_count};
 use super::pressable::action_row;
 use super::profile_panels::{CopyAction, copy_menu};
 use super::*;
@@ -16,7 +16,7 @@ use gpui_kit::component::*;
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::*;
 use quill::ids::ChatId;
-use quill::lang::{keys, tr, tr_with, trn};
+use quill::lang::{keys, tr, tr_with, trn, trn_with};
 use quill::local_path::sandboxed_display_path;
 use quill::state::{InfoPanelTarget, SupergroupMembersFetch};
 use quill::state::{ProfileChatsKind, Session};
@@ -326,7 +326,7 @@ impl QuillApp {
                 action_row(
                     ("info-media-count", index as u64),
                     Some(icon),
-                    trn(*key, count),
+                    trn_with(*key, count, &[("count", &compact_count(count))]),
                     false,
                     cx,
                 )
@@ -548,25 +548,7 @@ pub(in crate::ui) fn format_phone(raw: &str) -> String {
 
 /// "July 30, 1965 (61 years old)" — Telegram Desktop's birthday row.
 pub(super) fn format_birthday(date: quill::telegram::envelope::Birthdate) -> String {
-    const MONTHS: [quill::lang::Key; 12] = [
-        keys::MONTH_DAY1,
-        keys::MONTH_DAY2,
-        keys::MONTH_DAY3,
-        keys::MONTH_DAY4,
-        keys::MONTH_DAY5,
-        keys::MONTH_DAY6,
-        keys::MONTH_DAY7,
-        keys::MONTH_DAY8,
-        keys::MONTH_DAY9,
-        keys::MONTH_DAY10,
-        keys::MONTH_DAY11,
-        keys::MONTH_DAY12,
-    ];
-    let month = MONTHS
-        .get(usize::from(date.month.clamp(1, 12)) - 1)
-        .copied()
-        .map(tr)
-        .unwrap_or_default();
+    let month = quill::local_time::month_name(date.month);
     match date.year {
         Some(year) => {
             let today = quill::local_time::civil_local(quill::local_time::now_unix());
@@ -627,7 +609,6 @@ pub(super) fn supergroup_info_title(session: &Session, supergroup_id: i64) -> qu
 #[cfg(test)]
 mod tests {
     use super::{format_birthday, format_phone};
-    use quill::lang::{keys, tr, tr_with};
 
     #[test]
     fn a_birthday_reads_with_and_without_a_year() {
@@ -636,13 +617,7 @@ mod tests {
             month: 1,
             year: None,
         };
-        assert_eq!(
-            format_birthday(yearless),
-            tr_with(
-                keys::MONTH_DAY,
-                &[("month", tr(keys::MONTH_DAY1)), ("day", "1")]
-            )
-        );
+        assert_eq!(format_birthday(yearless), "January 1");
         let dated = quill::telegram::envelope::Birthdate {
             day: 1,
             month: 1,

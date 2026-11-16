@@ -2,7 +2,7 @@
 //! `boxes/star_gift_auction_box.cpp`, `lng_auction_*`).
 
 use super::{AuctionPhase, AuctionRound, AuctionState};
-use crate::lang::{keys, tr, tr_with, trn};
+use crate::lang::{keys, tr, tr_with, trn, trn_decimal};
 use crate::premium_hub::group_digits;
 
 /// Seconds from `now` until `date`, never negative.
@@ -100,7 +100,7 @@ pub fn bid_title(started: bool) -> &'static str {
 
 /// "Top 5 bidders will win" (`lng_auction_bid_subtitle`).
 pub fn bid_subtitle(per_round: i32) -> String {
-    trn(keys::Q_MONEY_AUCTION_WILL_WIN, per_round)
+    trn_decimal(keys::Q_MONEY_AUCTION_WILL_WIN, i64::from(per_round))
 }
 
 /// The toast after a bid: title and text.
@@ -259,31 +259,34 @@ pub fn average_tooltip(average: i64, title: &str) -> String {
 
 /// "3 items bought" (`lng_auction_bought`), without the emoji and arrow.
 pub fn bought_link(count: i32) -> String {
-    trn(keys::Q_MONEY_AUCTION_BOUGHT, count)
+    trn_decimal(keys::Q_MONEY_AUCTION_BOUGHT, i64::from(count))
 }
 
 /// "3 Items Bought" (`lng_auction_bought_title`).
 pub fn bought_title(count: i32) -> String {
-    trn(keys::Q_MONEY_AUCTION_BOUGHT_TITLE, count)
+    trn_decimal(keys::Q_MONEY_AUCTION_BOUGHT_TITLE, i64::from(count))
 }
 
 /// "View 12 Variants" (`lng_auction_preview_variants`).
 pub fn variants_link(count: i32) -> String {
     tr_with(
         keys::Q_MONEY_AUCTION_VIEW_COUNT,
-        &[("variants", &trn(keys::Q_MONEY_AUCTION_VARIANT, count))],
+        &[(
+            "variants",
+            &trn_decimal(keys::Q_MONEY_AUCTION_VARIANT, i64::from(count)),
+        )],
     )
 }
 
 /// The about box's three feature rows: title and text.
 pub fn about_features(per_round: i32, rounds: i32) -> [(String, String); 3] {
     let per = i64::from(per_round);
-    let gifts = trn(keys::Q_MONEY_AUCTION_GIFT_IS, per);
-    let round_count = trn(keys::Q_MONEY_AUCTION_ROUND_COUNT, i64::from(rounds));
-    let bidders = trn(keys::Q_MONEY_AUCTION_TOP_BIDDERS_LOWER, per);
+    let gifts = trn_decimal(keys::Q_MONEY_AUCTION_GIFT_IS, per);
+    let round_count = trn_decimal(keys::Q_MONEY_AUCTION_ROUND_COUNT, i64::from(rounds));
+    let bidders = trn_decimal(keys::Q_MONEY_AUCTION_TOP_BIDDERS_LOWER, per);
     [
         (
-            trn(keys::Q_MONEY_AUCTION_TOP_BIDDERS_TITLE, per),
+            trn_decimal(keys::Q_MONEY_AUCTION_TOP_BIDDERS_TITLE, per),
             tr_with(
                 keys::Q_MONEY_AUCTION_DROPPED,
                 &[
@@ -314,10 +317,10 @@ pub fn send_about(per_round: i32) -> String {
     tr_with(
         keys::Q_MONEY_AUCTION_SEND_ABOUT,
         &[
-            ("gifts", &trn(keys::Q_MONEY_AUCTION_GIFT_IS, per)),
+            ("gifts", &trn_decimal(keys::Q_MONEY_AUCTION_GIFT_IS, per)),
             (
                 "bidders",
-                &trn(keys::Q_MONEY_AUCTION_TOP_BIDDERS_LOWER, per),
+                &trn_decimal(keys::Q_MONEY_AUCTION_TOP_BIDDERS_LOWER, per),
             ),
         ],
     )
@@ -372,7 +375,7 @@ pub fn auction_bar(list: &[AuctionState], now: i64) -> Option<AuctionBar> {
         tr(keys::Q_MONEY_AUCTION_WINNING_ALL).to_string()
     };
     Some(AuctionBar {
-        title: trn(keys::Q_MONEY_AUCTION_ACTIVE_TITLE, list.len() as i64),
+        title: trn_decimal(keys::Q_MONEY_AUCTION_ACTIVE_TITLE, list.len() as i64),
         text,
         outbid: outbid > 0,
         button: tr(keys::Q_MONEY_AUCTION_VIEW).into(),

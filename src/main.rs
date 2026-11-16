@@ -265,13 +265,6 @@ fn ui_main(args: &[String]) {
         // kit Phase 7: File / Edit / View / Window / Help — native on
         // macOS, kit `AppMenuBar` data on Linux/Windows. The native menu
         // waits for the main window (`install_app_menus`).
-        //
-        // The menu labels are read now, before `LanguageUi::new` installs
-        // the pack it loads from the cache; do that first so the menu bar
-        // starts in the chosen language.
-        if let Some(root) = quill::settings::safe_app_root() {
-            quill::lang::install(quill::lang::prefs::load_cached_snapshot(&root));
-        }
         #[cfg(not(target_os = "macos"))]
         ui::setup_app_menus(cx);
         ui::flush_settings_on_quit(cx);
