@@ -309,16 +309,6 @@ fn names_line(summary: &CommunityRowSummary, cx: &App) -> AnyElement {
         .into_any_element()
 }
 
-/// The row's date: its newest chat's last message (`_chatsListDate`),
-/// in the chat rows' format.
-fn row_date(date: i32) -> Option<String> {
-    (date > 0).then(|| {
-        let now = quill::local_time::civil_local(quill::local_time::now_unix());
-        let date = quill::local_time::civil_local(i64::from(date));
-        quill::local_time::chat_list_stamp(&date, &now)
-    })
-}
-
 /// The unread-chats counter, grey when every unread chat is muted.
 fn unread_badge(text: String, muted: bool, cx: &App) -> AnyElement {
     div()
@@ -441,15 +431,18 @@ impl QuillApp {
                                             .truncate()
                                             .child(summary.name.clone()),
                                     )
-                                    .when_some(row_date(summary.date), |line, stamp| {
-                                        line.child(
-                                            div()
-                                                .flex_none()
-                                                .text_xs()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child(stamp),
-                                        )
-                                    }),
+                                    .when_some(
+                                        quill::local_time::list_stamp(summary.date),
+                                        |line, stamp| {
+                                            line.child(
+                                                div()
+                                                    .flex_none()
+                                                    .text_xs()
+                                                    .text_color(cx.theme().muted_foreground)
+                                                    .child(stamp),
+                                            )
+                                        },
+                                    ),
                             )
                             .child(
                                 div()

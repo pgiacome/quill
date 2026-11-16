@@ -14,6 +14,9 @@ use std::sync::atomic::Ordering;
 
 const FORUM: i64 = 16;
 const OPEN_TOPIC: i32 = 9;
+/// The newest seeded message's date: a fixed instant, so the demo's rows
+/// read the same on every run (the other demos' messages use it too).
+const NEWEST: i64 = 1_790_632_300;
 
 register_demos![
     DemoSpec::chats(
@@ -31,17 +34,59 @@ register_demos![
         "screenshot demo — forum topic with no messages"
     )
     .setup(QuillApp::demo_topic_empty),
-    DemoSpec::chats(
-        "ready-forum-topics",
-        "screenshot demo — forum topic list"
-    )
-    .setup(QuillApp::demo_forum_topics),
+    DemoSpec::chats("ready-forum-topics", "screenshot demo — forum topic list")
+        .setup(QuillApp::demo_forum_topics),
 ];
 
-fn topic_json(id: i32, name: &str, unread: i32, outgoing: bool, said: &str, date: i64) -> String {
+/// One seeded topic: its last message (Maya's, or yours) and its counters.
+struct Seed {
+    id: i32,
+    name: &'static str,
+    said: &'static str,
+    /// Seconds before `NEWEST`.
+    ago: i64,
+    outgoing: bool,
+    unread: i32,
+    mentions: i32,
+    muted: bool,
+    closed: bool,
+}
+
+const SEED: Seed = Seed {
+    id: 0,
+    name: "",
+    said: "",
+    ago: 0,
+    outgoing: false,
+    unread: 0,
+    mentions: 0,
+    muted: false,
+    closed: false,
+};
+
+fn topic_json(seed: &Seed) -> String {
+    let Seed {
+        id,
+        name,
+        said,
+        ago,
+        outgoing,
+        unread,
+        mentions,
+        muted,
+        closed,
+    } = *seed;
+    let last = 100 + id;
+    // Read up to the first unread message, so the count is the server's.
+    let read = last - unread;
+    let date = NEWEST - ago;
+    let (default_mute, mute_for) = if muted {
+        (false, 2_000_000_000)
+    } else {
+        (true, 0)
+    };
     format!(
-        r#"{{"info":{{"@type":"forumTopicInfo","chat_id":{FORUM},"forum_topic_id":{id},"name":"{name}","icon":{{"@type":"forumTopicIcon","color":16766590,"custom_emoji_id":"0"}},"is_general":false,"is_closed":false,"is_hidden":false,"is_outgoing":{outgoing}}},"last_message":{{"id":{last},"chat_id":{FORUM},"date":{date},"is_outgoing":{outgoing},"sender_id":{{"@type":"messageSenderUser","user_id":81}},"content":{{"@type":"messageText","text":{{"@type":"formattedText","text":"{said}","entities":[]}}}}}},"order":"{id}","is_pinned":false,"unread_count":{unread},"last_read_inbox_message_id":0,"notification_settings":{{"@type":"chatNotificationSettings","use_default_mute_for":true,"mute_for":0}}}}"#,
-        last = 100 + id
+        r#"{{"info":{{"@type":"forumTopicInfo","chat_id":{FORUM},"forum_topic_id":{id},"name":"{name}","icon":{{"@type":"forumTopicIcon","color":16766590,"custom_emoji_id":"0"}},"is_general":false,"is_closed":{closed},"is_hidden":false,"is_outgoing":false}},"last_message":{{"id":{last},"chat_id":{FORUM},"date":{date},"is_outgoing":{outgoing},"sender_id":{{"@type":"messageSenderUser","user_id":81}},"content":{{"@type":"messageText","text":{{"@type":"formattedText","text":"{said}","entities":[]}}}}}},"order":"{id}","is_pinned":false,"unread_count":{unread},"unread_mention_count":{mentions},"last_read_inbox_message_id":{read},"notification_settings":{{"@type":"chatNotificationSettings","use_default_mute_for":{default_mute},"mute_for":{mute_for}}}}}"#
     )
 }
 
@@ -50,9 +95,6 @@ fn seed_forum(session: &mut Session, app: &QuillApp) {
     let seq = &app.demo_ui.seq;
     seq.store(session.last_seq, Ordering::SeqCst);
     let dyn_sink: std::sync::Arc<dyn quill::diagnostics::DiagnosticSink> = sink;
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs() as i64);
     for json in [
         format!(
             r#"{{"@type":"updateNewChat","chat":{{"id":{FORUM},"title":"Dev Forum","type":{{"@type":"chatTypeSupergroup","supergroup_id":{FORUM},"is_channel":false}},"unread_count":0}}}}"#
@@ -66,56 +108,77 @@ fn seed_forum(session: &mut Session, app: &QuillApp) {
             session.apply(owned);
         }
     }
-    // (id, name, unread, last message outgoing, preview, age in seconds)
-    let names = [
-        (
-            2,
-            "Announcements",
-            0,
-            false,
-            "Rules are up for the quarter",
-            600,
-        ),
-        (
-            3,
-            "Release planning and roadmap discussion for the next quarter",
-            3,
-            false,
-            "Push the milestone to Friday?",
-            300,
-        ),
-        (4, "Design", 0, false, "New icon set is ready", 1_800),
-        (5, "Backend", 1, false, "Rate limits look stable", 2_400),
-        (6, "Frontend", 0, true, "Fixed the truncation bug", 3_600),
-        (7, "Off topic", 8, false, "Coffee machine is fixed", 7_200),
-        (
-            8,
-            "Questions and answers",
-            0,
-            false,
-            "Thread about topics is open",
-            9_000,
-        ),
-        (
-            OPEN_TOPIC,
-            "Build infrastructure",
-            0,
-            false,
-            "Cache hit rate went up",
-            12_000,
-        ),
+    let seeds = [
+        Seed {
+            id: 2,
+            name: "Announcements",
+            said: "Rules are up for the quarter",
+            ago: 600,
+            closed: true,
+            ..SEED
+        },
+        Seed {
+            id: 3,
+            name: "Release planning and roadmap discussion for the next quarter",
+            said: "Push the milestone to Friday?",
+            ago: 300,
+            unread: 3,
+            ..SEED
+        },
+        Seed {
+            id: 4,
+            name: "Design",
+            said: "New icon set is ready",
+            ago: 1_800,
+            ..SEED
+        },
+        Seed {
+            id: 5,
+            name: "Backend",
+            said: "Rate limits look stable",
+            ago: 2_400,
+            unread: 1,
+            mentions: 1,
+            ..SEED
+        },
+        Seed {
+            id: 6,
+            name: "Frontend",
+            said: "Fixed the truncation bug",
+            ago: 3_600,
+            outgoing: true,
+            ..SEED
+        },
+        Seed {
+            id: 7,
+            name: "Off topic",
+            said: "Coffee machine is fixed",
+            ago: 7_200,
+            unread: 8,
+            muted: true,
+            ..SEED
+        },
+        Seed {
+            id: 8,
+            name: "Questions and answers",
+            said: "Thread about topics is open",
+            ago: 9_000,
+            ..SEED
+        },
+        Seed {
+            id: OPEN_TOPIC,
+            name: "Build infrastructure",
+            said: "Cache hit rate went up",
+            ago: 12_000,
+            ..SEED
+        },
     ];
-    let topics: Vec<String> = names
-        .iter()
-        .map(|(id, name, unread, outgoing, said, ago)| {
-            topic_json(*id, name, *unread, *outgoing, said, now - ago)
-        })
-        .collect();
+    let topics: Vec<String> = seeds.iter().map(topic_json).collect();
     let extra = session.ask_forum_topics(ChatId(FORUM));
     let answer = format!(
         r#"{{"@type":"forumTopics","@extra":"{}","total_count":{},"topics":[{}],"next_offset_date":0,"next_offset_message_id":0,"next_offset_forum_topic_id":0}}"#,
         extra.0,
-        names.len(),
+        seeds.len(),
         topics.join(",")
     );
     if let Some(owned) = copy_and_parse(&answer, seq, &dyn_sink) {
@@ -144,7 +207,7 @@ impl QuillApp {
     /// with the seeded rows. `has_forum_tabs` would draw the tabs instead.
     fn demo_forum_topics(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
         self.demo_topic_session(|session| {
-            session.threads.forum_tabs_supergroups.remove(&16);
+            session.threads.forum_tabs_supergroups.remove(&FORUM);
             session.deselect_topic();
         });
     }

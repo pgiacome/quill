@@ -26,14 +26,10 @@ pub struct ForumTopic {
     /// Cheap preview of `forumTopic.last_message` via
     /// `MessageContent::preview`; empty when there is no last message.
     pub last_message_preview: String,
-    /// `forumTopic.last_message.date` (Unix time), 0 when there is no last
-    /// message — the topic row's timestamp.
-    pub last_message_date: i32,
-    /// `forumTopic.last_message.sender_id`, `None` when there is no last
-    /// message — the sender the topic row's preview leads with.
-    pub last_message_sender: Option<MessageSender>,
-    /// `forumTopic.last_message.is_outgoing` — the preview says "You".
-    pub last_message_is_outgoing: bool,
+    /// What the topic row draws around the preview text: the newest
+    /// message's date, sender and style. `None` when there is no last
+    /// message.
+    pub last_message: Option<TopicLastMessage>,
     /// Subsection tabs: `forumTopicIcon.color` (RGB, schema 1.8.67 line
     /// 3939) — the round topic icon's fill.
     pub icon_color: i32,
@@ -62,6 +58,34 @@ pub struct ForumTopic {
     /// own text draft, shown as "Draft:" in the topic row and restored
     /// when the topic opens (tdesktop `ForumTopic::cloudDraft`).
     pub draft: Option<ChatDraft>,
+}
+
+/// The parts of `forumTopic.last_message` the topic row shows beside its
+/// preview text, kept together so they always describe the same message.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TopicLastMessage {
+    /// Unix seconds: the row's timestamp.
+    pub date: i32,
+    /// The current user sent it: the preview leads with "You".
+    pub is_outgoing: bool,
+    /// Who sent it: the preview leads with their name.
+    pub sender: Option<MessageSender>,
+    /// Media icon, entities, and whether it is a service message (which
+    /// names its actor itself, so it gets no sender prefix).
+    pub style: crate::chatlist_style::ChatPreviewStyle,
+}
+
+impl TopicLastMessage {
+    /// The row's view of `message`, whose preview text is `preview`.
+    pub fn of(message: &ParsedMessage, preview: &str) -> Self {
+        let content = effective_content(&message.content, message.ephemeral.as_ref());
+        Self {
+            date: message.date,
+            is_outgoing: message.is_outgoing,
+            sender: message.sender,
+            style: crate::chatlist_style::preview_style(content, preview),
+        }
+    }
 }
 
 /// Subsection tabs: the `forumTopicInfo` fields that
@@ -178,12 +202,13 @@ pub(crate) fn parse_forum_topic(value: &Value) -> Option<ForumTopic> {
         .get("last_message")
         .and_then(|m| parse_message(m).ok());
     let last_message_id = last_message.as_ref().map_or(0, |m| m.id.0);
-    let last_message_date = last_message.as_ref().map_or(0, |m| m.date);
-    let last_message_sender = last_message.as_ref().and_then(|m| m.sender);
-    let last_message_is_outgoing = last_message.as_ref().is_some_and(|m| m.is_outgoing);
     let last_message_preview = last_message
+        .as_ref()
         .map(|m| effective_content(&m.content, m.ephemeral.as_ref()).preview())
         .unwrap_or_default();
+    let last_message = last_message
+        .as_ref()
+        .map(|m| TopicLastMessage::of(m, &last_message_preview));
     let (icon_color, icon_custom_emoji_id) = icon_fields(info);
     Some(ForumTopic {
         forum_topic_id,
@@ -195,9 +220,7 @@ pub(crate) fn parse_forum_topic(value: &Value) -> Option<ForumTopic> {
         unread_count,
         order,
         last_message_preview,
-        last_message_date,
-        last_message_sender,
-        last_message_is_outgoing,
+        last_message,
         icon_color,
         icon_custom_emoji_id,
         last_message_id,
@@ -265,31 +288,26 @@ mod tests {
         )))
         .expect("topic parses");
         assert_eq!(parsed.last_message_preview, "ship it");
-        assert_eq!(parsed.last_message_date, 1_700_000_000);
-        assert_eq!(
-            parsed.last_message_sender,
-            Some(MessageSender::User { user_id: 5 })
-        );
-        assert!(!parsed.last_message_is_outgoing);
+        let last = parsed.last_message.expect("a last message");
+        assert_eq!(last.date, 1_700_000_000);
+        assert_eq!(last.sender, Some(MessageSender::User { user_id: 5 }));
+        assert!(!last.is_outgoing);
+        assert!(!last.style.service);
 
         let own = parse_forum_topic(&topic(message(
             json!({"@type": "messageSenderChat", "chat_id": 77}),
             true,
         )))
         .expect("topic parses");
-        assert_eq!(
-            own.last_message_sender,
-            Some(MessageSender::Chat { chat_id: 77 })
-        );
-        assert!(own.last_message_is_outgoing);
+        let own = own.last_message.expect("a last message");
+        assert_eq!(own.sender, Some(MessageSender::Chat { chat_id: 77 }));
+        assert!(own.is_outgoing);
     }
 
     #[test]
     fn forum_topic_without_last_message_has_no_date_or_sender() {
         let parsed = parse_forum_topic(&topic(Value::Null)).expect("topic parses");
         assert_eq!(parsed.last_message_preview, "");
-        assert_eq!(parsed.last_message_date, 0);
-        assert_eq!(parsed.last_message_sender, None);
-        assert!(!parsed.last_message_is_outgoing);
+        assert_eq!(parsed.last_message, None);
     }
 }

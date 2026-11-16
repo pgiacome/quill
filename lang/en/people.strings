@@ -177,7 +177,6 @@
 "lng_sure_delete_group" = "Are you sure you want to delete this group? All members will be removed, and all messages will be lost.";
 "lng_switch_emoji" = "Emoji";
 "qll_people_1_more_boost" = "1 more boost";
-"qll_people_1_topic" = "1 topic";
 "qll_people_a_title_that_members_will" = "A title that members will see instead of 'Admin'. Empty removes it.";
 "qll_people_abort" = "Abort";
 "qll_people_about_copied" = "Description copied to clipboard";

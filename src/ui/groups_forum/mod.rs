@@ -927,6 +927,7 @@ crate::ui::shell::register_dialogs! {
 }
 
 mod closed_sends;
+mod forum_topic_row;
 mod forum_topics_pane;
 pub(super) use closed_sends::ClosedTopicSend;
 

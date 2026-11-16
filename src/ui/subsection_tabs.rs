@@ -810,9 +810,45 @@ fn count_pill(count: i32, muted: bool, cx: &App) -> impl IntoElement {
         .child(super::chat_row::compact_count(count))
 }
 
+/// The topic's icon in a `size` box: its custom emoji on its own once
+/// `emoji` has the picture (tdesktop `ForumTopic::paintUserpic` draws no
+/// circle under it), else [`topic_icon`].
+pub(super) fn topic_icon_or_emoji(
+    topic: &ForumTopic,
+    size: f32,
+    emoji: &super::sticker_player::PreviewEmoji,
+    cx: &App,
+) -> AnyElement {
+    let id = topic.icon_custom_emoji_id;
+    let picture = (!topic.is_general && id > 0)
+        .then(|| match emoji.layered.get(&id) {
+            Some(clip) => Some(
+                super::anim_layer::frames(clip.clone())
+                    .size(px(size))
+                    .into_any_element(),
+            ),
+            None => emoji.still.get(&id).map(|still| {
+                img(still.clone())
+                    .id(("topic-row-icon", topic.forum_topic_id as u64))
+                    .size(px(size))
+                    .object_fit(ObjectFit::Contain)
+                    .into_any_element()
+            }),
+        })
+        .flatten();
+    match picture {
+        Some(picture) => div()
+            .size(px(size))
+            .flex_none()
+            .child(picture)
+            .into_any_element(),
+        None => topic_icon(topic, size, cx),
+    }
+}
+
 /// The round topic icon: `forumTopicIcon.color` with the name's first
 /// letter (Telegram Desktop's `TopicIconEmojiEntity`); the General topic
-/// gets a muted "#". Custom-emoji icons fall back to the letter.
+/// gets a muted "#". [`topic_icon_or_emoji`] draws a custom-emoji icon.
 pub(super) fn topic_icon(topic: &ForumTopic, size: f32, cx: &App) -> AnyElement {
     if topic.is_general {
         return div()
