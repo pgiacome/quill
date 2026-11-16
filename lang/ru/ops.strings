@@ -856,12 +856,6 @@
 "qll_ops_give_the_account_a_name" = "Задайте имя аккаунту.";
 "qll_ops_could_not_rename_the_account" = "Не удалось переименовать аккаунт: {e}";
 // Calls list, added ahead of lang/en by the calls branch.
-"qll_ops_active_calls" = "Активные звонки";
-"qll_ops_call_participants#one" = "{count} участник";
-"qll_ops_call_participants#few" = "{count} участника";
-"qll_ops_call_participants#many" = "{count} участников";
-"qll_ops_call_participants#other" = "{count} участника";
-"qll_ops_end_current_call_first" = "Сначала завершите текущий звонок.";
 "qll_ops_bot_stop" = "Остановить";
 "qll_ops_bot_start" = "Запустить";
 "qll_ops_bot_paused" = "бот на паузе";

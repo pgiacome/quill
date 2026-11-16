@@ -485,10 +485,6 @@
 "qll_people_topic_selected" = "Тема выбрана";
 "qll_people_topic_updated" = "Тема обновлена";
 "qll_people_topics" = "‹ Темы";
-"qll_people_topics_count#one" = "{count} тема";
-"qll_people_topics_count#few" = "{count} темы";
-"qll_people_topics_count#many" = "{count} тем";
-"qll_people_topics_count#other" = "{count} темы";
 "qll_people_topics_need_a_live_connection" = "Для тем нужно подключение (демо)";
 "qll_people_transfer_channel_ownership" = "Передать право владения каналом";
 "qll_people_unavailable" = "Недоступно";

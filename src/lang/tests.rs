@@ -144,61 +144,87 @@ fn english_strings_use_the_ellipsis_character() {
     }
 }
 
-#[test]
-fn overlays_keep_placeholders_and_plural_other() {
-    fn tags(text: &str) -> Vec<&str> {
-        let mut out = Vec::new();
-        let mut rest = text;
-        while let Some((_, tail)) = rest.split_once('{') {
-            let Some((name, after)) = tail.split_once('}') else {
-                break;
-            };
-            out.push(name);
-            rest = after;
-        }
-        out.sort_unstable();
-        out
+/// The `{tag}` names of a value, sorted, with repeats.
+fn tags(text: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut rest = text;
+    while let Some((_, tail)) = rest.split_once('{') {
+        let Some((name, after)) = tail.split_once('}') else {
+            break;
+        };
+        out.push(name);
+        rest = after;
     }
+    out.sort_unstable();
+    out
+}
+
+/// The plural forms a language's rules pick for some whole count.
+fn forms_in_use(code: &str) -> std::collections::BTreeSet<usize> {
+    let rules = plural::PluralRules::for_code(code);
+    (0..1_000).map(|count| rules.form_for(count).index()).collect()
+}
+
+/// Every shipped overlay (`lang/<code>/*.strings`) translates only Quill's
+/// own English keys, once, with English's placeholders, and gives each
+/// plural key every form its language's rules use.
+#[test]
+fn overlays_match_english() {
+    use std::collections::{BTreeMap, BTreeSet};
+    // code → base key → the forms given (None for an ordinary key) and
+    // their values, across all of the language's files.
+    let mut languages: BTreeMap<&str, BTreeMap<String, BTreeMap<Option<usize>, String>>> =
+        BTreeMap::new();
     for (code, text) in key_table::OVERLAYS {
         let entries = parse::parse_strings(text).unwrap_or_else(|err| panic!("{code}: {err}"));
-        let mut plural_other = std::collections::HashSet::new();
+        let keys = languages.entry(code).or_default();
         for entry in &entries {
             let (base, form) = parse::split_plural(&entry.key);
-            let Some(index) = key_table::index_of(base) else {
-                continue;
+            let at = format!("{code}:{}: {}", entry.line, entry.key);
+            assert!(base.starts_with("qll_"), "{at}: overlays translate qll_* only");
+            assert!(parse::braces_balanced(&entry.value), "{at}: unbalanced braces");
+            let index = key_table::index_of(base).unwrap_or_else(|| panic!("{at}: not in English"));
+            let english = key_table::ENGLISH.get(index);
+            let english_value = match (english, form) {
+                (Some(English::Text(value)), None) => Some(*value),
+                (Some(English::Plural(forms)), Some(form)) => forms
+                    .get(form.index())
+                    .copied()
+                    .flatten()
+                    .or_else(|| forms.get(Form::Other.index()).copied().flatten()),
+                _ => panic!("{at}: English has the other kind"),
             };
-            let Some(english) = key_table::ENGLISH.get(index) else {
-                continue;
-            };
-            match (english, form) {
-                (English::Text(value), None) => {
-                    assert_eq!(tags(value), tags(&entry.value), "{code}: {base}");
-                }
-                (English::Plural(forms), Some(form)) => {
-                    let value = forms
-                        .get(form.index())
-                        .copied()
-                        .flatten()
-                        .or_else(|| forms.get(Form::Other.index()).copied().flatten());
-                    let Some(value) = value else { continue };
-                    assert_eq!(tags(value), tags(&entry.value), "{code}: {}", entry.key);
-                    if form == Form::Other {
-                        plural_other.insert(base.to_string());
-                    }
-                }
-                _ => panic!("{code}: {:?} has the wrong kind", entry.key),
+            if let Some(english_value) = english_value {
+                assert_eq!(tags(english_value), tags(&entry.value), "{at}: placeholders");
             }
-        }
-        for (base, english) in key_table::KEY_NAMES.iter().zip(key_table::ENGLISH.iter()) {
-            if matches!(english, English::Plural(_)) {
-                assert!(
-                    !entries
-                        .iter()
-                        .any(|e| parse::split_plural(&e.key).0 == *base)
-                        || plural_other.contains(*base),
-                    "{code}: {base} has no #other"
-                );
-            }
+            let forms = keys.entry(base.to_string()).or_default();
+            let previous = forms.insert(form.map(Form::index), entry.value.clone());
+            assert!(
+                previous.is_none_or(|previous| previous == entry.value),
+                "{at}: two different translations"
+            );
         }
     }
+    for (code, keys) in &languages {
+        let needed = forms_in_use(code);
+        for (base, forms) in keys {
+            if forms.contains_key(&None) {
+                continue;
+            }
+            let given: BTreeSet<usize> = forms.keys().flatten().copied().collect();
+            assert!(given.contains(&Form::Other.index()), "{code}: {base} has no #other");
+            let missing: Vec<_> = needed.difference(&given).collect();
+            assert!(missing.is_empty(), "{code}: {base} lacks forms {missing:?}");
+        }
+    }
+}
+
+#[test]
+fn russian_needs_one_few_and_many() {
+    use std::collections::BTreeSet;
+    // Whole counts never pick Russian's `other` (fractions do); every
+    // plural key still needs `#other` as the fallback.
+    let ru: BTreeSet<usize> = [Form::One, Form::Few, Form::Many].map(Form::index).into();
+    assert_eq!(forms_in_use("ru"), ru);
+    assert_eq!(forms_in_use("ja"), [Form::Other.index()].into());
 }
