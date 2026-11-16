@@ -53,8 +53,18 @@ pub fn plan(
     video_chat: Option<i32>,
     current: Option<CurrentCall>,
     private_call: bool,
+    mode: OfferMode,
 ) -> CallLinkStep {
-    if !matches!(kind, ChatKind::Supergroup { .. }) {
+    // A link's hash is only followed for supergroups and channels; the
+    // Calls tab lists basic groups' calls too.
+    let follows = match mode {
+        OfferMode::OpenScreen => matches!(kind, ChatKind::Supergroup { .. }),
+        OfferMode::Join => matches!(
+            kind,
+            ChatKind::Supergroup { .. } | ChatKind::BasicGroup { .. }
+        ),
+    };
+    if !follows {
         return CallLinkStep::JustOpen;
     }
     let Some(id) = video_chat.filter(|id| *id != 0) else {
@@ -324,21 +334,43 @@ mod tests {
     }
 
     #[test]
+    fn the_calls_tab_offers_a_basic_groups_call_a_link_does_not() {
+        let basic = ChatKind::BasicGroup { basic_group_id: 3 };
+        assert_eq!(
+            plan(&basic, Some(call(4)), None, false, OfferMode::OpenScreen),
+            CallLinkStep::JustOpen
+        );
+        assert_eq!(
+            plan(&basic, Some(call(4)), None, false, OfferMode::Join),
+            CallLinkStep::Offer { group_call_id: 4 }
+        );
+    }
+
+    #[test]
     fn only_groups_and_channels_follow_the_link() {
         let user = ChatKind::Private {
             user_id: crate::ids::UserId(5),
         };
         assert_eq!(
-            plan(&user, Some(call(4)), None, false),
+            plan(&user, Some(call(4)), None, false, OfferMode::OpenScreen),
             CallLinkStep::JustOpen
         );
     }
 
     #[test]
     fn no_call_is_a_bad_link() {
-        assert_eq!(plan(&channel(), None, None, false), CallLinkStep::NoCall);
         assert_eq!(
-            plan(&channel(), Some(call(0)), None, false),
+            plan(&channel(), None, None, false, OfferMode::OpenScreen),
+            CallLinkStep::NoCall
+        );
+        assert_eq!(
+            plan(
+                &channel(),
+                Some(call(0)),
+                None,
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::NoCall
         );
         assert_eq!(
@@ -350,7 +382,13 @@ mod tests {
     #[test]
     fn a_call_is_offered_not_joined() {
         assert_eq!(
-            plan(&channel(), Some(call(4)), None, false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                None,
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::Offer { group_call_id: 4 }
         );
         // The same call tracked but not joined yet still gets the offer.
@@ -359,7 +397,13 @@ mod tests {
             in_call: false,
         };
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(tracked), false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                Some(tracked),
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::Offer { group_call_id: 4 }
         );
     }
@@ -371,15 +415,27 @@ mod tests {
             in_call: true,
         };
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(in_call(4)), false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                Some(in_call(4)),
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::AlreadyJoined
         );
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(in_call(9)), false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                Some(in_call(9)),
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::OtherCallOn
         );
         assert_eq!(
-            plan(&channel(), Some(call(4)), None, true),
+            plan(&channel(), Some(call(4)), None, true, OfferMode::OpenScreen),
             CallLinkStep::OtherCallOn
         );
         assert_eq!(step_note(CallLinkStep::OtherCallOn, true), None);

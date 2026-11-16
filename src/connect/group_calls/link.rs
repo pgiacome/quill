@@ -57,6 +57,9 @@ impl<S: JsonSender> ConnectDriver<S> {
             return Ok(CallLinkStep::JustOpen);
         };
         let target_is_channel = chat.kind.is_channel();
+        // A row known only from its chat may be a channel's stream: a
+        // channel's call is one (tdesktop `peer->isBroadcast()`).
+        let live_stream = live_stream || (mode == OfferMode::Join && target_is_channel);
         // Joined, reconnecting after a network loss, or with its join in
         // flight: all are in a call, so a different one must ask first.
         let in_call = self.session.group_call_joined_or_joining(joining);
@@ -75,6 +78,7 @@ impl<S: JsonSender> ConnectDriver<S> {
             chat.video_chat.as_ref().map(|chat| chat.group_call_id),
             current,
             private_call,
+            mode,
         );
         match step {
             CallLinkStep::Offer { group_call_id } => {

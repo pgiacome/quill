@@ -288,7 +288,7 @@ fn the_list_orders_by_kind_then_by_the_name_it_shows() {
 }
 
 #[test]
-fn a_listed_join_offers_the_call_and_joins_once_tracked() {
+fn a_listed_join_offers_the_call() {
     let mut h = harness();
     h.chat_with_call(51, "Town hall", 41, true);
     let step = h
@@ -351,4 +351,22 @@ fn a_listed_join_during_the_uis_join_asks_first() {
     assert_eq!(step, CallLinkStep::OtherCallOn);
     assert_eq!(h.sent("getGroupCall"), before);
     assert_eq!(h.tracked(), Some(42));
+}
+
+/// A basic group's call is listed like any other, and its Join offers it
+/// (a call link would only open such a chat).
+#[test]
+fn a_basic_groups_call_is_offered_from_the_list() {
+    let mut h = harness();
+    h.feed(
+        r#"{"@type":"updateNewChat","chat":{"id":61,"title":"Family","type":{"@type":"chatTypeBasicGroup","basic_group_id":61},"unread_count":0}}"#,
+    );
+    h.video_chat(61, 71, true);
+    assert_eq!(h.listed_ids(), vec![71]);
+    let step = h
+        .driver
+        .join_listed_call(ChatId(61), false, None)
+        .expect("offers");
+    assert_eq!(step, CallLinkStep::Offer { group_call_id: 71 });
+    assert_eq!(h.sent("getGroupCall"), 1);
 }

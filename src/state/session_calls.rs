@@ -268,6 +268,10 @@ impl Session {
         if group_call.is_live_story || !self.group_call_update_may_take_slot(group_call, pending) {
             return;
         }
+        // The wanted answer arrived: the ask is over.
+        if pending.is_some_and(|request| self.calls.wanted_group_call == Some(request.id)) {
+            self.calls.wanted_group_call = None;
+        }
         if !group_call.is_active {
             // Phase C2h: a scheduled (not yet started) video chat is
             // still tracked — the overlay shows "starts in …" plus an

@@ -395,7 +395,15 @@ impl<S: JsonSender> ConnectDriver<S> {
         }
         let queued: Vec<i32> = std::mem::take(&mut self.session.calls.group_call_fetch_queue);
         for group_call_id in queued {
-            if let Err(err) = self.fetch_group_call(group_call_id) {
+            // A call already tracked (a conference handover) only needs its
+            // details again; it must not replace the call the person asked
+            // for last.
+            let sent = if self.session.calls.is_current_group_call(group_call_id) {
+                self.send_get_group_call(group_call_id)
+            } else {
+                self.fetch_group_call(group_call_id)
+            };
+            if let Err(err) = sent {
                 // Best-effort: re-queue for the next ingest tick; the
                 // `updateGroupCall` backstop still tracks the call.
                 let _ = err;
