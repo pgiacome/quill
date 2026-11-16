@@ -52,15 +52,16 @@ All of it is in our fork under `third_party/gpui-pre-linux`
 - `src/linux/x11/xsettings_scale.rs` (new, std-only) parses the property.
   The scale is `Gdk/WindowScalingFactor` (1 when unset) times a chosen text
   DPI over 96 (96 when unset), where the text DPI is `Gdk/UnscaledDPI`,
-  else `Xft/DPI`. This is the rule Chromium and Qt use, and the `Xft.dpi`
+  else `Xft/DPI` when no usable window scale is set. This is the rule Chromium and Qt use, and the `Xft.dpi`
   path above also takes DPI over 96. GTK 3 does not do this: it uses the
-  window scale for windows and the DPI only for fonts. `Gdk/UnscaledDPI`
-  comes first because gsd-xsettings publishes `Xft/DPI` multiplied by the
-  window scale, and using that would apply the window scale twice.
+  window scale for windows and the DPI only for fonts.
+- `Xft/DPI` beside a window scale is never used. gsd-xsettings publishes
+  it multiplied by the window scale (the plain value is
+  `Gdk/UnscaledDPI`), and xfsettingsd publishes a measurement there
+  (below). Neither is a choice to multiply in.
 - A value that is not a usable choice counts as unset, whichever key it
   is in: a window scale outside 1 to 20, a DPI outside 48 to 1920 (0 and
-  -1 are how managers write "not set"), and an `Xft/DPI` that xfsettingsd
-  measured (below). The product must lie between 0.5 and 20.
+  -1 are how managers write "not set"). The product must lie between 0.5 and 20.
 - A manager that sets neither a window scale nor a chosen DPI gives no
   answer, and the RandR guess runs as before. Sessions that run
   `xsettingsd` or lxsession only for the GTK theme (i3, bspwm, LXDE)
@@ -86,20 +87,26 @@ by capturing the property from xfsettingsd 4.18.4 on Xvfb
   server that reports the panel's real size (the NVIDIA driver takes it
   from EDID) gives the panel density, 165 on the laptop above. Trusting it
   would bring back the 1.75, and at 2x on a 15.6 inch 4K panel about 5.9.
-  So an `Xft/DPI` equal to that measurement of the core screen counts as
-  unset (except 96, which asks for 1.0 either way and which an
-  `xsettingsd` user may have chosen). Measured on 294x165 mm: scale 1.0;
-  at 2x on 173x97 mm (281 DPI): scale 2.0.
+  It is also computed only when xfsettingsd starts or a setting changes,
+  so it goes stale when a monitor is plugged in. Since xfsettingsd always
+  publishes `Gdk/WindowScalingFactor`, ignoring `Xft/DPI` beside a window
+  scale drops it. Captured on 294x165 mm (165 DPI): scale 1.0; at 2x on
+  173x97 mm (281 DPI): scale 2.0.
 - Custom DPI on: xfsettingsd also writes `Xft.dpi` to the resource
   database, so step 2 answers before XSETTINGS is read.
 
-An `Xft/DPI` chosen in `xsettingsd`'s config (144, say) does not match the
-core screen's measurement and gives 1.5.
+An `Xft/DPI` chosen in `xsettingsd`'s config (144, say) with no window
+scale gives 1.5. One set beside `Gdk/WindowScalingFactor` is ignored, so
+such a user who wants a fractional scale sets `Xft.dpi` in their X
+resources (read first) or `Gdk/UnscaledDPI`.
 
 What stays the same:
 
-- `GPUI_X11_SCALE_FACTOR` and `Xft.dpi` keep their priority, so GNOME, KDE
-  and anyone who set either see no change.
+- `GPUI_X11_SCALE_FACTOR` and `Xft.dpi` keep their priority, so GNOME and
+  anyone who set either see no change. KDE Plasma writes `Xft.dpi` when a
+  font DPI is forced or the scale is not 100%; at 100% without one, its
+  GTK settings bridge publishes `Gdk/WindowScalingFactor` 1, so Quill now
+  follows that (1.0) instead of the RandR guess. Not checked on Plasma.
 - With no XSETTINGS manager (a bare window manager) the RandR guess is
   still used. Nothing there says what the user wants, and on a high-density
   monitor a guess is better than a tiny window.
@@ -112,8 +119,8 @@ What stays the same:
   the selection owner and `PropertyNotify`, as GTK does, would fix it.
 
 Nothing is stored. The scale is detected at every start, so a new install
-needs no first-run step, and moving to another monitor or changing the
-desktop's scale is picked up without resetting a saved value. The
+needs no first-run step, and changing the desktop's scale is picked up at
+the next start without resetting a saved value. The
 Interface scale setting still applies on top, for people who want Quill
 larger or smaller than the desktop.
 
@@ -135,8 +142,8 @@ from real managers (`xsettings_fixtures/`, made by `capture.sh`) anchor the
 wire format: Xfce's defaults, Custom DPI off at 1x and 2x on core screens
 that measure 165 and 281 DPI, and `xsettingsd` with only a theme and with
 a chosen DPI of 144. Encoded properties then cover gsd-xsettings at 2x
-(`Gdk/UnscaledDPI` beside the scaled `Xft/DPI`), a window scale times a
-chosen DPI, both byte orders, out-of-range values in each key, a product
+(`Gdk/UnscaledDPI` beside the scaled `Xft/DPI`), a window scale times
+`Gdk/UnscaledDPI` and beside an ignored `Xft/DPI`, both byte orders, out-of-range values in each key, a product
 out of range, unknown types, a string length past the end, and every
 truncation of a captured property.
 
@@ -159,7 +166,7 @@ settings:
   `GPUI_X11_SCALE_FACTOR=1`.
 
 After the review fixes, on a Linux cloud machine (Rust 1.100, Xvfb,
-xfsettingsd 4.18.4, xsettingsd 1.0.2): the 14 unit tests pass, UI clippy is
+xfsettingsd 4.18.4, xsettingsd 1.0.2): the 12 unit tests pass, UI clippy is
 clean, and the debug build's default window, with a temporary print of the
 chosen source, came up as follows.
 

@@ -76,10 +76,11 @@ desktop's scale instead of the monitor's pixel density
 
 - `src/linux/x11/xsettings_scale.rs` (new): reads the scale from an
   `_XSETTINGS_SETTINGS` property: `Gdk/WindowScalingFactor` times a chosen
-  text DPI (`Gdk/UnscaledDPI`, else `Xft/DPI`) over 96, the rule Chromium
-  and Qt use (GTK 3 applies the DPI to fonts only). An `Xft/DPI` equal to
-  the DPI xfsettingsd measures from the core screen, and any out-of-range
-  value, count as unset. A manager that sets neither a window scale nor a
+  text DPI (`Gdk/UnscaledDPI`, else `Xft/DPI` when no window scale is set)
+  over 96, the rule Chromium and Qt use (GTK 3 applies the DPI to fonts
+  only). `Xft/DPI` beside a window scale is pre-multiplied (gsd-xsettings)
+  or measured from the screen (xfsettingsd), so it is ignored; an
+  out-of-range value counts as unset. A manager that sets neither a window scale nor a
   chosen DPI gives no answer. Unit tests, including bytes captured from
   xfsettingsd and xsettingsd (`xsettings_fixtures/`), run with
   `scripts/test-x11-scale.sh`.

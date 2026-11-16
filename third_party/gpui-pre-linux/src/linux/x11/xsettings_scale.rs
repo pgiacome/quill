@@ -16,31 +16,31 @@
 //! [`xsettings_scale_factor`] reads two things from it:
 //!
 //! - `Gdk/WindowScalingFactor`: the integer window scale.
-//! - A text DPI the user chose: `Gdk/UnscaledDPI`, else `Xft/DPI`, both
-//!   stored times 1024. `Gdk/UnscaledDPI` comes first because a manager
-//!   that publishes it (gsd-xsettings) multiplies `Xft/DPI` by the window
-//!   scale.
+//! - A text DPI the user chose, stored times 1024: `Gdk/UnscaledDPI`,
+//!   else `Xft/DPI` when the manager sets no usable window scale.
 //!
 //! The scale is the window scale (1 when unset) times the text DPI over 96
 //! (96 when unset). That is how Chromium and Qt combine the two, and it
 //! matches the `Xft.dpi` path, which also takes DPI over 96. GTK 3 itself
 //! uses only the window scale for windows and the DPI for fonts.
 //!
-//! A value that is not a usable choice counts as unset, so a bad value is
-//! never half-trusted:
+//! `Xft/DPI` next to `Gdk/WindowScalingFactor` is not a choice:
 //!
-//! - an out-of-range window scale or DPI;
-//! - an `Xft/DPI` equal to the core screen's measured DPI. With Custom DPI
-//!   off, xfsettingsd overwrites `Xft/DPI` with the DPI it measures from
-//!   the core screen's millimetre size ([`CoreScreen::xfsettingsd_dpi`]).
-//!   That is the panel's density on servers that report the real size (the
-//!   NVIDIA driver takes it from EDID), exactly what this module avoids.
-//!   When Custom DPI is on, xfsettingsd also writes `Xft.dpi`, which the
-//!   caller reads first.
+//! - xfsettingsd always publishes the window scale. With Custom DPI off it
+//!   overwrites `Xft/DPI` with the DPI it measures from the core screen's
+//!   millimetre size, once, when it starts or a setting changes. That is
+//!   the panel's density on servers that report the real size (the NVIDIA
+//!   driver takes it from EDID), exactly what this module avoids, and it
+//!   goes stale when the screen changes. With Custom DPI on, xfsettingsd
+//!   also writes `Xft.dpi`, which the caller reads first.
+//! - gsd-xsettings multiplies `Xft/DPI` by the window scale, and publishes
+//!   the plain value as `Gdk/UnscaledDPI`.
 //!
-//! When neither a window scale nor a chosen DPI is set, the manager says
-//! nothing about scale (an `xsettingsd` run only for the GTK theme), so the
-//! answer is `None` and the caller keeps guessing from the monitor.
+//! An out-of-range window scale or DPI counts as unset, so a bad value is
+//! never half-trusted. When neither a window scale nor a chosen DPI is set,
+//! the manager says nothing about scale (an `xsettingsd` run only for the
+//! GTK theme), so the answer is `None` and the caller keeps guessing from
+//! the monitor.
 //!
 //! The parser takes bytes another process wrote, so it never indexes or
 //! trusts a length: a truncated or malformed property gives `None` and the
@@ -64,39 +64,6 @@ const TYPE_INTEGER: u8 = 0;
 const TYPE_STRING: u8 = 1;
 const TYPE_COLOR: u8 = 2;
 
-/// The core X screen's size in pixels and millimetres (the connection
-/// setup's screen), which xfsettingsd measures its DPI from.
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct CoreScreen {
-    pub(crate) width_px: u16,
-    pub(crate) height_px: u16,
-    pub(crate) width_mm: u16,
-    pub(crate) height_mm: u16,
-}
-
-impl CoreScreen {
-    /// The DPI xfsettingsd publishes as `Xft/DPI` when Custom DPI is off:
-    /// `xfce_xsettings_helper_screen_dpi` in xfce4-settings'
-    /// `xfsettingsd/xsettings.c` (4.16 to master). Each axis is truncated,
-    /// both must lie strictly between 50 and 500, and the smaller wins;
-    /// otherwise 96.
-    fn xfsettingsd_dpi(self) -> i32 {
-        const FALLBACK: i32 = 96;
-        let axis = |px: u16, mm: u16| {
-            (mm > 0)
-                .then(|| (25.4 * f64::from(px) / f64::from(mm)) as i32)
-                .filter(|dpi| (51..500).contains(dpi))
-        };
-        match (
-            axis(self.width_px, self.width_mm),
-            axis(self.height_px, self.height_mm),
-        ) {
-            (Some(width), Some(height)) => width.min(height),
-            _ => FALLBACK,
-        }
-    }
-}
-
 /// The scale-related integers of one `_XSETTINGS_SETTINGS` property.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct ScaleSettings {
@@ -111,24 +78,18 @@ struct ScaleSettings {
 /// `None` when the bytes are not a complete XSETTINGS property, when the
 /// manager sets neither a window scale nor a chosen DPI, or when the result
 /// is out of range; the caller then uses its other sources.
-pub(crate) fn xsettings_scale_factor(data: &[u8], core_screen: CoreScreen) -> Option<f32> {
+pub(crate) fn xsettings_scale_factor(data: &[u8]) -> Option<f32> {
     let settings = parse(data)?;
 
     let window_scale = settings
         .window_scaling_factor
         .map(f64::from)
         .filter(|factor| (1.0..=MAX_SCALE).contains(factor));
-    // xfsettingsd's measured DPI is below 500, so the product cannot
-    // overflow. 96 is never treated as measured: it asks for 1.0 either way,
-    // and a manager without a window scale (xsettingsd) may have chosen it.
-    let measured_dpi = core_screen.xfsettingsd_dpi();
-    let is_measured = |stored: i32| measured_dpi != 96 && stored == measured_dpi * DPI_FIXED_POINT;
-    let chosen_dpi = settings.unscaled_dpi.and_then(text_dpi).or_else(|| {
-        settings
-            .xft_dpi
-            .filter(|stored| !is_measured(*stored))
-            .and_then(text_dpi)
-    });
+    let xft_dpi = settings.xft_dpi.filter(|_| window_scale.is_none());
+    let chosen_dpi = settings
+        .unscaled_dpi
+        .and_then(text_dpi)
+        .or_else(|| xft_dpi.and_then(text_dpi));
 
     let scale = match (window_scale, chosen_dpi) {
         (None, None) => return None,
@@ -243,28 +204,9 @@ fn parse(data: &[u8]) -> Option<ScaleSettings> {
     Some(settings)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// A 1920x1080 core screen at the given millimetre size.
-    fn core_1080p(width_mm: u16, height_mm: u16) -> CoreScreen {
-        CoreScreen {
-            width_px: 1920,
-            height_px: 1080,
-            width_mm,
-            height_mm,
-        }
-    }
-
-    /// Xorg's usual core screen: 96 DPI whatever the panel is.
-    const XORG_96: CoreScreen = CoreScreen {
-        width_px: 1920,
-        height_px: 1080,
-        width_mm: 508,
-        height_mm: 286,
-    };
 
     // Captured from real managers by xsettings_fixtures/capture.sh
     // (xfsettingsd 4.18.4, xsettingsd 1.0.2, Ubuntu 24.04).
@@ -322,50 +264,28 @@ mod tests {
     /// The laptop RandR scaled to 1.75, under Xfce's shipped settings.
     #[test]
     fn xfce_defaults_ask_for_no_scaling() {
-        assert_eq!(xsettings_scale_factor(XFCE_DEFAULTS, XORG_96), Some(1.0));
-        assert_eq!(
-            xsettings_scale_factor(XFCE_DEFAULTS, core_1080p(293, 165)),
-            Some(1.0)
-        );
+        assert_eq!(xsettings_scale_factor(XFCE_DEFAULTS), Some(1.0));
     }
 
     /// With Custom DPI off on a server that reports the panel's real size,
     /// the published DPI is the panel density, which must not scale.
     #[test]
     fn xfce_measured_dpi_is_not_a_scale() {
-        assert_eq!(
-            xsettings_scale_factor(XFCE_MEASURED_165, core_1080p(294, 165)),
-            Some(1.0)
-        );
-        assert_eq!(
-            xsettings_scale_factor(XFCE_2X_MEASURED_281, core_1080p(173, 97)),
-            Some(2.0)
-        );
-    }
-
-    /// The same bytes on a core screen that does not measure 165 DPI were
-    /// not measured by xfsettingsd on this server, so the DPI is a choice.
-    #[test]
-    fn a_dpi_that_is_not_the_measured_one_is_a_choice() {
-        let scale = xsettings_scale_factor(XFCE_MEASURED_165, XORG_96);
-        assert_eq!(scale, Some(165.0 / 96.0));
+        assert_eq!(xsettings_scale_factor(XFCE_MEASURED_165), Some(1.0));
+        assert_eq!(xsettings_scale_factor(XFCE_2X_MEASURED_281), Some(2.0));
     }
 
     #[test]
     fn a_manager_with_no_scale_keys_leaves_the_scale_to_the_caller() {
-        assert_eq!(xsettings_scale_factor(XSETTINGSD_THEME_ONLY, XORG_96), None);
-        assert_eq!(xsettings_scale_factor(&property(false, &[]), XORG_96), None);
+        assert_eq!(xsettings_scale_factor(XSETTINGSD_THEME_ONLY), None);
+        assert_eq!(xsettings_scale_factor(&property(false, &[])), None);
     }
 
     #[test]
     fn a_chosen_dpi_without_a_window_scale_scales_fractionally() {
-        assert_eq!(
-            xsettings_scale_factor(XSETTINGSD_DPI_144, XORG_96),
-            Some(1.5)
-        );
-        // 96 is a choice even on a 96 DPI core screen: it asks for 1.0.
+        assert_eq!(xsettings_scale_factor(XSETTINGSD_DPI_144), Some(1.5));
         let data = property(false, &[("Xft/DPI", Value::Int(96 * 1024))]);
-        assert_eq!(xsettings_scale_factor(&data, XORG_96), Some(1.0));
+        assert_eq!(xsettings_scale_factor(&data), Some(1.0));
     }
 
     /// gsd-xsettings at 2x publishes the window scale, the unscaled text
@@ -381,12 +301,14 @@ mod tests {
                 ("Xft/DPI", Value::Int(192 * 1024)),
             ],
         );
-        assert_eq!(xsettings_scale_factor(&data, XORG_96), Some(2.0));
+        assert_eq!(xsettings_scale_factor(&data), Some(2.0));
     }
 
-    /// A window scale and a chosen DPI multiply, as in the `Xft.dpi` path.
+    /// A window scale and `Gdk/UnscaledDPI` multiply, as in the `Xft.dpi`
+    /// path. `Xft/DPI` beside a window scale is ignored (pre-multiplied by
+    /// gsd-xsettings, measured by xfsettingsd).
     #[test]
-    fn window_scale_multiplies_a_chosen_dpi() {
+    fn window_scale_multiplies_the_unscaled_dpi_only() {
         let data = property(
             false,
             &[
@@ -394,16 +316,17 @@ mod tests {
                 ("Gdk/WindowScalingFactor", Value::Int(2)),
             ],
         );
-        assert_eq!(xsettings_scale_factor(&data, XORG_96), Some(2.5));
+        assert_eq!(xsettings_scale_factor(&data), Some(2.5));
 
         let data = property(
             false,
             &[
                 ("Gdk/WindowScalingFactor", Value::Int(2)),
+                ("Net/ThemeName", Value::Str("Greybird")),
                 ("Xft/DPI", Value::Int(120 * 1024)),
             ],
         );
-        assert_eq!(xsettings_scale_factor(&data, XORG_96), Some(2.5));
+        assert_eq!(xsettings_scale_factor(&data), Some(2.0));
     }
 
     #[test]
@@ -415,7 +338,7 @@ mod tests {
                 ("Xft/DPI", Value::Int(120 * 1024)),
             ],
         );
-        assert_eq!(xsettings_scale_factor(&data, XORG_96), Some(1.25));
+        assert_eq!(xsettings_scale_factor(&data), Some(1.25));
     }
 
     #[test]
@@ -428,7 +351,7 @@ mod tests {
                 ("Some/Color", Value::Color),
             ],
         );
-        assert_eq!(xsettings_scale_factor(&data, XORG_96), Some(2.0));
+        assert_eq!(xsettings_scale_factor(&data), Some(2.0));
     }
 
     /// A bad value counts as unset, whichever key it is in.
@@ -436,7 +359,7 @@ mod tests {
     fn out_of_range_values_count_as_unset() {
         for factor in [0, -3, 1000] {
             let alone = property(false, &[("Gdk/WindowScalingFactor", Value::Int(factor))]);
-            assert_eq!(xsettings_scale_factor(&alone, XORG_96), None, "{factor}");
+            assert_eq!(xsettings_scale_factor(&alone), None, "{factor}");
 
             let with_dpi = property(
                 false,
@@ -445,28 +368,20 @@ mod tests {
                     ("Xft/DPI", Value::Int(120 * 1024)),
                 ],
             );
-            assert_eq!(
-                xsettings_scale_factor(&with_dpi, XORG_96),
-                Some(1.25),
-                "{factor}"
-            );
+            assert_eq!(xsettings_scale_factor(&with_dpi), Some(1.25), "{factor}");
         }
         for dpi in [-1, 0, 1024, i32::MAX] {
             let alone = property(false, &[("Xft/DPI", Value::Int(dpi))]);
-            assert_eq!(xsettings_scale_factor(&alone, XORG_96), None, "{dpi}");
+            assert_eq!(xsettings_scale_factor(&alone), None, "{dpi}");
 
             let with_scale = property(
                 false,
                 &[
+                    ("Gdk/UnscaledDPI", Value::Int(dpi)),
                     ("Gdk/WindowScalingFactor", Value::Int(2)),
-                    ("Xft/DPI", Value::Int(dpi)),
                 ],
             );
-            assert_eq!(
-                xsettings_scale_factor(&with_scale, XORG_96),
-                Some(2.0),
-                "{dpi}"
-            );
+            assert_eq!(xsettings_scale_factor(&with_scale), Some(2.0), "{dpi}");
         }
     }
 
@@ -475,23 +390,11 @@ mod tests {
         let data = property(
             false,
             &[
+                ("Gdk/UnscaledDPI", Value::Int(192 * 1024)),
                 ("Gdk/WindowScalingFactor", Value::Int(20)),
-                ("Xft/DPI", Value::Int(192 * 1024)),
             ],
         );
-        assert_eq!(xsettings_scale_factor(&data, XORG_96), None);
-    }
-
-    #[test]
-    fn xfsettingsd_dpi_matches_xfsettingsd() {
-        // 1080 px over 286 mm is 95.9, truncated.
-        assert_eq!(XORG_96.xfsettingsd_dpi(), 95);
-        assert_eq!(core_1080p(294, 165).xfsettingsd_dpi(), 165);
-        assert_eq!(core_1080p(173, 97).xfsettingsd_dpi(), 281);
-        // A missing or unreasonable size falls back to 96.
-        assert_eq!(core_1080p(0, 165).xfsettingsd_dpi(), 96);
-        assert_eq!(core_1080p(10, 5).xfsettingsd_dpi(), 96);
-        assert_eq!(core_1080p(1000, 600).xfsettingsd_dpi(), 96);
+        assert_eq!(xsettings_scale_factor(&data), None);
     }
 
     #[test]
@@ -536,7 +439,9 @@ mod tests {
         StrWithLen(u32, &'a str),
         Color,
         /// A setting of type `kind` with a 4-byte body.
-        Raw { kind: u8 },
+        Raw {
+            kind: u8,
+        },
     }
 
     /// Encodes a property the way the XSETTINGS specification lays it out.

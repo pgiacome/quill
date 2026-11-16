@@ -50,7 +50,7 @@ use super::{
     XimCallbackEvent, XimHandler, button_or_scroll_from_event_detail, check_reply,
     clipboard::{self, Clipboard},
     get_reply, get_valuator_axis_index, handle_connection_error, modifiers_from_state,
-    next_frame_at, pressed_button_from_mask, xcb_flush, xsettings_scale_factor, CoreScreen,
+    next_frame_at, pressed_button_from_mask, xcb_flush, xsettings_scale_factor,
 };
 
 use crate::linux::{
@@ -2843,14 +2843,6 @@ fn get_xsettings_scale_factor(connection: &XCBConnection, screen_index: usize) -
     // The property's length in 32-bit units; real ones are a few kilobytes.
     const MAX_PROPERTY_WORDS: u32 = 1 << 18;
 
-    let screen = connection.setup().roots.get(screen_index)?;
-    let core_screen = CoreScreen {
-        width_px: screen.width_in_pixels,
-        height_px: screen.height_in_pixels,
-        width_mm: screen.width_in_millimeters,
-        height_mm: screen.height_in_millimeters,
-    };
-
     // only_if_exists: an atom no manager ever interned answers NONE, and
     // the server is not left holding a new one.
     let intern = |name: &[u8]| {
@@ -2885,7 +2877,7 @@ fn get_xsettings_scale_factor(connection: &XCBConnection, screen_index: usize) -
         return None;
     }
 
-    xsettings_scale_factor(&settings.value, core_screen)
+    xsettings_scale_factor(&settings.value)
 }
 
 fn get_randr_scale_factor(connection: &XCBConnection, screen_index: usize) -> Option<f32> {
