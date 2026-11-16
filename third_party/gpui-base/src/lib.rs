@@ -1,5 +1,3 @@
-// Modified by the Quill project (2026) from gpui-base 0.7.3 (Apache-2.0):
-// bidirectional text support in the input engine. See third_party/gpui-base/QUILL-CHANGES.md.
 //! Behavior and infrastructure foundations for GPUI applications.
 //!
 //! Primitives deliberately avoid presentation styles. Layout, positioning,
@@ -40,6 +38,7 @@ mod history;
 mod hover_card;
 mod index_path;
 pub mod input;
+mod layout_direction;
 mod link;
 mod list_settings;
 #[cfg(all(target_os = "macos", not(test)))]
@@ -130,6 +129,7 @@ pub use history::History;
 pub use hover_card::{HoverCard, HoverCardState};
 pub use index_path::IndexPath;
 pub use input::{Editor, Input, InputBase, InputStyles, Textarea};
+pub use layout_direction::{LayoutDirection, LogicalStyledExt};
 pub use link::{Link, LinkStyles};
 pub use list_settings::ListSettings;
 #[cfg(all(target_os = "macos", not(test)))]
@@ -156,12 +156,14 @@ pub use otp_input::{OtpEvent, OtpInput, OtpState};
 pub use pagination::{Pagination, PaginationItem, PaginationState};
 pub use plot::PlotMotion;
 pub use popover::{Popover, PopoverState};
-pub use popup::{POPUP_PRIORITY, Popup};
+pub use popup::{POPUP_PRIORITY, Popup, logical_anchor};
 pub use positioner::{Align, Positioner, ResolvedPosition};
 pub use progress::{Progress, ProgressIndicator, ProgressTrack};
 pub use radio::{Radio, RadioStyles};
 pub use radio_group::RadioGroup;
-pub use reduce_motion::apply_system_reduce_motion;
+pub use reduce_motion::{
+    ReduceMotionPreference, apply_system_reduce_motion, set_reduce_motion_preference,
+};
 #[doc(hidden)]
 pub use resizable::PANEL_MIN_SIZE;
 pub use resizable::{
@@ -170,7 +172,7 @@ pub use resizable::{
     resizable_panel, resize_handle, v_resizable,
 };
 pub use root::{Root, RootPlugin};
-pub use scroll_bounce::{ScrollBounce, ScrollBounceDisplacement, ScrollBounceMotion};
+pub use scroll_bounce::{ScrollBounce, ScrollBounceMotion};
 pub use scrollable_mask::{
     HorizontalScrollClaim, RoundedFrameCover, ScrollableMask, last_horizontal_scroll_claim,
 };
@@ -200,7 +202,7 @@ pub use text::{
 pub use text_selection::{
     TextSelection, TextSelectionContentKey, TextSelectionCoverage, TextSelectionEndpoint,
     TextSelectionEvent, TextSelectionHandle, TextSelectionLayer, TextSelectionProjection,
-    RunGeometry, TextSelectionRegistration, TextSelectionRun, TextSelectionScopeId, TextSelectionSnapshot,
+    TextSelectionRegistration, TextSelectionRun, TextSelectionScopeId, TextSelectionSnapshot,
     TextSelectionWindowPoints, TouchHandleLayout,
 };
 pub use theme::{PlotTheme, ResizableTheme, ScrollbarTheme, Theme, ThemeAppearance};
@@ -246,6 +248,7 @@ pub fn init(cx: &mut App) {
     let _ = Theme::global_mut(cx);
     GlobalState::init(cx);
     reduce_motion::init(cx);
+    layout_direction::init(cx);
     dialog::init(cx);
     focus_trap::init(cx);
     popover::init(cx);

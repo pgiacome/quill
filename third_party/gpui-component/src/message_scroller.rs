@@ -2,7 +2,7 @@ use std::{ops::Range, time::Duration};
 
 use gpui::{
     AnyElement, App, Context, ElementId, Entity, FollowMode, Hsla, InteractiveElement as _,
-    IntoElement, ListAlignment, ListOffset, ListState, ParentElement as _, Pixels, RenderOnce, Role,
+    IntoElement, ListAlignment, ListOffset, ListState, ParentElement as _, RenderOnce, Role,
     SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
     linear_color_stop, linear_gradient, list, prelude::FluentBuilder as _, px, rems,
 };
@@ -66,25 +66,12 @@ impl MessageScrollerState {
     /// Return the row at the top of the viewport and how far into it the list
     /// is scrolled.
     ///
-    /// Wheel, trackpad, and scrollbar scrolls and [`Self::scroll_to_item`]
-    /// update it at once. [`Self::scroll_to_end`] and tail following settle it
-    /// when the list next lays out; right after `scroll_to_end`, `item_ix` is
-    /// [`Self::item_count`] until then.
+    /// Wheel, trackpad, and scrollbar scrolls, [`Self::scroll_to_item`] and
+    /// [`Self::scroll_to_offset`] update it at once. [`Self::scroll_to_end`]
+    /// and tail following settle it when the list next lays out; right after
+    /// `scroll_to_end`, `item_ix` is [`Self::item_count`] until then.
     pub fn logical_scroll_top(&self) -> ListOffset {
         self.list_state.logical_scroll_top()
-    }
-
-    /// How far the viewport is from the first row's top and from the last
-    /// row's bottom, with rows not measured yet counted at the mean row
-    /// height, and the viewport's height. `None` until a row is laid out.
-    pub fn distance_to_edges(&self) -> Option<(Pixels, Pixels, Pixels)> {
-        self.list_state.estimated_distance_to_edges()
-    }
-
-    /// QUILL: the height of each row in `range`, rows not measured yet at
-    /// the mean height of the measured ones. `None` until a row is laid out.
-    pub fn estimated_row_heights(&self, range: Range<usize>) -> Option<Vec<Pixels>> {
-        self.list_state.estimated_item_heights(range)
     }
 
     /// Reset the list to `item_count` rows.
@@ -169,54 +156,28 @@ impl MessageScrollerState {
 
     /// Scroll to the row at `index`, if it exists.
     pub fn scroll_to_item(&mut self, index: usize, cx: &mut Context<Self>) -> bool {
-        if index >= self.list_state.item_count() {
+        self.scroll_to_offset(
+            ListOffset {
+                item_ix: index,
+                offset_in_item: px(0.),
+            },
+            cx,
+        )
+    }
+
+    /// Scroll to a position [`Self::logical_scroll_top`] returned, if its row exists:
+    /// the row at the top of the viewport and how far into it the list is scrolled.
+    ///
+    /// Restores a saved reading position to the pixel, where [`Self::scroll_to_item`]
+    /// puts the top of the row at the top of the viewport.
+    pub fn scroll_to_offset(&mut self, offset: ListOffset, cx: &mut Context<Self>) -> bool {
+        if offset.item_ix >= self.list_state.item_count() {
             return false;
         }
 
-        self.list_state.scroll_to(ListOffset {
-            item_ix: index,
-            offset_in_item: px(0.),
-        });
+        self.list_state.scroll_to(offset);
         cx.notify();
         true
-    }
-
-    /// The row at the top of the viewport and how many pixels of it are
-    /// scrolled above the viewport. `None` while the list follows its
-    /// tail, so callers keep a position only for a reader who moved away.
-    pub fn top_anchor(&self) -> Option<(usize, f32)> {
-        // Not `is_scrolled_up`: that reads the previous layout's extent, which
-        // right after a reset or a scroll_to still describes the old content.
-        // The follow state is set by the scroll itself and re-engaged by the
-        // layout when the list rests at its end.
-        if self.list_state.is_following_tail() {
-            return None;
-        }
-        let top = self.list_state.logical_scroll_top();
-        (top.item_ix < self.list_state.item_count())
-            .then(|| (top.item_ix, f32::from(top.offset_in_item)))
-    }
-
-    /// Scroll so row `index` starts `offset` pixels above the viewport top.
-    pub fn scroll_to_item_offset(&mut self, index: usize, offset: f32, cx: &mut Context<Self>) -> bool {
-        if index >= self.list_state.item_count() {
-            return false;
-        }
-
-        self.list_state.scroll_to(ListOffset {
-            item_ix: index,
-            offset_in_item: px(offset.max(0.)),
-        });
-        cx.notify();
-        true
-    }
-
-    /// QUILL: scroll the rows by `distance` pixels (positive: toward the
-    /// latest row) from where they are, measured over the rows laid out so
-    /// far.
-    pub fn scroll_by(&mut self, distance: Pixels, cx: &mut Context<Self>) {
-        self.list_state.scroll_by(distance);
-        cx.notify();
     }
 
     /// Resume tail following and scroll to the latest row.
@@ -243,15 +204,11 @@ pub struct MessageScroller {
     row_style: StyleRefinement,
     jump_button_style: StyleRefinement,
     jump_button_renderer: Option<Box<dyn FnOnce(Button) -> Button>>,
-    /// QUILL: see [`MessageScroller::wrap_jump_button`].
-    jump_button_wrap: Option<Box<dyn FnOnce(AnyElement) -> AnyElement>>,
     jump_button_transition: Duration,
     bottom_fade: Option<Hsla>,
     scrollbar: bool,
     jump_button: bool,
     jump_button_label: SharedString,
-    jump_button_shown_after: Pixels,
-    jump_button_always: bool,
 }
 
 impl MessageScroller {
@@ -277,14 +234,11 @@ impl MessageScroller {
             row_style: StyleRefinement::default(),
             jump_button_style: StyleRefinement::default(),
             jump_button_renderer: None,
-            jump_button_wrap: None,
             jump_button_transition: JUMP_BUTTON_TRANSITION,
             bottom_fade: None,
             scrollbar: true,
             jump_button: true,
             jump_button_label: "Jump to latest".into(),
-            jump_button_shown_after: px(0.),
-            jump_button_always: false,
         }
     }
 
@@ -297,20 +251,6 @@ impl MessageScroller {
     /// Enable or disable the built-in jump-to-latest button.
     pub fn jump_button(mut self, jump_button: bool) -> Self {
         self.jump_button = jump_button;
-        self
-    }
-
-    /// Show the jump button only once the viewport is more than `distance`
-    /// above the last row's bottom (zero: as soon as it is scrolled up).
-    pub fn with_jump_button_shown_after(mut self, distance: Pixels) -> Self {
-        self.jump_button_shown_after = distance;
-        self
-    }
-
-    /// Show the jump button wherever the list is scrolled, for content that
-    /// continues past the last loaded row.
-    pub fn jump_button_always(mut self, always: bool) -> Self {
-        self.jump_button_always = always;
         self
     }
 
@@ -356,17 +296,6 @@ impl MessageScroller {
         self
     }
 
-    /// QUILL: wraps the built-in jump button, while it is drawn, in an
-    /// element the caller passes (Quill marks it as covering the rows'
-    /// animations).
-    pub fn wrap_jump_button(
-        mut self,
-        wrap: impl FnOnce(AnyElement) -> AnyElement + 'static,
-    ) -> Self {
-        self.jump_button_wrap = Some(Box::new(wrap));
-        self
-    }
-
     /// Set how long the built-in jump button takes to enter or leave.
     ///
     /// A zero duration disables its transition. Reduced-motion preferences
@@ -398,17 +327,11 @@ impl Styled for MessageScroller {
 impl RenderOnce for MessageScroller {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let root_id = self.id.clone();
-        let (list_state, scrolled_up, below) = {
+        let (list_state, scrolled_up) = {
             let state = self.state.read(cx);
-            (
-                state.list_state.clone(),
-                state.is_scrolled_up(),
-                state.distance_to_edges().map(|(_, below, _)| below),
-            )
+            (state.list_state.clone(), state.is_scrolled_up())
         };
-        let far_enough = below.is_none_or(|below| below > self.jump_button_shown_after);
-        let show_jump_button =
-            self.jump_button && (self.jump_button_always || (scrolled_up && far_enough));
+        let show_jump_button = self.jump_button && scrolled_up;
         let jump_button_visibility = if self.jump_button {
             transition(
                 (root_id.clone(), "jump-button-visibility"),
@@ -437,10 +360,6 @@ impl RenderOnce for MessageScroller {
         let row_style = self.row_style;
         let jump_button_style = self.jump_button_style;
         let jump_button_renderer = self.jump_button_renderer;
-        let wrap_jump_button = move |button: AnyElement| match self.jump_button_wrap {
-            Some(wrap) => wrap(button),
-            None => button,
-        };
         let mut renderer = self.renderer;
 
         // GPUI's `list` lays rows out at the full list width and offsets them
@@ -554,7 +473,7 @@ impl RenderOnce for MessageScroller {
                         .flex()
                         .justify_center()
                         .opacity(jump_button_visibility)
-                        .child(wrap_jump_button(
+                        .child(
                             // No explicit width or height: Button sizes an
                             // icon-only button as a square on its own, and a
                             // renderer that adds a label or another semantic
@@ -569,20 +488,14 @@ impl RenderOnce for MessageScroller {
                                 .bg(tokens.colors.background)
                                 .text_color(tokens.colors.foreground)
                                 .refine_style(&jump_button_style)
-                                // QUILL: it floats over the rows, so it takes
-                                // the pointer from what is under it (a click
-                                // would reach a row's media too); the wheel
-                                // still scrolls the list.
-                                .block_mouse_except_scroll()
                                 .on_click(move |_, _, cx| {
                                     state.update(cx, |state, cx| state.scroll_to_end(cx));
                                 })
                                 .when_some(jump_button_renderer, |button, renderer| {
                                     renderer(button)
                                 })
-                                .when(!show_jump_button, |button| button.disabled(true))
-                                .into_any_element(),
-                        )),
+                                .when(!show_jump_button, |button| button.disabled(true)),
+                        ),
                 )
             })
             .refine_style(&self.style)
@@ -603,7 +516,6 @@ mod tests {
             assert_eq!(state.read(cx).item_count(), 3);
             assert!(!state.read(cx).is_scrolled_up());
             assert!(state.read(cx).is_following_tail());
-            assert_eq!(state.read(cx).top_anchor(), None);
 
             state.update(cx, |state, cx| {
                 assert!(!state.scroll_to_item(3, cx));
@@ -681,6 +593,45 @@ mod tests {
             (after_wheel.item_ix, after_wheel.offset_in_item),
             (11, px(0.))
         );
+    }
+
+    #[gpui::test]
+    fn test_scroll_to_offset_restores_a_saved_position(cx: &mut gpui::TestAppContext) {
+        cx.update(crate::init);
+        let state = cx.new(|cx| MessageScrollerState::new(30, cx));
+        let (_, cx) = cx.add_window_view({
+            let state = state.clone();
+            move |_, _| ScrollerHarness { state }
+        });
+        let draw = |cx: &mut gpui::VisualTestContext| {
+            cx.run_until_parked();
+            cx.update(|window, cx| {
+                _ = window.draw(cx);
+            });
+        };
+        draw(cx);
+
+        let saved = ListOffset {
+            item_ix: 10,
+            offset_in_item: px(17.),
+        };
+        cx.update(|_, cx| {
+            state.update(cx, |state, cx| {
+                let past_the_end = ListOffset {
+                    item_ix: 30,
+                    offset_in_item: px(0.),
+                };
+                assert!(!state.scroll_to_offset(past_the_end, cx));
+
+                // As an application does when a person comes back to a chat.
+                state.reset(30, cx);
+                assert!(state.scroll_to_offset(saved, cx));
+                assert!(!state.is_following_tail());
+            })
+        });
+        draw(cx);
+        let top = cx.update(|_, cx| state.read(cx).logical_scroll_top());
+        assert_eq!((top.item_ix, top.offset_in_item), (10, px(17.)));
     }
 
     /// A scrollbar drag to the bottom of the track must reach the end of the
@@ -802,23 +753,6 @@ mod tests {
             px(20.),
             "the top inset must ride on the first row only"
         );
-    }
-
-    #[gpui::test]
-    fn top_anchor_reads_a_restored_position_before_any_layout(cx: &mut gpui::TestAppContext) {
-        let state = cx.new(|cx| MessageScrollerState::new(6, cx));
-        cx.update(|cx| {
-            state.update(cx, |state, cx| {
-                state.reset(6, cx);
-                assert!(state.scroll_to_item_offset(2, 12., cx));
-                // No layout ran: `is_scrolled_up` still reads the old extent,
-                // the restored position must not look like the tail.
-                assert!(!state.is_scrolled_up());
-                assert_eq!(state.top_anchor(), Some((2, 12.)));
-                state.scroll_to_end(cx);
-                assert_eq!(state.top_anchor(), None);
-            });
-        });
     }
 
     #[gpui::test]

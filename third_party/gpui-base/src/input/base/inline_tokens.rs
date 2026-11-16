@@ -1,6 +1,3 @@
-// Modified by the Quill project (2026) from gpui-base 0.7.3 (Apache-2.0):
-// content carries formatting spans, and an insertion can carry several tokens.
-// See third_party/gpui-base/QUILL-CHANGES.md.
 //! Document annotations for atomic inline objects. Coordinates are always source bytes.
 use std::ops::Range;
 
@@ -93,57 +90,13 @@ impl InlineTokenSpan {
 pub struct InputContent {
     text: SharedString,
     tokens: Vec<InlineTokenSpan>,
-    /// Formatting spans over the text (Quill patch, `text_spans.rs`).
-    spans: Vec<super::TextSpan>,
 }
 impl InputContent {
     pub fn new(text: impl Into<SharedString>) -> Self {
         Self {
             text: text.into(),
             tokens: vec![],
-            spans: vec![],
         }
-    }
-    /// Attach a formatting span to a half-open UTF-8 byte range of the text.
-    /// The range must be nonempty and sit on character boundaries; spans may
-    /// overlap, and touching or overlapping spans of one tag merge.
-    pub fn with_span(
-        mut self,
-        range: Range<usize>,
-        tag: impl Into<SharedString>,
-    ) -> Result<Self, InlineTokenError> {
-        let tag = tag.into();
-        self.check_span(&range, &tag)?;
-        self.spans.push(super::TextSpan::new(range, tag));
-        super::text_spans::normalize(&mut self.spans);
-        Ok(self)
-    }
-    fn check_span(&self, range: &Range<usize>, tag: &SharedString) -> Result<(), InlineTokenError> {
-        if range.is_empty() || range.end > self.text.len() || tag.is_empty() {
-            return Err(InlineTokenError::InvalidRange);
-        }
-        if !self.text.is_char_boundary(range.start) || !self.text.is_char_boundary(range.end) {
-            return Err(InlineTokenError::InvalidBoundary);
-        }
-        Ok(())
-    }
-    /// Attach many formatting spans at once, leaving out the ones
-    /// [`Self::with_span`] refuses (Quill patch).
-    pub fn with_spans(
-        mut self,
-        spans: impl IntoIterator<Item = (Range<usize>, SharedString)>,
-    ) -> Self {
-        for (range, tag) in spans {
-            if self.check_span(&range, &tag).is_ok() {
-                self.spans.push(super::TextSpan::new(range, tag));
-            }
-        }
-        super::text_spans::normalize(&mut self.spans);
-        self
-    }
-    /// The formatting spans, sorted by start.
-    pub fn spans(&self) -> &[super::TextSpan] {
-        &self.spans
     }
     /// Attach a token to a half-open UTF-8 byte range of the text. The range
     /// must be nonempty, sit on grapheme boundaries, contain exactly the
@@ -218,6 +171,7 @@ pub enum InlineTokenError {
     UnsupportedMode,
     ValidationRejected,
     CompositionActive,
+    SplitsSelection,
 }
 
 impl std::error::Error for InlineTokenError {}
@@ -234,6 +188,7 @@ impl std::fmt::Display for InlineTokenError {
             Self::UnsupportedMode => "tokens are not supported by this input mode",
             Self::ValidationRejected => "input validation rejected the content",
             Self::CompositionActive => "finish the active IME composition before editing tokens",
+            Self::SplitsSelection => "token range splits a selection",
         })
     }
 }
@@ -273,7 +228,10 @@ impl InlineTokenStore {
         let shift = new_len as isize - range.len() as isize;
         self.spans.retain_mut(|span| {
             if span.range.start < range.end && range.start < span.range.end {
-                removed.push(span.shifted(-(range.start as isize)));
+                // Replaying history can cut through a token set after the edit.
+                if range.start <= span.range.start && span.range.end <= range.end {
+                    removed.push(span.shifted(-(range.start as isize)));
+                }
                 false
             } else {
                 if span.range.start >= range.end {
@@ -335,25 +293,16 @@ impl<M: InputModeKind> InputBaseState<M> {
         if self.replaying_history {
             return None;
         }
-        let mut inserted: Vec<InlineTokenSpan> = self
-            .pending_token
-            .take()
-            .map(|token| InlineTokenSpan {
-                range: 0..new_len,
-                token,
-            })
-            .into_iter()
-            .collect();
-        // Content inserted with its own tokens (Quill patch: rich paste).
-        if let Some(tokens) = self.pending_tokens.take() {
-            inserted.extend(tokens.into_iter().filter(|t| t.range.end <= new_len));
-        }
-        if !inserted.is_empty() && self.inline_tokens.is_none() {
+        let inserted = self.pending_token.take().map(|token| InlineTokenSpan {
+            range: 0..new_len,
+            token,
+        });
+        if inserted.is_some() && self.inline_tokens.is_none() {
             self.inline_tokens = Some(Box::default());
         }
         self.inline_tokens
             .as_mut()?
-            .replace(range, new_len, &inserted)
+            .replace(range, new_len, inserted.as_slice())
     }
     pub(super) fn replay_tokens(
         &mut self,
@@ -468,12 +417,57 @@ macro_rules! token_api {
             pub fn tokens(&self) -> &[InlineTokenSpan] {
                 self.token_spans()
             }
+            /// Replace the tokens and keep the text, the selections and the undo
+            /// history.
+            ///
+            /// Returns [`InlineTokenError::TextMismatch`] if `content` holds
+            /// different text, [`InlineTokenError::SplitsSelection`] if a token
+            /// cuts through any selection, [`InlineTokenError::CompositionActive`]
+            /// during IME composition and [`InlineTokenError::UnsupportedMode`]
+            /// for masked or password inputs.
+            ///
+            /// Undo and redo replay the text and the tokens recorded with it; a
+            /// token set here that an undone edit cuts through is dropped. Call
+            /// this again after every change to keep derived tokens current.
+            pub fn set_tokens(
+                &mut self,
+                content: InputContent,
+                cx: &mut Context<Self>,
+            ) -> Result<(), InlineTokenError> {
+                self.check_token_mode()?;
+                if self.text != content.text.as_ref() {
+                    return Err(InlineTokenError::TextMismatch);
+                }
+                let cuts = |at: usize| {
+                    content
+                        .tokens
+                        .iter()
+                        .any(|span| span.range.start < at && at < span.range.end)
+                };
+                if self
+                    .selections
+                    .iter()
+                    .any(|selection| cuts(selection.start) || cuts(selection.end))
+                {
+                    return Err(InlineTokenError::SplitsSelection);
+                }
+                if self.token_spans() == content.tokens.as_slice() {
+                    return Ok(());
+                }
+                self.document_revision = self.document_revision.wrapping_add(1);
+                self.inline_tokens = (!content.tokens.is_empty()).then(|| {
+                    Box::new(InlineTokenStore {
+                        spans: content.tokens,
+                    })
+                });
+                cx.notify();
+                Ok(())
+            }
             /// The text with its tokens, as `set_value` accepts it.
             pub fn content(&self) -> InputContent {
                 InputContent {
                     text: self.value(),
                     tokens: self.token_spans().to_vec(),
-                    spans: self.text_spans.to_vec(),
                 }
             }
         }

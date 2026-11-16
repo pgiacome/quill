@@ -5,7 +5,7 @@ use crate::{
     native_menu::FallbackMenuOverlay,
     notification::{Notification, NotificationList},
     sheet::Sheet,
-    tooltip::render_tooltip,
+    tooltip::tooltip_renderer,
     touch_selection::WindowTouchSelectionOverlay,
     window_border,
 };
@@ -108,7 +108,7 @@ impl WindowState {
             focused_input: None,
             notification: cx.new(|cx| NotificationList::new(window, cx)),
             tooltip_overlay: cx
-                .new(|_| gpui_base::TooltipOverlay::new().render_with(render_tooltip)),
+                .new(|_| gpui_base::TooltipOverlay::new().render_with(tooltip_renderer())),
             tooltip_hovered_trigger: None,
             tooltip_trigger_lifetime: std::rc::Weak::new(),
             tooltip_pressed_trigger: None,
@@ -172,7 +172,9 @@ impl WindowState {
         window: &Window,
         cx: &App,
     ) -> Option<impl IntoElement + use<>> {
-        let active_sheet_placement = root.read(cx).active_sheet.clone().map(|d| d.placement);
+        let active_sheet_placement = root.read(cx).active_sheet.clone().map(|d| {
+            crate::sheet::physical_placement(d.placement, gpui_base::LayoutDirection::global(cx))
+        });
 
         let sheet_size = root.read(cx).sheet_size;
         let (mt, mr, mb, ml) = match active_sheet_placement {
@@ -215,7 +217,10 @@ impl WindowState {
             let mut sheet = Sheet::new(window, cx);
             sheet = (active_sheet.builder)(sheet, window, cx);
             sheet.focus_handle = active_sheet.focus_handle.clone();
-            sheet.placement = active_sheet.placement;
+            sheet.placement = crate::sheet::physical_placement(
+                active_sheet.placement,
+                gpui_base::LayoutDirection::global(cx),
+            );
             sheet.selection_scope = active_sheet.selection_scope;
 
             let size = sheet.size;
@@ -243,6 +248,7 @@ impl WindowState {
         }
 
         let mut rendered: Vec<(usize, Dialog)> = Vec::with_capacity(active_dialogs.len());
+        let mut stack_depth = 0;
 
         for (index, active_dialog) in active_dialogs.iter().enumerate() {
             let mut dialog = Dialog::new(cx);
@@ -257,6 +263,11 @@ impl WindowState {
             dialog.selection_scope = active_dialog.selection_scope;
 
             dialog.layer_ix = index;
+            // A dialog that is leaving must not push the next one down.
+            dialog.stack_depth = stack_depth;
+            if !active_dialog.closing {
+                stack_depth += 1;
+            }
             dialog.id = active_dialog.id;
 
             // Refreshed every frame so closing decides in one step whether an
@@ -413,20 +424,12 @@ impl WindowState {
     /// `closing`, until [`WindowState::dialog_layer`] unmounts it once the
     /// transition ends. Without one, it is removed as before.
     fn close_dialog_internal(&mut self, window: &mut Window, cx: &mut App) -> Option<FocusHandle> {
+        self.focused_input = None;
+
         let ix = self
             .active_dialogs
             .iter()
             .rposition(|dialog| !dialog.closing)?;
-        self.close_dialog_at(ix, window, cx)
-    }
-
-    fn close_dialog_at(
-        &mut self,
-        ix: usize,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Option<FocusHandle> {
-        self.focused_input = None;
         let previous_focused_handle = self.active_dialogs[ix]
             .previous_focused_handle
             .clone()
@@ -450,52 +453,6 @@ impl WindowState {
         if dialog.focus_handle.contains_focused(window, cx) {
             window.blur(cx);
         }
-    }
-
-    /// The id of the newest dialog that is not closing.
-    pub fn last_dialog_id(&self) -> Option<usize> {
-        self.active_dialogs
-            .iter()
-            .rev()
-            .find(|dialog| !dialog.closing)
-            .map(|dialog| dialog.id)
-    }
-
-    /// Closes the dialog `id` named (`last_dialog_id` after it opened), and
-    /// no other. Returns whether it was still open.
-    pub fn close_dialog_by_id(
-        &mut self,
-        id: usize,
-        window: &mut Window,
-        cx: &mut Context<'_, WindowState>,
-    ) -> bool {
-        let Some(ix) = self
-            .active_dialogs
-            .iter()
-            .position(|dialog| dialog.id == id && !dialog.closing)
-        else {
-            return false;
-        };
-        // A dialog under another one has no focus to give back: the dialog
-        // above keeps it, and takes over the handle this one saved, so its
-        // own close restores what was focused before both.
-        let saved = self.active_dialogs[ix].previous_focused_handle.clone();
-        let above = self
-            .active_dialogs
-            .iter_mut()
-            .skip(ix + 1)
-            .find(|dialog| !dialog.closing);
-        let was_newest = above.is_none();
-        if let Some(above) = above {
-            above.previous_focused_handle = saved;
-        }
-        let restored = self.close_dialog_at(ix, window, cx);
-        if let Some(handle) = restored.filter(|_| was_newest) {
-            window.focus(&handle, cx);
-        }
-        gpui_base::TextSelection::clear(window, cx);
-        cx.notify();
-        true
     }
 
     pub fn close_dialog(&mut self, window: &mut Window, cx: &mut Context<'_, WindowState>) {
@@ -783,6 +740,11 @@ impl gpui_base::RootPlugin for WindowState {
                 .rounded_bl(radii.bottom_left)
                 .rounded_br(radii.bottom_right),
         );
+        // Text starts on the right in a right-to-left interface; elements
+        // that set their own alignment keep it.
+        if gpui_base::LayoutDirection::global(cx).is_rtl() {
+            surface.style().text.text_align = Some(gpui::TextAlign::Right);
+        }
     }
 
     fn decorate(
@@ -829,5 +791,59 @@ impl RenderOnce for WindowStateLayers {
             .children(WindowState::sheet_layer(root.clone(), window, cx))
             .children(WindowState::dialog_layer(&root, window, cx))
             .children(WindowState::notification_layer(&root, window, cx))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use gpui::{
+        AppContext as _, Bounds, Context, IntoElement, ParentElement as _, Pixels, Render,
+        Styled as _, TestAppContext, Window, canvas, div, px, size,
+    };
+    use std::{cell::Cell, rc::Rc};
+
+    struct BottomBarDemo {
+        bar: Rc<Cell<Option<Bounds<Pixels>>>>,
+    }
+
+    impl Render for BottomBarDemo {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let bar = self.bar.clone();
+            div()
+                .size_full()
+                .flex()
+                .flex_col()
+                .child(div().flex_1().w_full())
+                .child(div().h(px(40.)).w_full().child(
+                    canvas(move |bounds, _, _| bar.set(Some(bounds)), |_, _, _, _| {}).size_full(),
+                ))
+        }
+    }
+
+    /// #3857: with every component layer installed (window border, overlay
+    /// layers), a `size_full` view still fills the window height.
+    #[gpui::test]
+    fn size_full_view_fills_window_height(cx: &mut TestAppContext) {
+        cx.update(crate::init);
+        let bar = Rc::new(Cell::new(None));
+        let (_, cx) = cx.add_window_view({
+            let bar = bar.clone();
+            move |window, cx| {
+                let view = cx.new(|_| BottomBarDemo { bar });
+                crate::Root::new(view, window, cx)
+            }
+        });
+        cx.simulate_resize(size(px(800.), px(600.)));
+        cx.run_until_parked();
+        let viewport = cx.update(|window, cx| {
+            window.draw(cx).clear(cx);
+            window.viewport_size()
+        });
+        let bounds = bar.get().expect("bar painted");
+        assert_eq!(
+            bounds.bottom(),
+            viewport.height,
+            "bar {bounds:?}, viewport {viewport:?}"
+        );
     }
 }

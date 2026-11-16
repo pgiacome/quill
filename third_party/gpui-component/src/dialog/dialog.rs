@@ -9,11 +9,11 @@ use gpui::{
     StyleRefinement, Styled, Window, WindowControlArea, anchored, div, hsla, point,
     prelude::FluentBuilder, px,
 };
-use gpui_base::{ElementExt as _, TextSelectionScopeId, motion::Transition};
+use gpui_base::{ElementExt as _, LogicalStyledExt as _, TextSelectionScopeId, motion::Transition};
 use rust_i18n::t;
 
 use crate::{
-    ActiveTheme as _, IconName, Sizable as _, StyledExt, WindowExt as _,
+    ActiveTheme as _, IconName, Sizable as _, StyledExt, TITLE_BAR_HEIGHT, WindowExt as _,
     animation::cubic_bezier,
     button::{Button, ButtonVariant, ButtonVariants as _},
     dialog::{DialogContent, DialogDispatchAnchor, DialogTitle},
@@ -327,11 +327,11 @@ pub struct Dialog {
     /// This will be change when open the dialog, the focus handle is create when open the dialog.
     pub(crate) focus_handle: FocusHandle,
     pub(crate) layer_ix: usize,
+    /// The open dialogs beneath this one, which set its stacking offset.
+    pub(crate) stack_depth: usize,
     pub(crate) selection_scope: TextSelectionScopeId,
     pub(crate) motion: Option<DialogMotion>,
     pub(crate) id: usize,
-    /// QUILL: see [`Dialog::wrap_surface`].
-    surface_wrap: Option<Box<dyn FnOnce(AnyElement) -> AnyElement>>,
 }
 
 pub(crate) fn overlay_color(overlay: bool, cx: &App) -> Hsla {
@@ -376,22 +376,12 @@ impl Dialog {
             props: DialogProps::default(),
             children: Vec::new(),
             layer_ix: 0,
+            stack_depth: 0,
             selection_scope: TextSelectionScopeId::default(),
             button_props: DialogButtonProps::default(),
             motion: None,
             id: 0,
-            surface_wrap: None,
         }
-    }
-
-    /// QUILL: wrap the dialog's surface (everything it shows above the
-    /// backdrop) in `wrap`. The base dialog lays the surface out in place
-    /// but prepaints and paints it in a deferred pass, after the rest of the
-    /// window, so an element that sets something up for its subtree while
-    /// it draws (an image cache) has to sit inside the surface to cover it.
-    pub fn wrap_surface(mut self, wrap: impl FnOnce(AnyElement) -> AnyElement + 'static) -> Self {
-        self.surface_wrap = Some(Box::new(wrap));
-        self
     }
 
     /// Sets the trigger element for the dialog.
@@ -678,7 +668,7 @@ impl RenderOnce for Dialog {
         // viewport by default); an overflowing one is snapped up to this edge
         // margin so that the preferred offset does not waste usable height.
         let margin = cx.theme().spacing_tokens().lg;
-        let layer_offset = px(layer_ix as f32 * 16.);
+        let layer_offset = px(self.stack_depth as f32 * 16.);
         let (anchor, y) = if self.props.centered {
             (Anchor::LeftCenter, view_size.height / 2.)
         } else {
@@ -725,11 +715,6 @@ impl RenderOnce for Dialog {
             .iter()
             .rposition(|dialog| !dialog.closing);
         let is_topmost = !closing && topmost == Some(layer_ix);
-        let surface_wrap = self.surface_wrap.take();
-        let wrap_surface = move |surface: AnyElement| match surface_wrap {
-            Some(wrap) => wrap(surface),
-            None => surface,
-        };
 
         anchored()
             .position(point(window_paddings.left, window_paddings.top))
@@ -754,7 +739,7 @@ impl RenderOnce for Dialog {
                             .focus_handle(self.focus_handle.clone())
                             .close_on_escape(self.props.keyboard && !closing)
                             .close_on_backdrop_press(self.props.overlay_closable && !closing)
-                            .dismiss_below_y(cx.theme().title_bar_height)
+                            .dismiss_below_y(TITLE_BAR_HEIGHT)
                             .when(self.props.overlay && !closing, |this| {
                                 this.backdrop(
                                     div()
@@ -868,7 +853,7 @@ impl RenderOnce for Dialog {
                                             gpui_base::DialogClose::new()
                                                 .absolute()
                                                 .top(top)
-                                                .right(right)
+                                                .inset_e(right, cx)
                                                 .trigger(|button| {
                                                     Button::new("close")
                                                         .with_base(button)
@@ -919,9 +904,9 @@ impl RenderOnce for Dialog {
                                                     window_paddings.top + margin,
                                                 );
                                                 surface.progress = visibility;
-                                                wrap_surface(surface.into_any_element())
+                                                surface.into_any_element()
                                             } else {
-                                                wrap_surface(surface.into_any_element())
+                                                surface.into_any_element()
                                             }
                                         }),
                                 )
@@ -1276,6 +1261,37 @@ pub(crate) mod tests {
         });
         assert_eq!(surface(cx, 0).top(), px(80.));
         assert!(cx.debug_bounds("dialog-1").is_none());
+    }
+
+    /// A dialog opened while the previous one is leaving takes the place of a
+    /// lone dialog, rather than stacking on the closing one and snapping into
+    /// place when its exit ends.
+    #[gpui::test]
+    fn a_closing_dialog_does_not_offset_the_next_one(cx: &mut TestAppContext) {
+        for body_height in [px(40.), px(1000.)] {
+            let cx = window(cx, size(px(1000.), px(800.)));
+            cx.update(|_, cx| cx.set_reduce_motion(false));
+            open(cx, |dialog, _, _| dialog.title("First").child("body"));
+            cx.background_executor.advance_clock(*ANIMATION_DURATION);
+            frame(cx);
+            cx.update(|window, cx| window.close_dialog(cx));
+            frame(cx);
+
+            open(cx, move |dialog, _, _| {
+                dialog
+                    .title("Second")
+                    .child(div().h(body_height))
+                    .entrance(DialogEntrance::None)
+            });
+            let during_exit = surface(cx, 1);
+
+            cx.background_executor
+                .advance_clock(*ANIMATION_DURATION + Duration::from_millis(1));
+            frame(cx);
+            frame(cx);
+            assert!(cx.debug_bounds("dialog-1").is_none());
+            assert_eq!(during_exit, surface(cx, 0));
+        }
     }
 
     /// Closing the top of a stack only removes that dialog: the one below stays

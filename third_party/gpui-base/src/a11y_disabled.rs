@@ -60,6 +60,7 @@ impl<E: Element<PrepaintState = Option<gpui::Hitbox>> + InteractiveElement> A11y
     }
 }
 
+#[cfg(not(feature = "gpui-fast"))]
 impl<E: Element> IntoElement for A11yDisabled<E> {
     type Element = Self;
 
@@ -125,10 +126,6 @@ impl<E: Element> Element for A11yDisabled<E> {
 
     fn a11y_role(&self) -> Option<gpui::Role> {
         self.inner.a11y_role()
-    }
-
-    fn a11y_tag(&self) -> Option<gpui::SharedString> {
-        self.inner.a11y_tag()
     }
 
     fn write_a11y_info(&self, node: &mut accesskit::Node) {
@@ -247,6 +244,15 @@ mod tests {
                             ),
                         ));
                         nodes.push((
+                            "input",
+                            disabled,
+                            node_of(
+                                crate::input::InputBase::new("input")
+                                    .disabled(disabled)
+                                    .render(window, cx),
+                            ),
+                        ));
+                        nodes.push((
                             "slider",
                             disabled,
                             node_of(Slider::new(&slider).disabled(disabled).render(window, cx)),
@@ -268,7 +274,7 @@ mod tests {
         cx.update(|window, cx| window.draw(cx).clear(cx));
 
         let nodes = captured.lock().unwrap();
-        assert_eq!(nodes.len(), 22);
+        assert_eq!(nodes.len(), 24);
         for (name, disabled, node) in nodes.iter() {
             assert_ne!(node.role(), gpui::Role::Unknown, "{name} wrote no node");
             assert_eq!(node.is_disabled(), *disabled, "{name}, disabled {disabled}");

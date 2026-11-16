@@ -4,7 +4,7 @@
 //! identified GPUI elements with `.test_support()`, without supplying test-only state.
 use gpui::{
     App, Bounds, Element, ElementId, FocusHandle, GlobalElementId, Hitbox, InspectorElementId,
-    InteractiveElement, IntoElement, LayoutId, Pixels, SharedString, Visibility, Window, px,
+    InteractiveElement, LayoutId, Pixels, SharedString, Visibility, Window, px,
 };
 use smallvec::SmallVec;
 use std::{
@@ -450,7 +450,10 @@ impl<E: Element> Observed<E> {
         }
     }
 }
-impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> IntoElement for Observed<E> {
+#[cfg(not(feature = "gpui-fast"))]
+impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> gpui::IntoElement
+    for Observed<E>
+{
     type Element = Self;
     fn into_element(self) -> Self {
         self
@@ -577,9 +580,6 @@ impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> Element fo
     fn a11y_role(&self) -> Option<gpui::Role> {
         self.inner.a11y_role()
     }
-    fn a11y_tag(&self) -> Option<gpui::SharedString> {
-        self.inner.a11y_tag()
-    }
     fn write_a11y_info(&self, node: &mut gpui::accesskit::Node) {
         self.inner.write_a11y_info(node);
     }
@@ -647,7 +647,8 @@ impl<E: Element> ObservedText<E> {
         ObservedText::new(self.inner.id(id), self.text, self.alternative)
     }
 }
-impl<E: Element> IntoElement for ObservedText<E> {
+#[cfg(not(feature = "gpui-fast"))]
+impl<E: Element> gpui::IntoElement for ObservedText<E> {
     type Element = Self;
     fn into_element(self) -> Self {
         self

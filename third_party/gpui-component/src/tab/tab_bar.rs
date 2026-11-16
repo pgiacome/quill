@@ -6,7 +6,7 @@ use gpui::{
     StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div, point,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::spring;
+use gpui_base::{LayoutDirection, LogicalStyledExt as _, spring};
 use rust_i18n::t;
 use smallvec::SmallVec;
 
@@ -220,8 +220,8 @@ impl TabBar {
         let init_key = format!("{}-tab-init", self.id);
 
         let prev_selected = window.use_keyed_state(prev_key, cx, |_, _| selected_ix);
-        // (to_left, to_width, epoch, jumps)
-        let anim_params = window.use_keyed_state(anim_key, cx, |_, _| (px(0.), px(0.), 0u64, 0u64));
+        // (to_left, to_width, epoch)
+        let anim_params = window.use_keyed_state(anim_key, cx, |_, _| (px(0.), px(0.), 0u64));
         let initialized = window.use_keyed_state(init_key, cx, |_, _| false);
 
         // First frame: trigger re-render to capture bounds via on_prepaint
@@ -231,7 +231,7 @@ impl TabBar {
 
         self.update_anim_params(selected_ix, bounds_rc, &prev_selected, &anim_params, cx);
 
-        let (to_left, to_width, epoch, jumps) = *anim_params.read(cx);
+        let (to_left, to_width, epoch) = *anim_params.read(cx);
         if let Some(rc) = bounds_rc {
             rc.borrow_mut().placed = (to_left, to_width);
         }
@@ -242,11 +242,7 @@ impl TabBar {
         // The springs hold the indicator's own position and velocity, so a tab
         // switched again mid-slide is redirected from where the indicator
         // actually is rather than restarted from the tab it left.
-        //
-        // Quill: `jumps` counts bounds-only changes (a badge changing a tab's
-        // width). It is part of the spring key, and a spring adopts its first
-        // value immediately, so those changes jump instead of animating.
-        let indicator_key = format!("{}-tab-indicator-{}", self.id, jumps);
+        let indicator_key = format!("{}-tab-indicator", self.id);
         let left = spring(
             (indicator_key.clone(), "left"),
             to_left,
@@ -300,10 +296,6 @@ impl TabBar {
                 _ => el,
             });
 
-        // Quill: lets the tests read where the indicator is drawn.
-        #[cfg(any(test, all(debug_assertions, feature = "test-support")))]
-        let indicator = indicator.debug_selector(|| "tab-indicator".into());
-
         Some((indicator.into_any_element(), epoch))
     }
 
@@ -313,7 +305,7 @@ impl TabBar {
         selected_ix: usize,
         bounds_rc: &Option<Rc<RefCell<TabIndicatorBounds>>>,
         prev_selected: &gpui::Entity<usize>,
-        anim_params: &gpui::Entity<(Pixels, Pixels, u64, u64)>,
+        anim_params: &gpui::Entity<(Pixels, Pixels, u64)>,
         cx: &mut App,
     ) {
         let rc = match bounds_rc {
@@ -351,8 +343,7 @@ impl TabBar {
                     Some(_) => epoch + 1,
                     None => epoch,
                 };
-                let jumps = anim_params.read(cx).3;
-                anim_params.update(cx, |v, _| *v = (left, width, epoch, jumps));
+                anim_params.update(cx, |v, _| *v = (left, width, epoch));
             }
             drop(bounds);
             prev_selected.update(cx, |v, _| *v = selected_ix);
@@ -362,15 +353,10 @@ impl TabBar {
         if let Some(to_b) = bounds.tabs.get(selected_ix) {
             let left = to_b.origin.x - first_tab_origin;
             let width = to_b.size.width;
-            let (to_left, to_width, epoch, jumps) = *anim_params.read(cx);
+            let (to_left, to_width, epoch) = *anim_params.read(cx);
 
             if left != to_left || width != to_width {
-                // Quill: the selection did not change, only the tab's bounds
-                // did, so move the indicator without a spring (tdesktop
-                // animates only on selection change). The first measurement
-                // (to_width == 0) keeps its key: nothing to animate from.
-                let jumps = if to_width > px(0.) { jumps + 1 } else { jumps };
-                anim_params.update(cx, |v, _| *v = (left, width, epoch, jumps));
+                anim_params.update(cx, |v, _| *v = (left, width, epoch));
             }
         }
     }
@@ -453,6 +439,8 @@ impl RenderOnce for TabBar {
             TabVariant::Segmented | TabVariant::Pill | TabVariant::Underline
         );
         let num_tabs = self.children.len();
+        let rtl = LayoutDirection::global(cx).is_rtl();
+        let has_suffix_or_menu = self.suffix.is_some() || self.menu;
 
         // Bounds tracking for tab indicator animation.
         // Uses Rc<RefCell> to avoid triggering re-renders from prepaint writes.
@@ -489,6 +477,8 @@ impl RenderOnce for TabBar {
                 _ => px(32.),
             },
             num_tabs,
+            rtl,
+            leading: usize::from(rtl && has_suffix_or_menu),
         };
         reveal.advance(window, cx);
 
@@ -498,7 +488,6 @@ impl RenderOnce for TabBar {
         let mut indicator_element = indicator.map(|(el, _)| el);
         let indicator_ready = indicator_element.is_some();
 
-        let has_suffix_or_menu = self.suffix.is_some() || self.menu;
         let view = window.current_view();
         let mut item_metas: Vec<(
             Option<SharedString>,
@@ -573,6 +562,11 @@ impl RenderOnce for TabBar {
             // own `flex_grow` / `flex_basis` (e.g. `flex_1()`) must size it.
             let flex_grow = tab.style().flex_grow;
             let flex_basis = tab.style().flex_basis;
+            // In RTL the strip runs from the right: the last tab, laid out
+            // first, takes the free space before it. An auto margin collapses
+            // to zero once the tabs overflow, so they still scroll from the
+            // origin rather than past the left edge of the viewport.
+            let push_end = rtl && !has_suffix_or_menu && ix + 1 == num_tabs;
 
             rendered_tabs.push(if let Some(ref rc) = bounds_rc {
                 let rc = rc.clone();
@@ -587,6 +581,7 @@ impl RenderOnce for TabBar {
                         this.style().flex_basis = flex_basis;
                         this
                     })
+                    .when(push_end, |this| this.ml_auto())
                     .on_prepaint(move |bounds, window, _| {
                         let mut measured = rc.borrow_mut();
                         if let Some(slot) = measured.tabs.get_mut(ix) {
@@ -626,6 +621,7 @@ impl RenderOnce for TabBar {
                         this.style().flex_basis = flex_basis;
                         this
                     })
+                    .when(push_end, |this| this.ml_auto())
                     .when(!disabled, |this| {
                         this.on_hover(move |hovered, _, cx| {
                             hovered_tab.update(cx, |state, cx| {
@@ -644,13 +640,25 @@ impl RenderOnce for TabBar {
                     .child(tab)
                     .into_any_element()
             } else {
-                tab.into_any_element()
+                tab.when(push_end, |this| this.ml_auto()).into_any_element()
             });
         }
+        // `ScrollHandle` indexes the strip's children in layout order, which
+        // `TabReveal::item` maps back to tab indices.
+        if rtl {
+            rendered_tabs.reverse();
+        }
+        let last_empty_space = has_suffix_or_menu.then(|| {
+            div()
+                .flex_shrink_0()
+                .when(rtl, |this| this.ml_auto())
+                .child(self.last_empty_space)
+        });
 
         tabs.group("tab-bar")
             .relative()
-            .flex()
+            // Prefix, tabs, overflow menu and suffix read from the start edge.
+            .flex_row_dir(cx)
             .items_center()
             .bg(bg)
             .text_color(cx.theme().tab_foreground)
@@ -704,8 +712,13 @@ impl RenderOnce for TabBar {
                             .overflow_x_scroll()
                             .lock_scroll_axis()
                             .track_scroll(&scroll_handle)
-                            .children(rendered_tabs)
-                            .when(has_suffix_or_menu, |this| this.child(self.last_empty_space)),
+                            .map(|this| {
+                                if rtl {
+                                    this.children(last_empty_space).children(rendered_tabs)
+                                } else {
+                                    this.children(rendered_tabs).children(last_empty_space)
+                                }
+                            }),
                     )
                     // Outside the tracked children so tab indices stay unchanged.
                     .child(ScrollableMask::vertical_wheel(&scroll_handle)),
@@ -764,6 +777,10 @@ struct TabReveal {
     /// How much of the neighbouring tab stays visible.
     peek: Pixels,
     num_tabs: usize,
+    /// Whether the strip is laid out right to left, last tab first.
+    rtl: bool,
+    /// Strip children before the tabs: the trailing space in RTL.
+    leading: usize,
 }
 
 #[derive(Clone, Copy)]
@@ -790,23 +807,39 @@ impl TabReveal {
         cx.notify(self.view);
     }
 
+    /// The laid-out bounds of tab `ix`, which sits at a mirrored child index
+    /// in a right-to-left strip.
+    fn item(&self, ix: usize) -> Option<Bounds<Pixels>> {
+        if ix >= self.num_tabs {
+            return None;
+        }
+        let child = match self.rtl {
+            false => ix,
+            true => self.leading + self.num_tabs - 1 - ix,
+        };
+        self.scroll_handle.bounds_for_item(child)
+    }
+
     /// The horizontal offset that shows tab `ix` and `peek` of each neighbour,
     /// moving as little as possible. The tab itself wins on a narrow bar.
     fn offset_revealing(&self, ix: usize) -> Option<Pixels> {
         let handle = &self.scroll_handle;
         let viewport = handle.bounds();
-        let tab = handle.bounds_for_item(ix)?;
+        let tab = self.item(ix)?;
         let max = handle.max_offset().x;
+        // The tabs physically left and right of `ix`: its previous and next
+        // tab, swapped in a right-to-left strip.
+        let (left_ix, right_ix) = match self.rtl {
+            false => (ix.checked_sub(1), Some(ix + 1)),
+            true => (Some(ix + 1), ix.checked_sub(1)),
+        };
         // Child bounds are laid out unscrolled: content at x is on screen at
         // x + offset, so the visible content spans `viewport - offset`.
-        let want_left = match ix.checked_sub(1).and_then(|ix| handle.bounds_for_item(ix)) {
+        let want_left = match left_ix.and_then(|ix| self.item(ix)) {
             Some(prev) => (prev.right() - self.peek).max(prev.left()),
             None => viewport.left(),
         };
-        let want_right = match (ix + 1 < self.num_tabs)
-            .then(|| handle.bounds_for_item(ix + 1))
-            .flatten()
-        {
+        let want_right = match right_ix.and_then(|ix| self.item(ix)) {
             Some(next) => (next.left() + self.peek).min(next.right()),
             None => viewport.right() + max,
         };
@@ -1110,6 +1143,44 @@ mod tests {
         assert!(prefix.size.width > px(0.));
         assert!(child.size.width > px(0.));
         assert!(suffix.size.width > px(0.));
+    }
+
+    struct DirectionHarness {
+        suffix: bool,
+    }
+
+    impl Render for DirectionHarness {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            TabBar::new("direction-tabs")
+                .w(px(400.))
+                .child(Tab::new().child(div().debug_selector(|| "rtl-tab-0".into()).child("A")))
+                .child(Tab::new().child(div().debug_selector(|| "rtl-tab-1".into()).child("B")))
+                .when(self.suffix, |this| {
+                    this.suffix(div().debug_selector(|| "rtl-suffix".into()).child("S"))
+                })
+        }
+    }
+
+    #[gpui::test]
+    fn tabs_start_from_the_right_in_rtl(cx: &mut TestAppContext) {
+        cx.update(|cx| {
+            crate::theme::init(cx);
+            gpui_base::LayoutDirection::Rtl.set_global(cx);
+        });
+        for suffix in [false, true] {
+            let (_, cx) = cx.add_window_view(|_, _| DirectionHarness { suffix });
+            cx.update(|window, cx| window.draw(cx).clear(cx));
+
+            let first = cx.debug_bounds("rtl-tab-0").unwrap();
+            let second = cx.debug_bounds("rtl-tab-1").unwrap();
+            assert!(second.right() < first.left(), "suffix: {suffix}");
+            // The first tab sits against the start (right) edge of the bar.
+            assert!(first.right() > px(360.), "suffix: {suffix}");
+            if suffix {
+                let suffix = cx.debug_bounds("rtl-suffix").unwrap();
+                assert!(suffix.right() < second.left());
+            }
+        }
     }
 
     struct ScrollHarness {
@@ -2148,47 +2219,5 @@ mod tests {
         let cx = show_late_bar(cx, px(0.));
         next_frame(cx);
         assert_eq!(cx.update(|window, cx| window.simulate_next_frame(cx)), 0);
-    }
-
-    struct JumpHarness {
-        wide: bool,
-    }
-
-    impl Render for JumpHarness {
-        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-            let first = if self.wide { 120. } else { 60. };
-            div().w(px(400.)).child(
-                TabBar::new("jump-tabs")
-                    .underline()
-                    .selected_index(0)
-                    .child(Tab::new().w(px(first)).label("A").debug_selector(|| "jump-tab-0".into()))
-                    .child(Tab::new().w(px(60.)).label("B")),
-            )
-        }
-    }
-
-    #[gpui::test]
-    fn indicator_jumps_when_only_the_selected_tab_resizes(cx: &mut TestAppContext) {
-        cx.update(crate::theme::init);
-        let (view, cx) = cx.add_window_view(|_, _| JumpHarness { wide: false });
-        for _ in 0..3 {
-            draw(cx);
-        }
-        let before = cx.debug_bounds("tab-indicator").unwrap();
-        assert_eq!(before.size.width, cx.debug_bounds("jump-tab-0").unwrap().size.width);
-
-        view.update(cx, |view, cx| {
-            view.wide = true;
-            cx.notify();
-        });
-        // Measuring the new bounds takes a frame or two; no animation time
-        // passes, so a spring would still be at the old width.
-        for _ in 0..3 {
-            draw(cx);
-        }
-        let tab = cx.debug_bounds("jump-tab-0").unwrap();
-        let after = cx.debug_bounds("tab-indicator").unwrap();
-        assert_eq!(tab.size.width, px(120.));
-        assert_eq!(after.size.width, tab.size.width, "indicator must jump");
     }
 }
