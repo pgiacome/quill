@@ -4,6 +4,7 @@
 //! as a stuck focus ring.
 #![deny(clippy::indexing_slicing)]
 
+use gpui_kit::base::ElementExt as _;
 use gpui_kit::component::ActiveTheme;
 use gpui_kit::*;
 
@@ -35,7 +36,16 @@ const PANEL_INSET: f32 = PANEL_PADDING + 1.;
 /// opens to the right of the parent menu and moves to its left when the
 /// right has no room; near the top or bottom edge it moves back inside the
 /// window.
-pub(crate) fn submenu_panel(id: &'static str, rows: Vec<AnyElement>, cx: &App) -> AnyElement {
+///
+/// `on_bounds` gets the panel's bounds as it prepaints and `on_pointer` each
+/// pointer move over it (the parent menu's aim, `menu_aim`).
+pub(crate) fn submenu_panel(
+    id: &'static str,
+    rows: Vec<AnyElement>,
+    on_bounds: impl FnOnce(Bounds<Pixels>) + 'static,
+    on_pointer: impl Fn(&MouseMoveEvent, &mut Window, &mut App) + 'static,
+    cx: &App,
+) -> AnyElement {
     // The parent menu's outer left and right edges, relative to the row,
     // which sits `PANEL_INSET` inside them.
     let parent_menu = Bounds::new(
@@ -58,7 +68,9 @@ pub(crate) fn submenu_panel(id: &'static str, rows: Vec<AnyElement>, cx: &App) -
                 .w(px(MENU_WIDTH))
                 .p_1()
                 .menu_surface(cx)
-                .children(rows),
+                .on_mouse_move(on_pointer)
+                .children(rows)
+                .on_prepaint(move |bounds, _, _| on_bounds(bounds)),
         );
     // Measured from the row's own corner, not from where its padding puts
     // the next child.
