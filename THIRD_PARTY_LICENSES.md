@@ -15,7 +15,7 @@ under `licenses/`.
 
 - MIT License: 684
 - Apache License 2.0: 43
-- Unicode License v3: 26
+- Unicode License v3: 27
 - ISC License: 22
 - BSD 3-Clause "New" or "Revised" License: 16
 - Mozilla Public License 2.0: 16
@@ -1441,8 +1441,8 @@ Apache License
 Used by:
 - [constant_time_eq 0.6.1](https://codeberg.org/cesarb/constant_time_eq)
 - [dunce 1.0.5](https://gitlab.com/kornelski/dunce)
-- [gpui-kit-assets 0.9.1](https://github.com/longbridge/gpui-kit)
-- [gpui-kit 0.9.1](https://github.com/longbridge/gpui-kit)
+- [gpui-kit-assets 0.10.0](https://github.com/longbridge/gpui-kit)
+- [gpui-kit 0.10.0](https://github.com/longbridge/gpui-kit)
 - [interprocess 2.4.8](https://github.com/kotauskas/interprocess)
 - [ryu 1.0.23](https://github.com/dtolnay/ryu)
 - [spirv 0.4.0+sdk-1.4.341.0](https://github.com/gfx-rs/rspirv)
@@ -1775,9 +1775,9 @@ Apache License
 ### Apache License 2.0
 
 Used by:
-- [gpui-base 0.9.1](https://github.com/longbridge/gpui-kit)
-- [gpui-component 0.9.1](https://github.com/longbridge/gpui-kit)
-- [gpui-component-macros 0.9.1](https://crates.io/crates/gpui-component-macros)
+- [gpui-base 0.10.0](https://github.com/longbridge/gpui-kit)
+- [gpui-component 0.10.0](https://github.com/longbridge/gpui-kit)
+- [gpui-component-macros 0.10.0](https://crates.io/crates/gpui-component-macros)
 
 ````text
 Copyright 2024 - 2026 Longbridge <https://longbridge.com>
@@ -2012,7 +2012,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ### BSD 3-Clause "New" or "Revised" License
 
 Used by:
-- [rusty-opus 1.0.2](https://github.com/Remade-With-Rust/rusty-opus)
+- [rusty-opus 1.1.0](https://github.com/Remade-With-Rust/rusty-opus)
 
 ````text
 
@@ -3296,7 +3296,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 Used by:
 - [libloading 0.8.9](https://github.com/nagisa/rust_libloading/)
-- [libloading 0.9.0](https://github.com/nagisa/rust_libloading/)
+- [libloading 0.9.1](https://github.com/nagisa/rust_libloading/)
 
 ````text
 Copyright © 2015, Simonas Kazlauskas
@@ -3317,7 +3317,7 @@ THIS SOFTWARE.
 ### ISC License
 
 Used by:
-- [rustls-webpki 0.103.16](https://github.com/rustls/webpki)
+- [rustls-webpki 0.103.17](https://github.com/rustls/webpki)
 
 ````text
 Except as otherwise noted, this project is licensed under the following
@@ -5188,7 +5188,7 @@ DEALINGS IN THE SOFTWARE.
 ### MIT License
 
 Used by:
-- [mio 1.2.4](https://github.com/tokio-rs/mio)
+- [mio 1.2.5](https://github.com/tokio-rs/mio)
 
 ````text
 Copyright (c) 2014 Carl Lerche and other MIO contributors
@@ -5216,7 +5216,7 @@ THE SOFTWARE.
 ### MIT License
 
 Used by:
-- [errno 0.3.14](https://github.com/lambda-fairy/rust-errno)
+- [errno 0.3.15](https://github.com/lambda-fairy/rust-errno)
 
 ````text
 Copyright (c) 2014 Chris Wong
@@ -5764,6 +5764,7 @@ DEALINGS IN THE SOFTWARE.
 
 Used by:
 - [object 0.40.0](https://github.com/gimli-rs/object)
+- [object 0.41.0](https://github.com/gimli-rs/object)
 
 ````text
 Copyright (c) 2015 The Gimli Developers
@@ -5801,7 +5802,7 @@ Used by:
 - [heck 0.5.0](https://github.com/withoutboats/heck)
 - [unicode-bidi 0.3.18](https://github.com/servo/unicode-bidi)
 - [unicode-id 0.3.7](https://github.com/Boshen/unicode-id)
-- [unicode-properties 0.1.3](https://github.com/unicode-rs/unicode-properties)
+- [unicode-properties 0.1.5](https://github.com/unicode-rs/unicode-properties)
 - [unicode-segmentation 1.13.3](https://github.com/unicode-rs/unicode-segmentation)
 - [unicode-width 0.2.3](https://github.com/unicode-rs/unicode-width)
 
@@ -7611,7 +7612,6 @@ Used by:
 - [dirs-sys 0.4.1](https://github.com/dirs-dev/dirs-sys-rs)
 - [dirs-sys 0.5.0](https://github.com/dirs-dev/dirs-sys-rs)
 - [dirs 5.0.1](https://github.com/soc/dirs-rs)
-- [dirs 6.0.0](https://github.com/soc/dirs-rs)
 
 ````text
 Copyright (c) 2018-2019 dirs-rs contributors
@@ -9399,9 +9399,9 @@ SOFTWARE.
 
 Used by:
 - [zbus 5.19.0](https://github.com/z-galaxy/zbus/)
-- [zbus 6.2.1](https://github.com/z-galaxy/zbus/)
+- [zbus 6.3.0](https://github.com/z-galaxy/zbus/)
 - [zbus_macros 5.19.0](https://github.com/z-galaxy/zbus/)
-- [zbus_macros 6.2.1](https://github.com/z-galaxy/zbus/)
+- [zbus_macros 6.3.0](https://github.com/z-galaxy/zbus/)
 - [zbus_names 4.3.5](https://github.com/z-galaxy/zbus/)
 - [zbus_utils 6.1.0](https://github.com/z-galaxy/zbus/)
 - [zbus_xml 5.2.1](https://github.com/z-galaxy/zbus/)
@@ -9611,7 +9611,7 @@ DEALINGS IN THE SOFTWARE.
 ### MIT License
 
 Used by:
-- [zruntime 0.2.2](https://github.com/z-galaxy/zruntime)
+- [zruntime 0.2.3](https://github.com/z-galaxy/zruntime)
 
 ````text
 Copyright (c) 2026 Zeeshan Ali Khan & zruntime contributors
@@ -9651,7 +9651,7 @@ Copyright (c) 2020 Yoshua Wuyts, Stjepan Glavina & Zeeshan Ali Khan
 ### MIT License
 
 Used by:
-- [annotate-snippets 0.12.17](https://github.com/rust-lang/annotate-snippets-rs)
+- [annotate-snippets 0.12.18](https://github.com/rust-lang/annotate-snippets-rs)
 - [anstyle 1.0.14](https://github.com/rust-cli/anstyle.git)
 - [serde_spanned 0.6.9](https://github.com/toml-rs/toml)
 - [toml 0.8.23](https://github.com/toml-rs/toml)
@@ -9933,10 +9933,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 Used by:
 - [resvg 0.45.1](https://github.com/linebender/resvg)
 - [resvg 0.46.0](https://github.com/linebender/resvg)
-- [resvg 0.49.0](https://github.com/linebender/resvg)
+- [resvg 0.50.0](https://github.com/linebender/resvg)
 - [usvg 0.45.1](https://github.com/linebender/resvg)
 - [usvg 0.46.0](https://github.com/linebender/resvg)
-- [usvg 0.49.0](https://github.com/linebender/resvg)
+- [usvg 0.50.0](https://github.com/linebender/resvg)
 
 ````text
 Copyright 2017 the Resvg Authors
@@ -10771,7 +10771,7 @@ DEALINGS IN THE SOFTWARE.
 ### MIT License
 
 Used by:
-- [ureq 3.5.1](https://github.com/algesten/ureq)
+- [ureq 3.5.2](https://github.com/algesten/ureq)
 
 ````text
 MIT License
@@ -11436,13 +11436,13 @@ SOFTWARE.
 
 Used by:
 - [naga-types 30.0.1](https://github.com/gfx-rs/wgpu)
-- [naga 30.0.1](https://github.com/gfx-rs/wgpu)
+- [naga 30.0.2](https://github.com/gfx-rs/wgpu)
 - [wgpu-core-deps-apple 30.0.1](https://github.com/gfx-rs/wgpu)
 - [wgpu-core-deps-windows-linux-android 30.0.1](https://github.com/gfx-rs/wgpu)
-- [wgpu-core 30.0.1](https://github.com/gfx-rs/wgpu)
-- [wgpu-hal 30.0.1](https://github.com/gfx-rs/wgpu)
+- [wgpu-core 30.0.2](https://github.com/gfx-rs/wgpu)
+- [wgpu-hal 30.0.2](https://github.com/gfx-rs/wgpu)
 - [wgpu-naga-bridge 30.0.1](https://github.com/gfx-rs/wgpu)
-- [wgpu-types 30.0.1](https://github.com/gfx-rs/wgpu)
+- [wgpu-types 30.0.2](https://github.com/gfx-rs/wgpu)
 - [wgpu 30.0.1](https://github.com/gfx-rs/wgpu)
 
 ````text
@@ -11628,7 +11628,7 @@ Used by:
 - [rust-i18n-support 4.2.4](https://github.com/longbridge/rust-i18n)
 - [seahash 4.1.0](https://gitlab.redox-os.org/redox-os/seahash)
 - [svg_fmt 0.4.5](https://github.com/nical/rust_debug)
-- [taffy 0.15.0](https://github.com/DioxusLabs/taffy)
+- [taffy 0.15.1](https://github.com/DioxusLabs/taffy)
 - [tauri-winrt-notification 0.8.1](https://github.com/tauri-apps/winrt-notification)
 - [windows-collections 0.3.2](https://github.com/microsoft/windows-rs)
 - [windows-core 0.58.0](https://github.com/microsoft/windows-rs)
@@ -13045,9 +13045,9 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [rust-embed-impl 8.13.0](https://pyrossh.dev/repos/rust-embed)
-- [rust-embed-utils 8.13.0](https://pyrossh.dev/repos/rust-embed)
-- [rust-embed 8.13.0](https://pyrossh.dev/repos/rust-embed)
+- [rust-embed-impl 8.14.0](https://pyrossh.dev/repos/rust-embed)
+- [rust-embed-utils 8.14.0](https://pyrossh.dev/repos/rust-embed)
+- [rust-embed 8.14.0](https://pyrossh.dev/repos/rust-embed)
 
 ````text
 The MIT License (MIT)
@@ -14459,6 +14459,54 @@ UNICODE LICENSE V3
 COPYRIGHT AND PERMISSION NOTICE
 
 Copyright © 1991-2023 Unicode, Inc.
+
+NOTICE TO USER: Carefully read the following legal agreement. BY
+DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR
+SOFTWARE, YOU UNEQUIVOCALLY ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE
+TERMS AND CONDITIONS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT
+DOWNLOAD, INSTALL, COPY, DISTRIBUTE OR USE THE DATA FILES OR SOFTWARE.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of data files and any associated documentation (the "Data Files") or
+software and any associated documentation (the "Software") to deal in the
+Data Files or Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, and/or sell
+copies of the Data Files or Software, and to permit persons to whom the
+Data Files or Software are furnished to do so, provided that either (a)
+this copyright and permission notice appear with all copies of the Data
+Files or Software, or (b) this copyright and permission notice appear in
+associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+THIRD PARTY RIGHTS.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE
+BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA
+FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall
+not be used in advertising or otherwise to promote the sale, use or other
+dealings in these Data Files or Software without prior written
+authorization of the copyright holder.
+
+````
+
+### Unicode License v3
+
+Used by:
+- [unicode-properties 0.1.5](https://github.com/unicode-rs/unicode-properties)
+
+````text
+UNICODE LICENSE V3
+
+COPYRIGHT AND PERMISSION NOTICE
+
+Copyright © 1991-2026 Unicode, Inc.
 
 NOTICE TO USER: Carefully read the following legal agreement. BY
 DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR
