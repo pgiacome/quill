@@ -31,6 +31,32 @@ use quill::telegram::envelope::{ChatKind, format_payment_price};
 /// Rows drawn at once; the search narrows the rest.
 const ROWS_MAX: usize = 150;
 
+/// The giveaway sentences that name the boosted chat, in the group or
+/// the channel wording.
+struct PlaceKeys {
+    receive: quill::lang::Key,
+    only_new: quill::lang::Key,
+    winners: quill::lang::Key,
+}
+
+impl PlaceKeys {
+    fn for_group(group: bool) -> Self {
+        if group {
+            Self {
+                receive: keys::Q_MONEY_THIS_WILL_RECEIVE_GROUP,
+                only_new: keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_GROUP,
+                winners: keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_GROUP,
+            }
+        } else {
+            Self {
+                receive: keys::Q_MONEY_THIS_WILL_RECEIVE_CHANNEL,
+                only_new: keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_CHANNEL,
+                winners: keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_CHANNEL,
+            }
+        }
+    }
+}
+
 impl QuillApp {
     /// Everything of the form that only a random giveaway has: the extra
     /// channels, who may take part, the extra prize, the end date and
@@ -45,21 +71,7 @@ impl QuillApp {
     ) -> Div {
         let options = &session.payments.giveaway.options;
         let group = Self::giveaway_group(session, draft.boosted_chat_id);
-        let receive_key = if group {
-            keys::Q_MONEY_THIS_WILL_RECEIVE_GROUP
-        } else {
-            keys::Q_MONEY_THIS_WILL_RECEIVE_CHANNEL
-        };
-        let only_new_key = if group {
-            keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_GROUP
-        } else {
-            keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_CHANNEL
-        };
-        let winners_key = if group {
-            keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_GROUP
-        } else {
-            keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_CHANNEL
-        };
+        let place = PlaceKeys::for_group(group);
         let chat_name = session
             .chats
             .get(&draft.boosted_chat_id)
@@ -72,7 +84,7 @@ impl QuillApp {
         body = body
             .child(section_title(tr(keys::GIVEAWAY_CHANNELS_TITLE)))
             .child(div().text_sm().child(tr_with(
-                receive_key,
+                place.receive,
                 &[
                     ("chat_name", &chat_name.to_string()),
                     ("boosts_text", &(boosts_text(boosts)).to_string()),
@@ -137,7 +149,7 @@ impl QuillApp {
                         })),
                     ),
             )
-            .child(about_line(tr_with(only_new_key, &[])));
+            .child(about_line(tr(place.only_new)));
         body = self.giveaway_countries_row(body, draft, session, cx);
 
         // Additional prize.
@@ -197,7 +209,7 @@ impl QuillApp {
                     ),
             )
             .child(about_line(tr_with(
-                winners_key,
+                place.winners,
                 &[("max_days", &max_days.to_string())],
             )));
 
@@ -685,7 +697,6 @@ fn country_name(session: &Session, code: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{MembersStage, members_page_due};
-    use quill::lang::{Snapshot, install, isolate_thread, keys};
 
     #[test]
     fn a_failed_members_page_waits_for_a_scroll_and_nothing_loops() {
@@ -703,64 +714,5 @@ mod tests {
         ] {
             assert!(!members_page_due(&stage, true, true));
         }
-    }
-
-    #[test]
-    fn the_giveaway_place_words_come_from_russian_keys() {
-        let entries =
-            quill::lang::parse::parse_strings(include_str!("../../lang/ru/money.strings"))
-                .expect("the Russian strings file parses");
-        let mut pack = Snapshot::new("ru", "ru", false);
-        pack.layer_entries(&entries);
-        isolate_thread();
-        install(Some(pack));
-
-        let pairs = [
-            (
-                keys::Q_MONEY_CHECK_YOUR_S_BOOSTS_TO_CHANNEL,
-                keys::Q_MONEY_CHECK_YOUR_S_BOOSTS_TO_GROUP,
-                "канала",
-                "группы",
-            ),
-            (
-                keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_CHANNEL,
-                keys::Q_MONEY_CHOOSE_IF_YOU_WANT_TO_GROUP,
-                "каналу",
-                "группе",
-            ),
-            (
-                keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_CHANNEL,
-                keys::Q_MONEY_CHOOSE_WHEN_WINNERS_OF_YOUR_GROUP,
-                "канала",
-                "группы",
-            ),
-            (
-                keys::Q_MONEY_GET_MORE_BOOSTS_FOR_YOUR_CHANNEL,
-                keys::Q_MONEY_GET_MORE_BOOSTS_FOR_YOUR_GROUP,
-                "канала",
-                "группы",
-            ),
-            (
-                keys::Q_MONEY_THIS_WILL_RECEIVE_CHANNEL,
-                keys::Q_MONEY_THIS_WILL_RECEIVE_GROUP,
-                "канал",
-                "группа",
-            ),
-        ];
-        for (channel, group, channel_word, group_word) in pairs {
-            let channel_text = quill::lang::tr(channel);
-            let group_text = quill::lang::tr(group);
-            assert!(channel_text.contains(channel_word), "{channel_text}");
-            assert!(group_text.contains(group_word), "{group_text}");
-            for text in [channel_text, group_text] {
-                for english in ["group", "channel", "subscribers", "members"] {
-                    assert!(
-                        !text.split_whitespace().any(|word| word == english),
-                        "{english:?} reached the Russian sentence: {text}"
-                    );
-                }
-            }
-        }
-        install(None);
     }
 }

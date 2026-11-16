@@ -200,7 +200,7 @@
 "qll_ops_could_not_select_audio_device" = "Не удалось выбрать аудиоустройство: {err}";
 "qll_ops_could_not_select_camera" = "Не удалось выбрать камеру: {err}";
 "qll_ops_could_not_send_report" = "Не удалось отправить жалобу";
-"qll_ops_could_not_send_the" = "Не удалось сохранить: {what}.";
+"qll_ops_could_not_send_the" = "Не удалось отправить: {what}.";
 "qll_ops_could_not_send_the_command" = "Не удалось отправить команду";
 "qll_ops_could_not_send_the_contact" = "Не удалось отправить контакт";
 "qll_ops_could_not_send_the_dice" = "Не удалось отправить кубик";
@@ -419,7 +419,7 @@
 "qll_ops_load_more_tracks" = "Загрузить больше треков";
 "qll_ops_load_the_newly_entered_gift" = "Загрузите только что введённый подарок перед покупкой.";
 "qll_ops_loading" = "Загрузка…";
-"qll_ops_location" = "Геопозиция";
+"qll_ops_location" = "геопозиция";
 "qll_ops_loading_2" = "Загрузка {to_lowercase}…";
 "qll_ops_loading_calls" = "Загружаем звонки…";
 "qll_ops_loading_recent_actions" = "Загружаем недавние действия…";

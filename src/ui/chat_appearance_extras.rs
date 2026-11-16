@@ -93,10 +93,6 @@ impl QuillApp {
     ) -> AnyElement {
         let muted = cx.theme().muted_foreground;
         let levels = self.wallpaper_levels(chat_id.0);
-        let word = match kind {
-            ChatAppearanceKind::Channel => tr(keys::Q_MISC_CHANNEL_WORD),
-            ChatAppearanceKind::Supergroup => tr(keys::Q_MISC_GROUP_WORD),
-        };
         div()
             .flex()
             .flex_col()
@@ -120,11 +116,11 @@ impl QuillApp {
                 ),
             )
             .child(div().text_xs().text_color(muted).child(tr_with(
-                keys::Q_MISC_CHOOSE_A_CHAT_THEME_OR,
-                &[
-                    ("word", word),
-                    ("theme_background", &levels.theme_background.to_string()),
-                ],
+                kind.pick(
+                    keys::Q_MISC_CHOOSE_A_CHAT_THEME_OR_CHANNEL,
+                    keys::Q_MISC_CHOOSE_A_CHAT_THEME_OR_GROUP,
+                ),
+                &[("theme_background", &levels.theme_background.to_string())],
             )))
             .into_any_element()
     }

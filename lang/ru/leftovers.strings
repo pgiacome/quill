@@ -33,7 +33,8 @@
 "qll_leftovers_gift_stars_for" = "Подарить {count} ⭐ за {price}";
 "qll_leftovers_giveaway_prizes_about" = "Включите, если хотите дать победителям свои призы в дополнение к {prize}. Не более {max} символов.";
 "qll_leftovers_last_active" = "Последняя активность: {date}";
-"qll_leftovers_level_required" = "Требуется уровень {required}. Текущий уровень: {have} ({group_word}).";
+"qll_leftovers_level_required_channel" = "Требуется уровень {required}. Сейчас у канала уровень {have}.";
+"qll_leftovers_level_required_group" = "Требуется уровень {required}. Сейчас у группы уровень {have}.";
 "qll_leftovers_loading_older_messages" = "Загрузка старых сообщений";
 "qll_leftovers_logout_warning" = "Помните: выход из аккаунта уничтожает все секретные чаты. Скачанные медиа будут удалены с этого устройства.";
 "qll_leftovers_mark_option_correct" = "Отметить вариант {number} как правильный ответ";

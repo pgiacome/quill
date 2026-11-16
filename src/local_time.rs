@@ -232,57 +232,49 @@ const WEEKDAY_KEYS: [Key; 7] = [
     keys::Q_MISC_WEEKDAY7,
 ];
 const SHORT_WEEKDAY_KEYS: [Key; 7] = [
-    keys::Q_MISC_SHORT_WEEKDAY1,
-    keys::Q_MISC_SHORT_WEEKDAY2,
-    keys::Q_MISC_SHORT_WEEKDAY3,
-    keys::Q_MISC_SHORT_WEEKDAY4,
-    keys::Q_MISC_SHORT_WEEKDAY5,
-    keys::Q_MISC_SHORT_WEEKDAY6,
-    keys::Q_MISC_SHORT_WEEKDAY7,
+    keys::WEEKDAY1,
+    keys::WEEKDAY2,
+    keys::WEEKDAY3,
+    keys::WEEKDAY4,
+    keys::WEEKDAY5,
+    keys::WEEKDAY6,
+    keys::WEEKDAY7,
 ];
+
+/// The name at `index` of a 0-based name table, "" past its end.
+fn pick(table: &[Key], index: usize) -> &'static str {
+    table.get(index).map(|key| tr(*key)).unwrap_or_default()
+}
+
+/// 0-based index of a 1-based month, clamped to the year.
+fn month_index(month: u8) -> usize {
+    usize::from(month.clamp(1, 12)).saturating_sub(1)
+}
 
 /// The full month name, "January" / «января».
 pub fn month_name(month: u8) -> &'static str {
-    let index = usize::from(month.clamp(1, 12)).saturating_sub(1);
-    MONTH_KEYS
-        .get(index)
-        .map(|key| tr(*key))
-        .unwrap_or_default()
+    pick(&MONTH_KEYS, month_index(month))
 }
 
 /// The full month name in the nominative, "January" / «Январь», for
 /// calendar captions and tables where no day follows.
 pub fn month_name_nominative(month: u8) -> &'static str {
-    let index = usize::from(month.clamp(1, 12)).saturating_sub(1);
-    MONTH_NOMINATIVE_KEYS
-        .get(index)
-        .map(|key| tr(*key))
-        .unwrap_or_default()
+    pick(&MONTH_NOMINATIVE_KEYS, month_index(month))
 }
 
 /// The abbreviated month name, "Jan" / «янв.».
 pub fn short_month_name(month: u8) -> &'static str {
-    let index = usize::from(month.clamp(1, 12)).saturating_sub(1);
-    SHORT_MONTH_KEYS
-        .get(index)
-        .map(|key| tr(*key))
-        .unwrap_or_default()
+    pick(&SHORT_MONTH_KEYS, month_index(month))
 }
 
 /// The full weekday name, "Monday" / «Понедельник».
 pub fn weekday_name(weekday: u8) -> &'static str {
-    WEEKDAY_KEYS
-        .get(usize::from(weekday.min(6)))
-        .map(|key| tr(*key))
-        .unwrap_or_default()
+    pick(&WEEKDAY_KEYS, usize::from(weekday.min(6)))
 }
 
 /// The abbreviated weekday name, "Mon" / «Пн».
 pub fn short_weekday_name(weekday: u8) -> &'static str {
-    SHORT_WEEKDAY_KEYS
-        .get(usize::from(weekday.min(6)))
-        .map(|key| tr(*key))
-        .unwrap_or_default()
+    pick(&SHORT_WEEKDAY_KEYS, usize::from(weekday.min(6)))
 }
 
 /// The time of day in the system's clock style: `21:42` or `9:42 PM`
@@ -383,22 +375,7 @@ pub fn viewer_stamp(date: &CivilTime, now: &CivilTime) -> String {
         0 => tr_with(keys::MEDIAVIEW_TODAY, &[("time", &time)]),
         1 => tr_with(keys::MEDIAVIEW_YESTERDAY, &[("time", &time)]),
         _ => {
-            let day = date.day.to_string();
-            let date_text = if !needs_year(date, now) {
-                tr_with(
-                    keys::MONTH_DAY,
-                    &[("month", month_name(date.month)), ("day", &day)],
-                )
-            } else {
-                tr_with(
-                    keys::MONTH_DAY_YEAR,
-                    &[
-                        ("month", month_name(date.month)),
-                        ("day", &day),
-                        ("year", &date.year.to_string()),
-                    ],
-                )
-            };
+            let date_text = day_label(date, now);
             tr_with(
                 keys::MEDIAVIEW_DATE_TIME,
                 &[("date", &date_text), ("time", &time)],

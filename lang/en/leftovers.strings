@@ -102,7 +102,8 @@
 "qll_leftovers_gift_stars_for" = "Gift {count} Stars for {price}";
 "qll_leftovers_giveaway_prizes_about" = "Turn this on if you want to give the winners your own prizes in addition to {prize}. Up to {max} characters.";
 "qll_leftovers_last_active" = "Last active: {date}";
-"qll_leftovers_level_required" = "Level {required} required. This {group_word} is at level {have}.";
+"qll_leftovers_level_required_channel" = "Level {required} required. This channel is at level {have}.";
+"qll_leftovers_level_required_group" = "Level {required} required. This group is at level {have}.";
 "qll_leftovers_loading_older_messages" = "Loading older messages";
 "qll_leftovers_logout_warning" = "Remember, logging out kills all your Secret Chats. Downloaded media will be erased from this device.";
 "qll_leftovers_mark_option_correct" = "Mark option {number} as the correct answer";

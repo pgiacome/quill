@@ -592,7 +592,7 @@
 "qll_media_verify_bot" = "Подтверждение бота";
 "qll_media_verify_channel" = "Подтверждение канала";
 "qll_media_verify_group" = "Подтверждение группы";
-"qll_media_verify_name_as_a_on_behalf" = "Подтвердить {name} как {noun} от имени {org}? Рядом с именем появится отметка о проверке.";
+"qll_media_verify_name_as_a_on_behalf" = "Подтвердить {name} ({noun}) от имени {org}? Рядом с именем появится отметка о проверке.";
 "qll_media_verify_user" = "Подтверждение пользователя";
 "qll_media_verifying_as_a" = "Подтверждение: {name} — {noun}…";
 "qll_media_description_limit_shown_on" = "{typed}/{limit}. Показывается в профиле: {name}.";

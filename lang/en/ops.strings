@@ -1078,6 +1078,13 @@
 "lng_month10_small" = "Oct";
 "lng_month11_small" = "Nov";
 "lng_month12_small" = "Dec";
+"lng_weekday1" = "Mon";
+"lng_weekday2" = "Tue";
+"lng_weekday3" = "Wed";
+"lng_weekday4" = "Thu";
+"lng_weekday5" = "Fri";
+"lng_weekday6" = "Sat";
+"lng_weekday7" = "Sun";
 "lng_context_select_msg" = "Select";
 "lng_context_forward_selected" = "Forward Selected";
 "lng_context_delete_selected" = "Delete Selected";
