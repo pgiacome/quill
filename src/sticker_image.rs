@@ -6,8 +6,8 @@
 //! Pure pixels and numbers; the editor UI is `ui/photo_editor_set.rs`.
 #![deny(clippy::indexing_slicing)]
 
-#[cfg(feature = "ui")]
 use crate::lang::{keys, tr};
+#[cfg(feature = "ui")]
 use image::RgbaImage;
 
 /// Side of the editor's transparent canvas. tdesktop prepares the scene at

@@ -149,11 +149,12 @@ fn overlays_keep_placeholders_and_plural_other() {
     fn tags(text: &str) -> Vec<&str> {
         let mut out = Vec::new();
         let mut rest = text;
-        while let Some(start) = rest.find('{') {
-            let tail = &rest[start + 1..];
-            let Some(end) = tail.find('}') else { break };
-            out.push(&tail[..end]);
-            rest = &tail[end + 1..];
+        while let Some((_, tail)) = rest.split_once('{') {
+            let Some((name, after)) = tail.split_once('}') else {
+                break;
+            };
+            out.push(name);
+            rest = after;
         }
         out.sort_unstable();
         out
