@@ -32,6 +32,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use super::app::QuillApp;
+use super::menu_aim::MenuAimRow as _;
 use super::menu_states::ChatMenuSubmenu;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::*;
@@ -63,6 +64,10 @@ pub(super) struct ContextMenuItems {
     /// Parent row of a submenu whose first drawn row takes the focus once
     /// the frame that draws it has run.
     focus_pending: Cell<Option<u32>>,
+    /// The pointer's way from a row to its open submenu (`menu_aim`).
+    pub(super) aim: super::menu_aim::MenuAim,
+    /// Where the menu panel and its submenu were drawn, for the aim.
+    pub(super) panels: super::menu_aim::MenuPanels,
 }
 
 /// One window's focus hand-off for its context menus and hand-drawn
@@ -110,6 +115,7 @@ impl MenuFocus {
                     window.focus(previous, cx);
                 }
                 self.stage = MenuFocusStage::Closed;
+                self.items.aim.reset();
             }
             _ => {}
         }
@@ -185,6 +191,11 @@ impl ContextMenuItems {
         let handle = cx.focus_handle().tab_stop(true);
         with_vec(&self.handles, |handles| handles.push(handle.clone()));
         handle
+    }
+
+    /// The sort key of the item drawn last this frame.
+    pub(super) fn last_key(&self) -> Option<u32> {
+        with_vec(&self.keys, |keys| keys.last().copied())
     }
 
     /// How many enabled items were drawn so far this frame.
@@ -274,7 +285,7 @@ impl ContextMenuItems {
     }
 
     /// The submenu the row at `key` opens.
-    fn submenu_of(&self, key: u32) -> Option<ChatMenuSubmenu> {
+    pub(super) fn submenu_of(&self, key: u32) -> Option<ChatMenuSubmenu> {
         with_vec(&self.parents, |parents| {
             parents
                 .iter()
@@ -284,7 +295,7 @@ impl ContextMenuItems {
     }
 
     /// The sort key of the row that owns `submenu`, if drawn this frame.
-    fn parent_of(&self, submenu: ChatMenuSubmenu) -> Option<u32> {
+    pub(super) fn parent_of(&self, submenu: ChatMenuSubmenu) -> Option<u32> {
         with_vec(&self.parents, |parents| {
             parents
                 .iter()
@@ -381,7 +392,7 @@ pub(super) fn context_menu_item(
         let position = items.claimed();
         let key = row_key(u8::try_from(position).unwrap_or(u8::MAX));
         item.cursor_pointer()
-            .hover(|style| style.bg(hover))
+            .menu_hover(hover, items)
             .menu_key_target(key, items, cx)
     } else {
         item.opacity(0.5)
@@ -489,7 +500,7 @@ impl QuillApp {
     }
 
     /// The submenu that is open, by hover or by key.
-    fn open_submenu(&self) -> Option<ChatMenuSubmenu> {
+    pub(super) fn open_submenu(&self) -> Option<ChatMenuSubmenu> {
         // The chat list's and community's menus are the main window's: a
         // chat window's message menu has none, and must not close theirs.
         if self.windows.in_window() {
@@ -634,3 +645,8 @@ pub(super) fn arrow_direction(key: &Keystroke) -> Option<bool> {
 #[cfg(feature = "demo-capture")]
 #[path = "context_menu_submenu_tests.rs"]
 mod context_menu_submenu_tests;
+
+#[cfg(test)]
+#[cfg(feature = "demo-capture")]
+#[path = "menu_aim_ui_tests.rs"]
+mod menu_aim_ui_tests;

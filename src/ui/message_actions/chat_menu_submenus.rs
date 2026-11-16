@@ -6,8 +6,8 @@
 
 use super::*;
 use crate::ui::context_menu_keys::ContextMenuItems;
+use crate::ui::menu_aim::MenuAimRow as _;
 use crate::ui::menu_states::{ChatMenuState, ChatMenuSubmenu};
-use crate::ui::menu_surface::submenu_panel;
 use gpui_kit::TestSupportExt;
 use gpui_kit::assets::IconName;
 use quill::chatlist_menu::{ExitEntry, exit_entry, mute_offered};
@@ -28,8 +28,8 @@ const FOLDERS_ROW_ORDER: u8 = 45;
 /// One menu row: icon, label, optional trailing marker. Danger rows read
 /// in the attention colour. `key` places it among the menu's keyboard items
 /// (`row_key` of its order; `submenu_key` for a submenu row).
-pub(super) fn menu_row(
-    id: impl Into<ElementId>,
+pub(super) fn menu_row<I: Into<ElementId>>(
+    id: I,
     icon: Option<IconName>,
     label: String,
     danger: bool,
@@ -37,7 +37,7 @@ pub(super) fn menu_row(
     key: u32,
     items: &ContextMenuItems,
     cx: &App,
-) -> impl ParentElement + IntoElement + StatefulInteractiveElement + Styled {
+) -> impl ParentElement + IntoElement + StatefulInteractiveElement + Styled + use<I> {
     div()
         .id(id)
         .test_support()
@@ -51,7 +51,7 @@ pub(super) fn menu_row(
         .cursor_pointer()
         .text_sm()
         .text_color(if danger { danger_bright() } else { text_menu() })
-        .hover(|style| style.bg(hover))
+        .menu_hover(hover, items)
         .menu_key_target(key, items, cx)
         .role(gpui_kit::Role::MenuItem)
         .aria_label(label.clone())
@@ -83,18 +83,6 @@ impl QuillApp {
     /// Closes the open submenu only; the menu stays.
     pub(in crate::ui) fn close_chat_submenu(&mut self, cx: &mut Context<Self>) {
         if self.close_community_submenu(cx) {
-            return;
-        }
-        if let Some(menu) = self.message_ui.menu.row_mut()
-            && menu.submenu.take().is_some()
-        {
-            cx.notify();
-        }
-    }
-
-    /// Hovering a plain menu row folds an open submenu away.
-    pub(super) fn chat_menu_row_hovered(&mut self, hovered: bool, cx: &mut Context<Self>) {
-        if !hovered {
             return;
         }
         if let Some(menu) = self.message_ui.menu.row_mut()
@@ -154,9 +142,7 @@ impl QuillApp {
                     &self.frame.menu.items,
                     cx,
                 )
-                .on_hover(cx.listener(|this, hovered, _, cx| {
-                    this.chat_menu_row_hovered(*hovered, cx);
-                }))
+                .menu_aim_row(row_key(MUTE_ROW_ORDER), cx)
                 .on_click(cx.listener(move |this, _, _, cx| {
                     this.apply_chat_mute(chat_id, 0, cx);
                     this.close_chat_menu(cx);
@@ -180,14 +166,13 @@ impl QuillApp {
             cx,
         )
         .child(Icon::new(IconName::ChevronRight).size(px(14.)))
-        .on_hover(cx.listener(|this, hovered, _, cx| {
-            if *hovered {
-                this.open_chat_submenu(ChatMenuSubmenu::Mute, cx);
-            }
-        }))
+        .menu_aim_row(row_key(MUTE_ROW_ORDER), cx)
         .on_click(cx.listener(|this, _, _, cx| {
             this.open_chat_submenu(ChatMenuSubmenu::Mute, cx);
         }));
+        // The row stays lit while its submenu is open (tdesktop
+        // `Menu::setChildShownAction`).
+        let parent = if open { parent.bg(hover) } else { parent };
         // The submenu rows join the keyboard items only while it is open, so
         // they are built after their parent row and sort right after it.
         if !open {
@@ -296,7 +281,7 @@ impl QuillApp {
         );
         Some(
             parent
-                .child(submenu_panel("chat-menu-submenu", rows, cx))
+                .child(self.aimed_submenu_panel("chat-menu-submenu", rows, cx))
                 .into_any_element(),
         )
     }
@@ -332,14 +317,11 @@ impl QuillApp {
             cx,
         )
         .child(Icon::new(IconName::ChevronRight).size(px(14.)))
-        .on_hover(cx.listener(|this, hovered, _, cx| {
-            if *hovered {
-                this.open_chat_submenu(ChatMenuSubmenu::Folders, cx);
-            }
-        }))
+        .menu_aim_row(row_key(FOLDERS_ROW_ORDER), cx)
         .on_click(cx.listener(|this, _, _, cx| {
             this.open_chat_submenu(ChatMenuSubmenu::Folders, cx);
         }));
+        let parent = if open { parent.bg(hover) } else { parent };
         if !open {
             return Some(parent.into_any_element());
         }
@@ -372,7 +354,7 @@ impl QuillApp {
         }
         Some(
             parent
-                .child(submenu_panel("chat-menu-submenu", rows, cx))
+                .child(self.aimed_submenu_panel("chat-menu-submenu", rows, cx))
                 .into_any_element(),
         )
     }
@@ -426,9 +408,7 @@ impl QuillApp {
                 &self.frame.menu.items,
                 cx,
             )
-            .on_hover(cx.listener(|this, hovered, _, cx| {
-                this.chat_menu_row_hovered(*hovered, cx);
-            }))
+            .menu_aim_row(row_key(90), cx)
             .on_click(cx.listener(move |this, _, _, cx| {
                 let action = if leave {
                     GroupConfirmAction::LeaveChat { chat_id }

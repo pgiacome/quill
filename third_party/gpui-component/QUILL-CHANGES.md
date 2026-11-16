@@ -124,3 +124,19 @@ and refresh the windows themselves. Quill's Compact mode sets a 26px bar from
 (`docs/decisions/compact-mode-density.md`). Write the height only through the
 setter: the field is public, and writing it directly leaves the sheet and
 notification margins behind. Re-apply when re-vendoring.
+
+`src/menu/submenu_aim.rs` (new), `src/menu/{mod,menu_item,popup_menu}.rs`:
+menu aim, Telegram Desktop's rule for reaching a submenu diagonally (lib_ui
+`PopupMenu::SubmenuAim`, `insideSubmenuAim`, 300 ms rest). `SubmenuAim` is
+the pure decision, public as `menu::{SubmenuAim, AimGeometry, AimPointer,
+SUBMENU_AIM_REST}` because Quill's hand-built menus use it too
+(`src/ui/menu_aim.rs`). In `PopupMenu`, an item takes the selection on a
+pointer move (`item_pointer_moved`) instead of on hover, and only when the
+aim lets it: while the pointer crosses rows inside the triangle from where
+it left the submenu's row to the submenu's near edge, the submenu stays,
+the crossed rows are not lit (`MenuItemElement::lit_by_pointer`) and the
+row under the pointer takes the selection once the pointer rests for 300 ms
+(a `Task` held by the waiting stage; the clock is the executor's, so tests
+advance it). The corridor takes the submenu's side from the measured
+bounds, so it does not depend on `update_submenu_menu_anchor`. Re-apply
+when re-vendoring: upstream has no hover intent for submenus.
