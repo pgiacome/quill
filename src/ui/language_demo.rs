@@ -122,6 +122,7 @@ const RU: &[(&str, &str)] = &[
     ),
     ("lng_settings_section_chat_settings", "Настройки чатов"),
     ("lng_settings_advanced", "Дополнительно"),
+    ("lng_mac_menu_edit", "Правка"),
 ];
 
 /// A fixture as the pack layer `prefs::build_snapshot` takes.

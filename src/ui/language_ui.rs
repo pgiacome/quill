@@ -128,11 +128,20 @@ fn current_id() -> String {
 
 /// Install a pack, and point the kit's own strings (calendar days, input
 /// menus) at the same language where the kit has it.
-/// Installs `snapshot` as the interface's strings and rebuilds the app
-/// menus, which keep the strings they were built with.
-pub(super) fn install_pack(snapshot: Option<quill::lang::Snapshot>, cx: &mut App) {
+/// Installs `snapshot` as the interface's strings and rebuilds the menus,
+/// which keep the strings they were built with: the app's menus, then the
+/// kit menu bar of the main window (Linux, Windows), which copies them. The
+/// bar reloads on the next turn, since a pack installed while `QuillApp` is
+/// being built (`LanguageUi::new`) has no bar on `self` yet.
+pub(super) fn install_pack(snapshot: Option<quill::lang::Snapshot>, cx: &mut Context<QuillApp>) {
     quill::lang::install(snapshot);
     super::refresh_app_menus(cx);
+    let app = cx.weak_entity();
+    cx.defer(move |cx| {
+        let _ = app.update(cx, |this, cx| {
+            this.menu_bar.update(cx, |bar, cx| bar.reload(cx));
+        });
+    });
     let current = quill::lang::current();
     let (pack, language) = current
         .as_deref()
