@@ -162,7 +162,9 @@ fn tags(text: &str) -> Vec<&str> {
 /// The plural forms a language's rules pick for some whole count.
 fn forms_in_use(code: &str) -> std::collections::BTreeSet<usize> {
     let rules = plural::PluralRules::for_code(code);
-    (0..1_000).map(|count| rules.form_for(count).index()).collect()
+    (0..1_000)
+        .map(|count| rules.form_for(count).index())
+        .collect()
 }
 
 /// Every shipped overlay (`lang/<code>/*.strings`) translates only Quill's
@@ -181,8 +183,14 @@ fn overlays_match_english() {
         for entry in &entries {
             let (base, form) = parse::split_plural(&entry.key);
             let at = format!("{code}:{}: {}", entry.line, entry.key);
-            assert!(base.starts_with("qll_"), "{at}: overlays translate qll_* only");
-            assert!(parse::braces_balanced(&entry.value), "{at}: unbalanced braces");
+            assert!(
+                base.starts_with("qll_"),
+                "{at}: overlays translate qll_* only"
+            );
+            assert!(
+                parse::braces_balanced(&entry.value),
+                "{at}: unbalanced braces"
+            );
             let index = key_table::index_of(base).unwrap_or_else(|| panic!("{at}: not in English"));
             let english = key_table::ENGLISH.get(index);
             let english_value = match (english, form) {
@@ -195,7 +203,11 @@ fn overlays_match_english() {
                 _ => panic!("{at}: English has the other kind"),
             };
             if let Some(english_value) = english_value {
-                assert_eq!(tags(english_value), tags(&entry.value), "{at}: placeholders");
+                assert_eq!(
+                    tags(english_value),
+                    tags(&entry.value),
+                    "{at}: placeholders"
+                );
             }
             let forms = keys.entry(base.to_string()).or_default();
             let previous = forms.insert(form.map(Form::index), entry.value.clone());
@@ -212,7 +224,10 @@ fn overlays_match_english() {
                 continue;
             }
             let given: BTreeSet<usize> = forms.keys().flatten().copied().collect();
-            assert!(given.contains(&Form::Other.index()), "{code}: {base} has no #other");
+            assert!(
+                given.contains(&Form::Other.index()),
+                "{code}: {base} has no #other"
+            );
             let missing: Vec<_> = needed.difference(&given).collect();
             assert!(missing.is_empty(), "{code}: {base} lacks forms {missing:?}");
         }
