@@ -3,6 +3,7 @@
 //! appearance"). Pure logic: the UI maps each name to a drawn glyph.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use crate::telegram::envelope::ChatFolderSpec;
 use serde::{Deserialize, Serialize};
 
@@ -95,10 +96,10 @@ impl FolderTabsMode {
     /// tdesktop `lng_filters_tabs_*`.
     pub fn label(self) -> &'static str {
         match self {
-            FolderTabsMode::Default => "Default",
-            FolderTabsMode::TextOnly => "Text only",
-            FolderTabsMode::TextAndIcons => "Text and icons",
-            FolderTabsMode::IconsOnly => "Icons only",
+            FolderTabsMode::Default => tr(keys::Q_PREFS_TABS_DEFAULT),
+            FolderTabsMode::TextOnly => tr(keys::Q_PREFS_TABS_TEXT_ONLY),
+            FolderTabsMode::TextAndIcons => tr(keys::Q_PREFS_TABS_TEXT_AND_ICONS),
+            FolderTabsMode::IconsOnly => tr(keys::Q_PREFS_TABS_ICONS_ONLY),
         }
     }
 

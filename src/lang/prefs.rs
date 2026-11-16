@@ -137,7 +137,8 @@ pub fn save_cache(root: &Path, snapshot: &Snapshot) -> std::io::Result<()> {
     save_cache_entries(root, snapshot.pack_id(), snapshot.entries())
 }
 
-/// [`save_cache`] from [`Snapshot::entries`] taken on another thread.
+/// [`save_cache`] from [`Snapshot::entries`] taken on another thread. Only
+/// Telegram's strings are saved; the overlay is rebuilt from this build.
 pub fn save_cache_entries(
     root: &Path,
     pack_id: &str,
@@ -145,7 +146,10 @@ pub fn save_cache_entries(
 ) -> std::io::Result<()> {
     let cache = Cache {
         pack_id: pack_id.to_string(),
-        strings: entries.into_iter().collect(),
+        strings: entries
+            .into_iter()
+            .filter(|(key, _)| from_telegram(key))
+            .collect(),
     };
     crate::settings::write_json_atomic(&root.join(CACHE_FILE), &cache)
 }
@@ -164,8 +168,20 @@ pub fn load_cached_snapshot(root: &Path) -> Option<Snapshot> {
     if cache.pack_id != choice.pack_id {
         return None;
     }
-    let strings: Vec<(String, PackValue)> = cache.strings.into_iter().collect();
+    let strings: Vec<(String, PackValue)> = cache
+        .strings
+        .into_iter()
+        .filter(|(key, _)| from_telegram(key))
+        .collect();
     Some(build_snapshot(&choice, &[], &strings))
+}
+
+/// Whether a key's value comes from Telegram's pack, the only layer the
+/// cache keeps. `qll_*` values come from the overlay this build ships, so a
+/// cached copy would hide a later release's fixes (a cache written before
+/// this rule may still hold some, and they are dropped on load).
+fn from_telegram(key: &str) -> bool {
+    !key.starts_with("qll_")
 }
 
 #[cfg(test)]
@@ -199,6 +215,50 @@ mod tests {
             loaded.entries(),
             vec![(name, PackValue::Ordinary("Olá".into()))]
         );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_cache_keeps_telegram_strings_and_not_the_overlay() {
+        let dir = std::env::temp_dir().join(format!("quill-lang-overlay-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let choice = LanguageChoice {
+            pack_id: "ru".into(),
+            plural_code: "ru".into(),
+            ..Default::default()
+        };
+        save_choice(&dir, &choice).unwrap();
+        let overlay_key = crate::lang::keys::Q_MONEY_TX_MONTHLY.name().to_string();
+        let telegram_key = crate::lang::keys::LANGUAGES.name().to_string();
+        let value_of = |snapshot: &Snapshot, key: &str| {
+            snapshot
+                .entries()
+                .into_iter()
+                .find(|(name, _)| name == key)
+                .map(|(_, value)| value)
+        };
+        let shipped = value_of(&build_snapshot(&choice, &[], &[]), &overlay_key);
+        assert!(shipped.is_some(), "the ru overlay translates {overlay_key}");
+        // A cache an older build wrote, with an outdated overlay value.
+        let stale = Cache {
+            pack_id: "ru".into(),
+            strings: [
+                (overlay_key.clone(), PackValue::Ordinary("old".into())),
+                (telegram_key.clone(), PackValue::Ordinary("Язык".into())),
+            ]
+            .into(),
+        };
+        crate::settings::write_json_atomic(&dir.join(CACHE_FILE), &stale).unwrap();
+        let loaded = load_cached_snapshot(&dir).unwrap();
+        assert_eq!(value_of(&loaded, &overlay_key), shipped);
+        assert_eq!(
+            value_of(&loaded, &telegram_key),
+            Some(PackValue::Ordinary("Язык".into()))
+        );
+        save_cache(&dir, &loaded).unwrap();
+        let saved: Cache =
+            serde_json::from_slice(&std::fs::read(dir.join(CACHE_FILE)).unwrap()).unwrap();
+        assert!(saved.strings.keys().all(|key| !key.starts_with("qll_")));
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -48,3 +48,30 @@ fn the_dialog_close_clears_the_open_calendar(cx: &mut TestAppContext) {
     assert!(!calendar_open(&app, vcx));
     shell.read_with(vcx, |shell, _| assert_eq!(shell.open_dialog, None));
 }
+
+#[test]
+fn the_russian_calendar_has_seven_distinct_weekday_headers() {
+    use quill::lang::{Snapshot, install, isolate_thread};
+    use std::collections::HashSet;
+
+    isolate_thread();
+    let entries = quill::lang::parse::parse_strings(include_str!("../../lang/ru/misc.strings"))
+        .expect("the Russian strings file parses");
+    let mut pack = Snapshot::new("ru", "ru", false);
+    pack.layer_entries(&entries);
+    install(Some(pack));
+    let headers = super::weekday_headers();
+    install(None);
+
+    let unique: HashSet<&str> = headers.iter().copied().collect();
+    assert_eq!(
+        headers.len(),
+        7,
+        "the header has seven columns: {headers:?}"
+    );
+    assert_eq!(unique.len(), 7, "each weekday differs: {headers:?}");
+    assert!(
+        headers.iter().all(|label| label.chars().count() >= 2),
+        "Cyrillic short names are not byte-sliced: {headers:?}"
+    );
+}

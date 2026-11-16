@@ -587,6 +587,42 @@ impl QuillApp {
         self.sidebar_emoji_images(&entities, cx)
     }
 
+    /// The pictures a forum topic row draws: the custom emoji in its last
+    /// message's preview, and its custom-emoji icon decoded at the icon's
+    /// own `icon_side` (the preview's 14pt frames would blur at that size).
+    pub(in crate::ui) fn topic_row_emoji(
+        &self,
+        topic: &quill::telegram::envelope::ForumTopic,
+        icon_side: f32,
+        cx: &mut Context<QuillApp>,
+    ) -> (PreviewEmoji, Option<ImageSource>) {
+        let preview: Vec<quill::text::TextEntity> = topic
+            .last_message
+            .iter()
+            .flat_map(|m| m.style.entities.iter().cloned())
+            .collect();
+        let emoji = if preview.is_empty() {
+            PreviewEmoji::default()
+        } else {
+            self.sidebar_emoji_images(&preview, cx)
+        };
+        let id = topic.icon_custom_emoji_id;
+        let icon = (!topic.is_general && id > 0)
+            .then(|| {
+                let entity = quill::text::TextEntity {
+                    utf8_start: 0,
+                    utf8_end: 0,
+                    kind: quill::text::TextEntityKind::CustomEmoji {
+                        custom_emoji_id: id,
+                    },
+                };
+                self.custom_emoji_images(&[entity], EmojiSide(icon_side), Part::Chrome, cx)
+                    .remove(&id)
+            })
+            .flatten();
+        (emoji, icon)
+    }
+
     fn sidebar_emoji_images(
         &self,
         entities: &[quill::text::TextEntity],

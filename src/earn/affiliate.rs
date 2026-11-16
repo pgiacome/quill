@@ -4,6 +4,7 @@
 //! share referral links.
 
 use super::{int, text};
+use crate::lang::{keys, tr};
 use crate::premium_hub::StarAmount;
 use serde_json::{Value, json};
 
@@ -174,9 +175,9 @@ impl ProgramSort {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Profitability => "Profitability",
-            Self::Revenue => "Revenue",
-            Self::Date => "Date",
+            Self::Profitability => tr(keys::Q_MONEY_AFFILIATE_SORT_PROFITABILITY),
+            Self::Revenue => tr(keys::Q_MONEY_AFFILIATE_SORT_REVENUE),
+            Self::Date => tr(keys::Q_MONEY_AFFILIATE_SORT_DATE),
         }
     }
 

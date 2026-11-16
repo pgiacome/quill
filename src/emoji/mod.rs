@@ -763,9 +763,15 @@ impl Session {
             // The verifying bot's icon before the title.
             ids.extend(self.chat_bot_verification_icon(chat));
         }
-        // Custom emoji icons of the topics listed on forum rows.
-        for topics in self.threads.forum_topics.values() {
-            ids.extend(topics.iter().map(|t| t.icon_custom_emoji_id));
+        // Custom emoji icons of the topics listed on forum rows, and the
+        // custom emoji in the topic rows' previews.
+        for topic in self.threads.forum_topics.values().flatten() {
+            ids.push(topic.icon_custom_emoji_id);
+            let entities = topic.last_message.iter().flat_map(|m| &m.style.entities);
+            ids.extend(entities.filter_map(|entity| match entity.kind {
+                TextEntityKind::CustomEmoji { custom_emoji_id } => Some(custom_emoji_id),
+                _ => None,
+            }));
         }
         for options in self.stickers.message_reaction_options.ready_options() {
             ids.extend(options.all().into_iter().filter_map(|choice| match choice {

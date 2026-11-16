@@ -3,12 +3,13 @@
 use super::*;
 use crate::ui::history_state::ForumPeek;
 use crate::ui::status_note::StatusNote;
-use quill::lang::{keys, tr, tr_with};
+use gpui_kit::component::menu::PopupMenu;
+use quill::lang::{keys, tr, trn};
 
 impl QuillApp {
-    /// Phase 5.1: the topic list for a forum supergroup — one row per
-    /// topic with name, unread badge, and a cheap last-message preview.
-    /// Selecting a row opens the per-topic history.
+    /// Phase 5.1: the topic list for a forum supergroup, one chat-list row
+    /// per topic (`forum_topic_row`). Selecting a row opens the per-topic
+    /// history.
     pub(in crate::ui) fn forum_topics_pane(
         &self,
         open: Option<ChatId>,
@@ -30,8 +31,7 @@ impl QuillApp {
             .flex_1()
             .min_h_0()
             .px_3()
-            .pt_2()
-            .gap_1();
+            .pt_2();
         if topics.is_empty() {
             return pane_placeholder(
                 tr(keys::Q_PEOPLE_NO_TOPICS_YET),
@@ -45,165 +45,61 @@ impl QuillApp {
                 .id("forum-topics-count")
                 .text_xs()
                 .text_color(cx.theme().muted_foreground)
-                .child(format!("{} topics", topics.len())),
+                .child(trn(keys::Q_PEOPLE_TOPICS_COUNT, topics.len() as i64)),
         );
-        for topic in topics {
-            let topic_id = topic.forum_topic_id;
-            // kit Phase 4: the unread count badges the topic name via the
-            // kit `Badge`.
-            let unread = topic.unread_count;
-            let name = if topic.name.is_empty() {
-                tr_with(
-                    keys::Q_PEOPLE_TOPIC,
-                    &[("forum_topic_id", &topic.forum_topic_id.to_string())],
-                )
-            } else {
-                topic.name.clone()
-            };
-            // A topic draft replaces the last-message preview (red
-            // "Draft:" prefix), as a chat row's does.
-            let draft = topic.draft_preview();
-            let preview = match &draft {
-                Some(draft) => draft.text.clone(),
-                None => topic.last_message_preview.clone(),
-            };
-            let draft_reply = draft.map(|draft| draft.reply);
-            let extras = open
-                .map(|id| self.topic_extras(id, &topic))
-                .unwrap_or_default();
-            let can_pin = open.is_some_and(|id| {
-                self.session().is_some_and(|s| s.chat_can_manage_topics(id)) && !topic.is_general
-            });
-            let pinned = topic.is_pinned;
-            let owner = cx.entity().downgrade();
-            let chat_for_menu = open.unwrap_or(ChatId(0));
-            list = list.child(
-                div()
-                    .id(("forum-topic-row", topic_id as u64))
-                    .px_3()
-                    .py_2()
-                    .rounded_md()
-                    .role(gpui_kit::Role::Button)
-                    .aria_label(name.clone())
-                    .tab_index(0)
-                    .cursor_pointer()
-                    .pressable(cx.theme())
-                    .bg(if selected_topic == Some(topic_id) {
-                        cx.theme().accent
-                    } else {
-                        cx.theme().sidebar
-                    })
-                    .on_click(cx.listener(move |this, _, _, cx| {
-                        this.select_topic_ui(topic_id, cx);
-                    }))
-                    .context_menu(move |menu, _, _| {
-                        let mut menu = menu;
-                        if can_pin {
-                            let pin_owner = owner.clone();
-                            menu = menu.item(
-                                PopupMenuItem::new(if pinned {
-                                    tr(keys::Q_PEOPLE_UNPIN)
-                                } else {
-                                    tr(keys::CONTEXT_PIN_MSG)
-                                })
-                                .icon(if pinned {
-                                    IconName::PinOff
-                                } else {
-                                    IconName::Pin
-                                })
-                                .on_click(move |_, _, cx| {
-                                    let _ = pin_owner.update(cx, |this, cx| {
-                                        let action = if pinned {
-                                            ForumTopicAction::Unpin
-                                        } else {
-                                            ForumTopicAction::Pin
-                                        };
-                                        this.forum_topic_action(
-                                            chat_for_menu,
-                                            topic_id,
-                                            action,
-                                            cx,
-                                        );
-                                    });
-                                }),
-                            );
-                        }
-                        super::forum_extras::add_topic_extras(
-                            menu,
-                            extras,
-                            owner.clone(),
-                            chat_for_menu,
-                            topic_id,
-                        )
-                    })
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .justify_between()
-                            .gap_2()
-                            .child({
-                                let name_el = div()
-                                    .flex()
-                                    .items_center()
-                                    .gap_2()
-                                    .min_w_0()
-                                    .child(div().font_medium().min_w_0().child(name))
-                                    .when(
-                                        topic.is_general
-                                            && !topic.name.eq_ignore_ascii_case("general"),
-                                        |this| {
-                                            this.child(
-                                                div()
-                                                    .text_xs()
-                                                    .text_color(cx.theme().muted_foreground)
-                                                    .child(tr(keys::Q_PEOPLE_GENERAL)),
-                                            )
-                                        },
-                                    )
-                                    .when(topic.is_pinned, |this| {
-                                        this.child(
-                                            div()
-                                                .text_xs()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child(tr(keys::Q_PEOPLE_PINNED)),
-                                        )
-                                    })
-                                    .when(topic.is_closed, |this| {
-                                        this.child(
-                                            div()
-                                                .text_xs()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child(tr(keys::Q_PEOPLE_CLOSED)),
-                                        )
-                                    });
-                                if unread > 0 {
-                                    unread_badge(name_el.into_any_element(), unread, false)
-                                } else {
-                                    name_el.into_any_element()
-                                }
-                            }),
-                    )
-                    .when(!preview.is_empty() || draft_reply.is_some(), |this| {
-                        this.child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .min_w_0()
-                                .text_xs()
-                                .text_color(cx.theme().muted_foreground)
-                                .when_some(draft_reply, |this, reply| {
-                                    this.child(super::super::chat_row::draft_prefix(
-                                        reply,
-                                        preview.is_empty(),
-                                    ))
-                                })
-                                .child(preview),
-                        )
-                    }),
-            );
+        let chat_id = open.unwrap_or(ChatId(0));
+        for topic in &topics {
+            let selected = selected_topic == Some(topic.forum_topic_id);
+            list = list.child(self.forum_topic_row(chat_id, topic, selected, cx));
         }
         list.into_any_element()
+    }
+
+    /// The topic row's context menu: Pin / Unpin for those who manage
+    /// topics, then the shared topic actions.
+    pub(super) fn forum_topic_menu(
+        &self,
+        chat_id: ChatId,
+        topic: &ForumTopic,
+        cx: &Context<Self>,
+    ) -> impl Fn(PopupMenu, &mut Window, &mut Context<PopupMenu>) -> PopupMenu + 'static {
+        let topic_id = topic.forum_topic_id;
+        let pinned = topic.is_pinned;
+        let can_pin = !topic.is_general
+            && self
+                .session()
+                .is_some_and(|s| s.chat_can_manage_topics(chat_id));
+        let extras = self.topic_extras(chat_id, topic);
+        let owner = cx.entity().downgrade();
+        move |menu, _, _| {
+            let mut menu = menu;
+            if can_pin {
+                let pin_owner = owner.clone();
+                menu = menu.item(
+                    PopupMenuItem::new(if pinned {
+                        tr(keys::Q_PEOPLE_UNPIN)
+                    } else {
+                        tr(keys::CONTEXT_PIN_MSG)
+                    })
+                    .icon(if pinned {
+                        IconName::PinOff
+                    } else {
+                        IconName::Pin
+                    })
+                    .on_click(move |_, _, cx| {
+                        let _ = pin_owner.update(cx, |this, cx| {
+                            let action = if pinned {
+                                ForumTopicAction::Unpin
+                            } else {
+                                ForumTopicAction::Pin
+                            };
+                            this.forum_topic_action(chat_id, topic_id, action, cx);
+                        });
+                    }),
+                );
+            }
+            super::forum_extras::add_topic_extras(menu, extras, owner.clone(), chat_id, topic_id)
+        }
     }
 
     /// Whether the user is peeking at the chat list over the open forum's
@@ -309,10 +205,7 @@ impl QuillApp {
                                 div()
                                     .text_xs()
                                     .text_color(cx.theme().muted_foreground)
-                                    .child(match count {
-                                        1 => tr(keys::Q_PEOPLE_1_TOPIC).to_owned(),
-                                        n => format!("{n} topics"),
-                                    }),
+                                    .child(trn(keys::Q_PEOPLE_TOPICS_COUNT, count as i64)),
                             ),
                     ),
             )

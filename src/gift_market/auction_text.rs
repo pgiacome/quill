@@ -1,8 +1,8 @@
 //! The wording of the auction boxes and the chat-list bar (tdesktop
 //! `boxes/star_gift_auction_box.cpp`, `lng_auction_*`).
 
-use super::plural;
 use super::{AuctionPhase, AuctionRound, AuctionState};
+use crate::lang::{keys, tr, tr_with, trn, trn_decimal};
 use crate::premium_hub::group_digits;
 
 /// Seconds from `now` until `date`, never negative.
@@ -52,56 +52,68 @@ pub fn join_button(state: &AuctionState, now: i64, place: bool) -> (String, Stri
         minutes_left(state.end_date(), now)
     };
     if state.finished(now) || (!preview && left <= 0) {
-        return ("OK".into(), String::new());
+        return (tr(keys::BOX_OK).into(), String::new());
     }
     if preview {
         return (
-            "Place an Early Bid".into(),
-            format!("starts in {}", nice_countdown(left)),
+            tr(keys::Q_MONEY_AUCTION_PLACE_EARLY_BID).into(),
+            tr_with(
+                keys::Q_MONEY_AUCTION_STARTS_IN,
+                &[("time", &nice_countdown(left))],
+            ),
         );
     }
-    let title = if place { "Place a Bid" } else { "Join Auction" };
+    let title = if place {
+        tr(keys::AUCTION_JOIN_BID)
+    } else {
+        tr(keys::Q_MONEY_AUCTION_JOIN_AUCTION)
+    };
     let (hours, minutes) = (left / 60, left % 60);
     let time = if hours > 0 {
-        format!("{hours} h {minutes} m")
+        tr_with(
+            keys::Q_MONEY_AUCTION_TIME_HM,
+            &[
+                ("hours", &hours.to_string()),
+                ("minutes", &minutes.to_string()),
+            ],
+        )
     } else {
-        format!("{minutes} m")
+        tr_with(
+            keys::Q_MONEY_AUCTION_TIME_M,
+            &[("minutes", &minutes.to_string())],
+        )
     };
-    (title.into(), format!("{time} left"))
+    (
+        title.into(),
+        tr_with(keys::Q_MONEY_AUCTION_TIME_LEFT, &[("time", &time)]),
+    )
 }
 
 /// The bid box title (`lng_auction_bid_title` / `_early`).
 pub fn bid_title(started: bool) -> &'static str {
     if started {
-        "Place a Bid"
+        tr(keys::AUCTION_JOIN_BID)
     } else {
-        "Place an Early Bid"
+        tr(keys::Q_MONEY_AUCTION_PLACE_EARLY_BID)
     }
 }
 
 /// "Top 5 bidders will win" (`lng_auction_bid_subtitle`).
 pub fn bid_subtitle(per_round: i32) -> String {
-    if per_round == 1 {
-        "Top 1 bidder will win".into()
-    } else {
-        format!(
-            "Top {} bidders will win",
-            group_digits(i64::from(per_round))
-        )
-    }
+    trn_decimal(keys::Q_MONEY_AUCTION_WILL_WIN, i64::from(per_round))
 }
 
 /// The toast after a bid: title and text.
 pub fn bid_done_toast(increased: bool, per_round: i32) -> (&'static str, String) {
     (
         if increased {
-            "Your bid has been increased"
+            tr(keys::Q_MONEY_AUCTION_BID_INCREASED)
         } else {
-            "Your bid has been placed"
+            tr(keys::Q_MONEY_AUCTION_BID_PLACED)
         },
-        format!(
-            "If you fall below the top {}, your bid will roll over to the next round.",
-            group_digits(i64::from(per_round))
+        tr_with(
+            keys::Q_MONEY_AUCTION_ROLLOVER,
+            &[("count", &group_digits(i64::from(per_round)))],
         ),
     )
 }
@@ -117,25 +129,33 @@ pub fn info_rows(
     let mut rows = vec![
         (
             if preview {
-                "Starts"
+                tr(keys::Q_MONEY_AUCTION_STARTS)
             } else if finished {
-                "First Sale"
+                tr(keys::Q_MONEY_AUCTION_FIRST_SALE)
             } else {
-                "Started"
+                tr(keys::Q_MONEY_AUCTION_STARTED)
             }
             .to_string(),
             date(state.start_date()),
         ),
         (
-            if finished { "Last Sale" } else { "Ends" }.to_string(),
+            if finished {
+                tr(keys::GIFT_VALUE_LAST_SALE)
+            } else {
+                tr(keys::Q_MONEY_AUCTION_ENDS)
+            }
+            .to_string(),
             date(state.end_date()),
         ),
     ];
     match &state.phase {
         AuctionPhase::Active(active) if preview => {
-            rows.push(("Quantity".into(), group_digits(i64::from(state.total()))));
             rows.push((
-                "Rounds".into(),
+                tr(keys::Q_MONEY_AUCTION_QUANTITY).into(),
+                group_digits(i64::from(state.total())),
+            ));
+            rows.push((
+                tr(keys::Q_MONEY_AUCTION_ROUNDS).into(),
                 group_digits(i64::from(active.total_rounds)),
             ));
             for (index, round) in active.rounds.iter().enumerate() {
@@ -148,26 +168,30 @@ pub fn info_rows(
         }
         AuctionPhase::Active(active) => {
             rows.push((
-                "Current Round".into(),
-                format!(
-                    "{} of {}",
-                    group_digits(i64::from(active.round)),
-                    group_digits(i64::from(active.total_rounds))
+                tr(keys::Q_MONEY_AUCTION_CURRENT_ROUND).into(),
+                tr_with(
+                    keys::Q_MONEY_AUCTION_OF,
+                    &[
+                        ("have", &group_digits(i64::from(active.round))),
+                        ("total", &group_digits(i64::from(active.total_rounds))),
+                    ],
                 ),
             ));
             rows.push((
-                "Availability".into(),
-                format!(
-                    "{} of {} left",
-                    group_digits(i64::from(active.left)),
-                    group_digits(i64::from(state.total()))
+                tr(keys::Q_MONEY_AUCTION_AVAILABILITY).into(),
+                tr_with(
+                    keys::Q_MONEY_AUCTION_OF_LEFT,
+                    &[
+                        ("have", &group_digits(i64::from(active.left))),
+                        ("total", &group_digits(i64::from(state.total()))),
+                    ],
                 ),
             ));
         }
         AuctionPhase::Finished(finished) => {
             if finished.average_price > 0 {
                 rows.push((
-                    "Average Price".into(),
+                    tr(keys::GIFT_VLAUE_AVERAGE_PRICE).into(),
                     format!("★{}", group_digits(finished.average_price)),
                 ));
             }
@@ -180,16 +204,28 @@ pub fn info_rows(
 fn round_row(round: &AuctionRound, next_number: i32) -> (String, String) {
     let exact = next_number == round.number.saturating_add(1);
     let label = if exact {
-        format!("Round {}", round.number)
+        tr_with(
+            keys::Q_MONEY_AUCTION_ROUND,
+            &[("number", &round.number.to_string())],
+        )
     } else {
-        format!("Rounds {}-{}", round.number, next_number.saturating_sub(1))
+        tr_with(
+            keys::Q_MONEY_AUCTION_ROUNDS_RANGE,
+            &[
+                ("from", &round.number.to_string()),
+                ("to", &next_number.saturating_sub(1).to_string()),
+            ],
+        )
     };
     let duration = duration_text(round.duration, !exact);
     let value = if round.top_winner_count > 0 && round.extend_time > 0 {
-        format!(
-            "{duration} + {} for late bids in top {}",
-            duration_text(round.extend_time, false),
-            round.top_winner_count
+        tr_with(
+            keys::Q_MONEY_AUCTION_LATE_BIDS,
+            &[
+                ("duration", &duration),
+                ("extend", &duration_text(round.extend_time, false)),
+                ("count", &round.top_winner_count.to_string()),
+            ],
         )
     } else {
         duration
@@ -199,64 +235,77 @@ fn round_row(round: &AuctionRound, next_number: i32) -> (String, String) {
 
 /// "10 minutes", or "10 minutes each" for a range of rounds.
 fn duration_text(seconds: i32, each: bool) -> String {
-    let (count, one, other) = if seconds % 3600 == 0 {
-        (seconds / 3600, "hour", "hours")
+    let text = if seconds % 3600 == 0 {
+        trn(keys::HOURS, seconds / 3600)
     } else if seconds % 60 == 0 {
-        (seconds / 60, "minute", "minutes")
+        trn(keys::MINUTES, seconds / 60)
     } else {
-        (seconds, "second", "seconds")
+        trn(keys::SECONDS, seconds)
     };
-    let text = plural(i64::from(count), one, other);
-    if each { format!("{text} each") } else { text }
+    if each {
+        format!("{text}{}", tr(keys::Q_MONEY_AUCTION_EACH))
+    } else {
+        text
+    }
 }
 
 /// "{amount} is the average sale price for {gift} gifts."
 pub fn average_tooltip(average: i64, title: &str) -> String {
-    format!(
-        "★{} is the average sale price for {title} gifts.",
-        group_digits(average)
+    tr_with(
+        keys::Q_MONEY_AUCTION_AVERAGE_TOOLTIP,
+        &[("average", &group_digits(average)), ("title", title)],
     )
 }
 
 /// "3 items bought" (`lng_auction_bought`), without the emoji and arrow.
 pub fn bought_link(count: i32) -> String {
-    plural(i64::from(count), "item bought", "items bought")
+    trn_decimal(keys::Q_MONEY_AUCTION_BOUGHT, i64::from(count))
 }
 
 /// "3 Items Bought" (`lng_auction_bought_title`).
 pub fn bought_title(count: i32) -> String {
-    plural(i64::from(count), "Item Bought", "Items Bought")
+    trn_decimal(keys::Q_MONEY_AUCTION_BOUGHT_TITLE, i64::from(count))
 }
 
 /// "View 12 Variants" (`lng_auction_preview_variants`).
 pub fn variants_link(count: i32) -> String {
-    format!("View {}", plural(i64::from(count), "Variant", "Variants"))
+    tr_with(
+        keys::Q_MONEY_AUCTION_VIEW_COUNT,
+        &[(
+            "variants",
+            &trn_decimal(keys::Q_MONEY_AUCTION_VARIANT, i64::from(count)),
+        )],
+    )
 }
 
 /// The about box's three feature rows: title and text.
 pub fn about_features(per_round: i32, rounds: i32) -> [(String, String); 3] {
     let per = i64::from(per_round);
+    let gifts = trn_decimal(keys::Q_MONEY_AUCTION_GIFT_IS, per);
+    let round_count = trn_decimal(keys::Q_MONEY_AUCTION_ROUND_COUNT, i64::from(rounds));
+    let bidders = trn_decimal(keys::Q_MONEY_AUCTION_TOP_BIDDERS_LOWER, per);
     [
         (
-            plural_words(per, "Top", "Bidder", "Bidders"),
-            format!(
-                "{} dropped in {} to the {} by bid amount.",
-                plural(per, "gift is", "gifts are"),
-                plural(i64::from(rounds), "round", "rounds"),
-                plural_words(per, "top", "bidder", "bidders")
+            trn_decimal(keys::Q_MONEY_AUCTION_TOP_BIDDERS_TITLE, per),
+            tr_with(
+                keys::Q_MONEY_AUCTION_DROPPED,
+                &[
+                    ("gifts", &gifts),
+                    ("rounds", &round_count),
+                    ("bidders", &bidders),
+                ],
             ),
         ),
         (
-            "Bid Carryover".into(),
-            format!(
-                "If your bid leaves the top {}, it will automatically join the next round.",
-                group_digits(per)
+            tr(keys::Q_MONEY_AUCTION_CARRYOVER_TITLE).into(),
+            tr_with(
+                keys::Q_MONEY_AUCTION_CARRYOVER_TEXT,
+                &[("count", &group_digits(per))],
             ),
         ),
         (
-            "Missed Bidders".into(),
-            "If your bid doesn't win after the final round, your Stars will be fully refunded."
-                .into(),
+            tr(keys::Q_MONEY_AUCTION_MISSED_TITLE).into(),
+            tr(keys::Q_MONEY_AUCTION_MISSED_TEXT).into(),
         ),
     ]
 }
@@ -265,16 +314,16 @@ pub fn about_features(per_round: i32, rounds: i32) -> [(String, String); 3] {
 /// (`lng_auction_about_top_short`), without the "Learn more" link.
 pub fn send_about(per_round: i32) -> String {
     let per = i64::from(per_round);
-    format!(
-        "{} dropped to the {} by bid amount.",
-        plural(per, "gift is", "gifts are"),
-        plural_words(per, "top", "bidder", "bidders")
+    tr_with(
+        keys::Q_MONEY_AUCTION_SEND_ABOUT,
+        &[
+            ("gifts", &trn_decimal(keys::Q_MONEY_AUCTION_GIFT_IS, per)),
+            (
+                "bidders",
+                &trn_decimal(keys::Q_MONEY_AUCTION_TOP_BIDDERS_LOWER, per),
+            ),
+        ],
     )
-}
-
-/// "Top 5 Bidders": a lead word, the count, then the noun.
-fn plural_words(count: i64, lead: &str, one: &str, other: &str) -> String {
-    format!("{lead} {}", plural(count, one, other))
 }
 
 /// The chat-list bar: title, text, whether the text is red, and the
@@ -297,12 +346,18 @@ pub fn auction_bar(list: &[AuctionState], now: i64) -> Option<AuctionBar> {
     };
     if list.len() == 1 {
         let (text, outbid) = match winning(first) {
-            Some(1) => ("You're winning (1st place).".to_string(), false),
-            Some(n) => (format!("You're winning ({n}th place)."), false),
-            None => ("You've been outbid.".to_string(), true),
+            Some(1) => (tr(keys::Q_MONEY_AUCTION_WINNING_FIRST).to_string(), false),
+            Some(n) => (
+                tr_with(
+                    keys::Q_MONEY_AUCTION_WINNING_PLACE,
+                    &[("place", &n.to_string())],
+                ),
+                false,
+            ),
+            None => (tr(keys::Q_MONEY_AUCTION_OUTBID).to_string(), true),
         };
         return Some(AuctionBar {
-            title: "Active Auction".into(),
+            title: tr(keys::Q_MONEY_AUCTION_ACTIVE).into(),
             text,
             outbid,
             button: nice_countdown(seconds_left(first.next_round_at(), now)),
@@ -310,17 +365,20 @@ pub fn auction_bar(list: &[AuctionState], now: i64) -> Option<AuctionBar> {
     }
     let outbid = list.iter().filter(|state| winning(state).is_none()).count();
     let text = if outbid == list.len() {
-        "You've been outbid in all of them.".to_string()
+        tr(keys::Q_MONEY_AUCTION_OUTBID_ALL).to_string()
     } else if outbid > 0 {
-        format!("You've been outbid in {outbid} of them.")
+        tr_with(
+            keys::Q_MONEY_AUCTION_OUTBID_SOME,
+            &[("count", &outbid.to_string())],
+        )
     } else {
-        "You're winning in all of them.".to_string()
+        tr(keys::Q_MONEY_AUCTION_WINNING_ALL).to_string()
     };
     Some(AuctionBar {
-        title: plural(list.len() as i64, "Active Auction", "Active Auctions"),
+        title: trn_decimal(keys::Q_MONEY_AUCTION_ACTIVE_TITLE, list.len() as i64),
         text,
         outbid: outbid > 0,
-        button: "View".into(),
+        button: tr(keys::Q_MONEY_AUCTION_VIEW).into(),
     })
 }
 
@@ -334,11 +392,21 @@ pub fn active_row(state: &AuctionState) -> (String, String, bool) {
     let outbid = position > state.per_round();
     let stars = format!("★{}", group_digits(state.my_stars()));
     let text = if outbid {
-        format!("Your bid {stars} is outbid")
+        tr_with(keys::Q_MONEY_AUCTION_MY_BID_OUTBID, &[("stars", &stars)])
     } else {
-        format!("Your bid {stars} is ranked #{position}")
+        tr_with(
+            keys::Q_MONEY_AUCTION_MY_BID_RANKED,
+            &[("stars", &stars), ("position", &position.to_string())],
+        )
     };
-    (format!("Round {round} of {total}"), text, outbid)
+    (
+        tr_with(
+            keys::Q_MONEY_AUCTION_ROUND_OF,
+            &[("round", &round.to_string()), ("total", &total.to_string())],
+        ),
+        text,
+        outbid,
+    )
 }
 
 /// The tile's badge and price line for an auction gift (tdesktop
@@ -346,31 +414,39 @@ pub fn active_row(state: &AuctionState) -> (String, String, bool) {
 /// "View".
 pub fn auction_tile(start_date: i32, sold_out: bool, now: i64) -> (&'static str, &'static str) {
     let upcoming = i64::from(start_date) > now;
-    let badge = if upcoming { "soon" } else { "auction" };
-    let line = if sold_out || upcoming { "View" } else { "Join" };
+    let badge = if upcoming {
+        tr(keys::Q_MONEY_AUCTION_BADGE_SOON)
+    } else {
+        tr(keys::Q_MONEY_AUCTION_BADGE_AUCTION)
+    };
+    let line = if sold_out || upcoming {
+        tr(keys::Q_MONEY_AUCTION_VIEW)
+    } else {
+        tr(keys::Q_MONEY_AUCTION_JOIN)
+    };
     (badge, line)
 }
 
 /// The link preview button (tdesktop `history_view_web_page.cpp`).
 pub fn preview_button(start_date: i32, end_date: i32, now: i64) -> &'static str {
     if i64::from(end_date) <= now {
-        "View Results"
+        tr(keys::Q_MONEY_AUCTION_VIEW_RESULTS)
     } else if i64::from(start_date) > now {
-        "View"
+        tr(keys::Q_MONEY_AUCTION_VIEW)
     } else {
-        "Join"
+        tr(keys::Q_MONEY_AUCTION_JOIN)
     }
 }
 
 /// The "Change Recipient" text.
 pub fn change_recipient_text(from: Option<&str>, to: Option<&str>) -> String {
     let already = match from {
-        None => "You've already placed a bid on this gift for yourself.".to_string(),
-        Some(name) => format!("You've already placed a bid on this gift for {name}."),
+        None => tr(keys::Q_MONEY_AUCTION_ALREADY_BID_SELF).to_string(),
+        Some(name) => tr_with(keys::Q_MONEY_AUCTION_ALREADY_BID_FOR, &[("name", name)]),
     };
     let change = match to {
-        None => "Do you want to raise your bid and change the recipient to yourself?".to_string(),
-        Some(name) => format!("Do you want to raise your bid and change the recipient to {name}?"),
+        None => tr(keys::Q_MONEY_AUCTION_CHANGE_TO_SELF).to_string(),
+        Some(name) => tr_with(keys::Q_MONEY_AUCTION_CHANGE_TO, &[("name", name)]),
     };
     format!("{already} {change}")
 }

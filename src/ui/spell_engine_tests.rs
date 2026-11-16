@@ -201,8 +201,9 @@ fn misspellings_are_the_composers_wavy_decorations(cx: &mut TestAppContext) {
     let (app, mut vcx) = new_app(cx);
     app.update_in(&mut vcx, |app, window, cx| {
         app.chat_prefs.spellcheck_enabled = true;
-        app.composer
-            .update(cx, |state, cx| state.set_value("teh good speling", window, cx));
+        app.composer.update(cx, |state, cx| {
+            state.set_value("teh good speling", window, cx)
+        });
         app.composer_ui.spelling.underlines.text = "teh good speling".into();
         app.composer_ui.spelling.underlines.found = vec![
             Misspelling {

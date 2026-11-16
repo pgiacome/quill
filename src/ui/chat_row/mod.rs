@@ -26,7 +26,7 @@ use quill::telegram::envelope::{
 };
 use quill::text::TextEntity;
 mod forum_titles_demo;
-mod row_badges;
+pub(in crate::ui) mod row_badges;
 mod topic_fit;
 mod topic_titles;
 #[cfg(test)]
@@ -469,8 +469,8 @@ pub(super) fn session_chat_row(
         _ => chat.is_muted(),
     };
     let badges = row_badges::row_badges(
-        chat,
-        archived,
+        ("unread-pill", id.0 as u64).into(),
+        pinned_here(chat, archived),
         muted_fg,
         badge_muted,
         unread_indicator,

@@ -524,7 +524,16 @@ impl QuillApp {
         let options = &session.payments.giveaway.options;
         let giveaway = &session.payments.giveaway;
         let group = Self::giveaway_group(session, draft.boosted_chat_id);
-        let place = if group { "group" } else { "channel" };
+        let boosts_key = if group {
+            keys::Q_MONEY_CHECK_YOUR_S_BOOSTS_TO_GROUP
+        } else {
+            keys::Q_MONEY_CHECK_YOUR_S_BOOSTS_TO_CHANNEL
+        };
+        let receive_key = if group {
+            keys::Q_MONEY_THIS_WILL_RECEIVE_GROUP
+        } else {
+            keys::Q_MONEY_THIS_WILL_RECEIVE_CHANNEL
+        };
         let chat_name = session
             .chats
             .get(&draft.boosted_chat_id)
@@ -559,10 +568,7 @@ impl QuillApp {
                         .font_semibold()
                         .child(tr(keys::GIVEAWAY_CREATED_TITLE)),
                 )
-                .child(about_line(tr_with(
-                    keys::Q_MONEY_CHECK_YOUR_S_BOOSTS_TO,
-                    &[("place", place)],
-                )))
+                .child(about_line(tr_with(boosts_key, &[])))
                 .into_any_element();
         }
         if form.page == GiveawayPage::Confirming {
@@ -597,10 +603,9 @@ impl QuillApp {
 
         if draft.is_specific_users() {
             body = body.child(about_line(tr_with(
-                keys::Q_MONEY_THIS_WILL_RECEIVE,
+                receive_key,
                 &[
                     ("chat_name", &chat_name.to_string()),
-                    ("place", place),
                     ("boosts_text", &(boosts_text(boosts)).to_string()),
                 ],
             )));

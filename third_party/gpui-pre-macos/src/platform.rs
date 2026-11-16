@@ -12,7 +12,7 @@ use futures::channel::oneshot;
 use gpui::{
     Action, ActivationPolicy, ActivityGuard, AnyWindowHandle, AppLifecyclePhase,
     BackgroundExecutor, ClipboardItem, CursorStyle, ForegroundExecutor, GraphicalEnvironment,
-    KeyContext, Keymap, Menu, MenuItem, OsMenu, OwnedMenu, PathPromptOptions, Platform,
+    KeyContext, Keymap, Menu, MenuItem, MenuRole, OsMenu, OwnedMenu, PathPromptOptions, Platform,
     PlatformDisplay, PlatformKeyboardLayout, PlatformKeyboardMapper, PlatformTextSystem,
     PlatformWindow, PowerMode, QuitAnswer, QuitStep, Result, SystemMenuType, Task, ThermalState,
     WindowAppearance, WindowKind, WindowParams, WindowingRequest, popup::PopupNotSupportedError,
@@ -316,7 +316,7 @@ impl MacPlatform {
                 menu_item.setSubmenu(Some(&menu));
                 application_menu.addItem(&menu_item);
 
-                if menu_config.name == "Window" {
+                if menu_config.role == MenuRole::Window {
                     let app: *mut AnyObject = msg_send![APP_CLASS, sharedApplication];
                     let _: () = msg_send![app, setWindowsMenu: &*menu];
                 }
@@ -463,6 +463,7 @@ impl MacPlatform {
                     name,
                     items,
                     disabled,
+                    ..
                 }) => {
                     let item = NSMenuItem::new(self.1);
                     let submenu = NSMenu::new(self.1);

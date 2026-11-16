@@ -11,6 +11,7 @@
 //! the bot has `verifierSettings`.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use crate::telegram::envelope::{int64, parse_formatted_text};
 use serde_json::{Value, json};
 
@@ -169,19 +170,19 @@ pub enum VerifyTarget {
 impl VerifyTarget {
     pub fn title(self) -> &'static str {
         match self {
-            Self::User => "Verify User",
-            Self::Bot => "Verify Bot",
-            Self::Channel => "Verify Channel",
-            Self::Group => "Verify Group",
+            Self::User => tr(keys::Q_MEDIA_VERIFY_USER),
+            Self::Bot => tr(keys::Q_MEDIA_VERIFY_BOT),
+            Self::Channel => tr(keys::Q_MEDIA_VERIFY_CHANNEL),
+            Self::Group => tr(keys::Q_MEDIA_VERIFY_GROUP),
         }
     }
 
     pub fn noun(self) -> &'static str {
         match self {
-            Self::User => "user",
-            Self::Bot => "bot",
-            Self::Channel => "channel",
-            Self::Group => "group",
+            Self::User => tr(keys::Q_MEDIA_NOUN_USER),
+            Self::Bot => tr(keys::Q_MEDIA_NOUN_BOT),
+            Self::Channel => tr(keys::Q_MEDIA_NOUN_CHANNEL),
+            Self::Group => tr(keys::Q_MEDIA_NOUN_GROUP),
         }
     }
 }

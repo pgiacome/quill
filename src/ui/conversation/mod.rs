@@ -209,7 +209,7 @@ impl QuillApp {
         };
         let (status_line, status_accent): (Option<String>, bool) = if typing {
             (
-                Some(activity_line.map_or_else(|| "typing".to_string(), |l| l.text)),
+                Some(activity_line.map_or_else(|| tr(keys::Q_CHAT_TYPING).to_string(), |l| l.text)),
                 true,
             )
         } else if let Some((_, line, _)) = thread_header.clone() {
@@ -237,7 +237,7 @@ impl QuillApp {
                     if forever {
                         tr(keys::Q_CHAT_MUTED_FOREVER)
                     } else {
-                        "muted"
+                        tr(keys::Q_CHAT_MUTED)
                     }
                     .to_string(),
                 ),

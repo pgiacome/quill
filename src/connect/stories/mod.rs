@@ -127,7 +127,7 @@ impl<S: JsonSender> ConnectDriver<S> {
 
     /// stories-live-play: join the group call behind a live story
     /// (`storyContentLive.group_call_id`, `schema/td_api.tl:6662`).
-    /// Two-step: `getGroupCall` (via `fetch_group_call`) creates the
+    /// Two-step: `getGroupCall` (via `send_get_group_call`) creates the
     /// story stream's unjoined tracker, and the ingest pump issues
     /// `joinLiveStory` once it exists (`pending_live_story_join`). The
     /// story plays beside any 1:1 call or video chat you are in, which
@@ -178,7 +178,7 @@ impl<S: JsonSender> ConnectDriver<S> {
             self.leave_live_story()?;
         }
         self.session.calls.pending_live_story_join = None;
-        let extra = self.fetch_group_call(group_call_id)?;
+        let extra = self.send_get_group_call(group_call_id)?;
         self.session
             .begin_live_story(chat_id.0, story_id, group_call_id);
         // A Join pressed again asks once more for what failed to load.

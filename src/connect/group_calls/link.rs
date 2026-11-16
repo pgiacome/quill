@@ -3,7 +3,7 @@
 use super::*;
 use crate::call_link::{
     CallLinkConfirm, CallLinkLeaving, CallLinkStage, CallLinkStep, CurrentCall, LeaveKind,
-    LeavingCall, OfferedCallLink, PendingCallLink, plan,
+    LeavingCall, OfferMode, OfferedCallLink, PendingCallLink, plan,
 };
 use crate::ids::ChatId;
 
@@ -19,6 +19,37 @@ impl<S: JsonSender> ConnectDriver<S> {
         invite_hash: &str,
         live_stream: bool,
     ) -> Result<CallLinkStep, ConnectSendError> {
+        self.offer_call(
+            chat_id,
+            Some(invite_hash),
+            live_stream,
+            OfferMode::OpenScreen,
+            None,
+        )
+    }
+
+    /// The Calls tab's Join on a listed call of `chat_id`: the same offer as
+    /// a call link, with no hash, joining the call once it is tracked. While
+    /// another call is on (joined, reconnecting, its join in flight, or
+    /// `joining`, the UI's own join), the question to leave it is raised and
+    /// the join waits in it, so a declined question leaves no join behind.
+    pub fn join_listed_call(
+        &mut self,
+        chat_id: ChatId,
+        live_stream: bool,
+        joining: Option<i32>,
+    ) -> Result<CallLinkStep, ConnectSendError> {
+        self.offer_call(chat_id, None, live_stream, OfferMode::Join, joining)
+    }
+
+    fn offer_call(
+        &mut self,
+        chat_id: ChatId,
+        invite_hash: Option<&str>,
+        live_stream: bool,
+        mode: OfferMode,
+        joining: Option<i32>,
+    ) -> Result<CallLinkStep, ConnectSendError> {
         if !self.chats_path_active() {
             return Err(ConnectSendError::InvalidRequest);
         }
@@ -26,6 +57,12 @@ impl<S: JsonSender> ConnectDriver<S> {
             return Ok(CallLinkStep::JustOpen);
         };
         let target_is_channel = chat.kind.is_channel();
+        // A row known only from its chat may be a channel's stream: a
+        // channel's call is one (tdesktop `peer->isBroadcast()`).
+        let live_stream = live_stream || (mode == OfferMode::Join && target_is_channel);
+        // Joined, reconnecting after a network loss, or with its join in
+        // flight: all are in a call, so a different one must ask first.
+        let in_call = self.session.group_call_joined_or_joining(joining);
         let current = self
             .session
             .calls
@@ -33,7 +70,7 @@ impl<S: JsonSender> ConnectDriver<S> {
             .as_ref()
             .map(|call| CurrentCall {
                 group_call_id: call.id,
-                joined: call.is_joined,
+                in_call,
             });
         let private_call = self.session.calls.active_call.is_some();
         let step = plan(
@@ -41,6 +78,7 @@ impl<S: JsonSender> ConnectDriver<S> {
             chat.video_chat.as_ref().map(|chat| chat.group_call_id),
             current,
             private_call,
+            mode,
         );
         match step {
             CallLinkStep::Offer { group_call_id } => {
@@ -49,7 +87,7 @@ impl<S: JsonSender> ConnectDriver<S> {
                 self.fetch_group_call(group_call_id)?;
                 self.session.calls.call_link_stage = CallLinkStage::Joinable(PendingCallLink {
                     group_call_id,
-                    invite_hash: invite_hash.to_string(),
+                    invite_hash: invite_hash.unwrap_or_default().to_string(),
                 });
             }
             CallLinkStep::OtherCallOn => {
@@ -64,10 +102,11 @@ impl<S: JsonSender> ConnectDriver<S> {
                 };
                 self.session.calls.call_link_stage = CallLinkStage::Confirm(CallLinkConfirm {
                     chat_id: chat_id.0,
-                    invite_hash: invite_hash.to_string(),
+                    invite_hash: invite_hash.unwrap_or_default().to_string(),
                     live_stream,
                     target_is_channel,
                     leave,
+                    mode,
                 });
             }
             _ => {}
@@ -156,8 +195,14 @@ impl<S: JsonSender> ConnectDriver<S> {
     }
 
     fn offer_confirmed_link(&mut self, link: CallLinkConfirm) -> Result<(), ConnectSendError> {
-        let step =
-            self.offer_call_link(ChatId(link.chat_id), &link.invite_hash, link.live_stream)?;
+        // The old call is gone: nothing the UI joins blocks the offer now.
+        let step = self.offer_call(
+            ChatId(link.chat_id),
+            Some(&link.invite_hash),
+            link.live_stream,
+            link.mode,
+            None,
+        )?;
         if let CallLinkStep::Offer { group_call_id } = step
             && let CallLinkStage::Joinable(pending) =
                 std::mem::take(&mut self.session.calls.call_link_stage)
@@ -166,6 +211,7 @@ impl<S: JsonSender> ConnectDriver<S> {
                 offered: OfferedCallLink {
                     group_call_id,
                     live_stream: link.live_stream,
+                    mode: link.mode,
                 },
                 link: pending,
             };

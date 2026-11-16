@@ -51,11 +51,21 @@ fn group_call_messages_route_to_tracked_call() {
 fn scheduled_group_call_tracks_start_date() {
     let (mut session, sink) = session();
     let seq = AtomicU64::new(0);
+    // A scheduled call is opened by the person's own fetch, so its
+    // `groupCall` answer is what may take the slot.
+    let extra = session.request(
+        RequestPurpose::Calls(CallsPurpose::GetGroupCall { group_call_id: 555 }),
+        None,
+    );
+    session.want_group_call(extra);
     apply_json(
         &mut session,
         &seq,
         &sink,
-        r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":555,"unique_id":"999","title":"Planned sync","invite_link":"","paid_message_star_count":0,"scheduled_start_date":1788003600,"enabled_start_notification":true,"is_active":false,"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":false,"need_rejoin":false,"is_owned":true,"can_be_managed":true,"participant_count":0,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":true,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0}}"#,
+        &format!(
+            r#"{{"@type":"groupCall","@extra":"{}","id":555,"unique_id":"999","title":"Planned sync","invite_link":"","paid_message_star_count":0,"scheduled_start_date":1788003600,"enabled_start_notification":true,"is_active":false,"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":false,"need_rejoin":false,"is_owned":true,"can_be_managed":true,"participant_count":0,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":true,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0}}"#,
+            extra.0
+        ),
     );
     let call = session.calls.active_group_call.as_ref().expect("tracked");
     assert_eq!(call.scheduled_start_date, 1788003600);

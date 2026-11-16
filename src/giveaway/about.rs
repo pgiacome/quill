@@ -1,6 +1,5 @@
 //! The words of the "About this giveaway" box (tdesktop
 //! `boxes/gift_premium_box.cpp` `GiveawayInfoBox`, strings `lng_prizes_*`).
-use crate::deep_link_types::gift_duration;
 use crate::telegram::envelope::{
     GiveawayInfoData, GiveawayParticipantStatus, GiveawayPrize, GiveawaySummary,
 };
@@ -45,7 +44,9 @@ fn stars(n: i64) -> String {
 }
 
 fn months_phrase(months: i32) -> String {
-    format!("for {}", gift_duration(i64::from(months), 0))
+    // This box is English-only, so it keeps its own English plural instead
+    // of mixing a localized gift duration into an English frame.
+    format!("for {}", count_of(i64::from(months), "month", "months"))
 }
 
 /// The text for `summary` (the giveaway card) and `info` (the answer to

@@ -21,6 +21,16 @@ pub enum ChatAppearanceKind {
     Supergroup,
 }
 
+impl ChatAppearanceKind {
+    /// The channel or the group wording of a sentence.
+    pub fn pick(self, channel: crate::lang::Key, group: crate::lang::Key) -> crate::lang::Key {
+        match self {
+            Self::Channel => channel,
+            Self::Supergroup => group,
+        }
+    }
+}
+
 /// Fallbacks when the level table of the chat has not arrived: tdesktop's
 /// defaults for `channel_bg_icon_level_min`, `channel_profile_bg_icon_level_min`,
 /// `group_profile_bg_icon_level_min` and the emoji status minimums.

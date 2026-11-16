@@ -6,6 +6,7 @@
 //! is pure so the permission gating can be tested without a session.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use crate::telegram::envelope::ChannelMemberStatus;
 
 /// TDLib treats a ban shorter than 30 seconds or longer than 366 days as
@@ -35,11 +36,11 @@ impl RestrictUntil {
 
     pub fn label(self) -> &'static str {
         match self {
-            RestrictUntil::Forever => "Forever",
-            RestrictUntil::Day => "1 day",
-            RestrictUntil::Week => "1 week",
-            RestrictUntil::Month => "1 month",
-            RestrictUntil::Custom(_) => "Custom date",
+            RestrictUntil::Forever => tr(keys::Q_OPS_RESTRICT_FOREVER),
+            RestrictUntil::Day => tr(keys::Q_OPS_RESTRICT_DAY),
+            RestrictUntil::Week => tr(keys::Q_OPS_RESTRICT_WEEK),
+            RestrictUntil::Month => tr(keys::Q_OPS_RESTRICT_MONTH),
+            RestrictUntil::Custom(_) => tr(keys::Q_OPS_RESTRICT_CUSTOM),
         }
     }
 

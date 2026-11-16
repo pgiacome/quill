@@ -6,6 +6,7 @@
 //! such screen, so the layout follows the TGX reference.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use serde_json::Value;
 
 /// The network a group of entries was counted on.
@@ -27,10 +28,10 @@ impl NetworkGroup {
 
     pub fn label(self) -> &'static str {
         match self {
-            NetworkGroup::Mobile => "Mobile network",
-            NetworkGroup::WiFi => "Wi-Fi",
-            NetworkGroup::Roaming => "Roaming",
-            NetworkGroup::Other => "Other networks",
+            NetworkGroup::Mobile => tr(keys::Q_PREFS_USAGE_MOBILE),
+            NetworkGroup::WiFi => tr(keys::Q_PREFS_USAGE_WIFI),
+            NetworkGroup::Roaming => tr(keys::Q_PREFS_USAGE_ROAMING),
+            NetworkGroup::Other => tr(keys::Q_PREFS_USAGE_OTHER),
         }
     }
 

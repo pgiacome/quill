@@ -1,6 +1,7 @@
 use super::{format_entity_json, input_message_reply_to_with_quote};
 use crate::composer::parse_format_markup;
 use crate::ids::{ChatId, MessageId, RequestId, TopicId};
+use crate::lang::{PluralKey, keys};
 use serde_json::{Value, json};
 
 /// `getForumTopics` (TDLib 1.8.67, `schema/td_api.tl:12701`):
@@ -896,18 +897,14 @@ pub fn add_chat_welcome_message(extra: RequestId, chat_id: ChatId, text: &str) -
 
 /// The info panel's media rows, in Telegram Desktop's order: the
 /// `searchMessagesFilter*` constructor and its row label (singular, plural).
-pub const MEDIA_COUNT_FILTERS: [(&str, &str, &str); 7] = [
-    ("searchMessagesFilterPhoto", "photo", "photos"),
-    ("searchMessagesFilterVideo", "video", "videos"),
-    ("searchMessagesFilterDocument", "file", "files"),
-    ("searchMessagesFilterAudio", "audio file", "audio files"),
-    ("searchMessagesFilterUrl", "shared link", "shared links"),
-    (
-        "searchMessagesFilterVoiceNote",
-        "voice message",
-        "voice messages",
-    ),
-    ("searchMessagesFilterAnimation", "GIF", "GIFs"),
+pub const MEDIA_COUNT_FILTERS: [(&str, PluralKey); 7] = [
+    ("searchMessagesFilterPhoto", keys::Q_MEDIA_COUNT_PHOTOS),
+    ("searchMessagesFilterVideo", keys::Q_MEDIA_COUNT_VIDEOS),
+    ("searchMessagesFilterDocument", keys::Q_MEDIA_COUNT_FILES),
+    ("searchMessagesFilterAudio", keys::Q_MEDIA_COUNT_AUDIO),
+    ("searchMessagesFilterUrl", keys::MEDIA_SELECTED_LINK),
+    ("searchMessagesFilterVoiceNote", keys::Q_MEDIA_COUNT_VOICE),
+    ("searchMessagesFilterAnimation", keys::MEDIA_SELECTED_GIF),
 ];
 
 mod edit_chat_welcome_message;

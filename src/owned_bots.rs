@@ -19,6 +19,7 @@
 //! `ui/bot_edit_dialog.rs` and `ui/bot_create_dialog.rs`.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use serde_json::json;
 
 /// The bot's name length limit (`setBotName`: 0-64 characters).
@@ -47,9 +48,9 @@ impl ManagerScreen {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Intro => "Edit intro",
-            Self::Commands => "Edit commands",
-            Self::Settings => "Change bot settings",
+            Self::Intro => tr(keys::Q_MONEY_BOT_EDIT_INTRO),
+            Self::Commands => tr(keys::Q_MONEY_BOT_EDIT_COMMANDS),
+            Self::Settings => tr(keys::Q_MONEY_BOT_EDIT_SETTINGS),
         }
     }
 

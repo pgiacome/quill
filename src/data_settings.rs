@@ -11,6 +11,7 @@
 //! `setAutoDownloadSettings` at the same time.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use crate::settings::AccountPaths;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -45,9 +46,9 @@ impl NetworkKind {
     /// Screen labels (TGX `SettingsDataStorage` connection rows).
     pub fn label(self) -> &'static str {
         match self {
-            NetworkKind::Mobile => "Mobile data",
-            NetworkKind::Roaming => "Roaming",
-            NetworkKind::WiFi => "Wi-Fi",
+            NetworkKind::Mobile => tr(keys::Q_PREFS_NETWORK_MOBILE),
+            NetworkKind::Roaming => tr(keys::Q_PREFS_NETWORK_ROAMING),
+            NetworkKind::WiFi => tr(keys::Q_PREFS_NETWORK_WIFI),
         }
     }
 }

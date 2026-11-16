@@ -254,7 +254,7 @@ impl QuillApp {
         if info.creator.is_some() {
             body = body.child(info_row(
                 tr(keys::GIFT_LINK_LABEL_REASON),
-                gift_reason(info.is_from_giveaway, info.user_id > 0 || used).into(),
+                gift_reason(info.is_from_giveaway, info.user_id > 0 || used),
             ));
         }
         if info.creation_date > 0 {

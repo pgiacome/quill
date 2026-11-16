@@ -11,6 +11,7 @@
 //! access to this chat" when the toggle button is hidden).
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use serde_json::{Value, json};
 
 /// `businessBotManageBar` (TDLib 1.8.68).
@@ -33,8 +34,8 @@ impl BotToggle {
     /// tdesktop `lng_chatbot_button_pause` / `lng_chatbot_button_resume`.
     pub fn label(self) -> &'static str {
         match self {
-            BotToggle::Pause => "Stop",
-            BotToggle::Resume => "Start",
+            BotToggle::Pause => tr(keys::Q_OPS_BOT_STOP),
+            BotToggle::Resume => tr(keys::Q_OPS_BOT_START),
         }
     }
 
@@ -48,11 +49,11 @@ impl BusinessBotManageBar {
     /// The status line under the bot's name.
     pub fn status(&self) -> &'static str {
         if self.is_paused {
-            "bot paused"
+            tr(keys::Q_OPS_BOT_PAUSED)
         } else if self.can_reply {
-            "bot manages this chat"
+            tr(keys::Q_OPS_BOT_ACTIVE)
         } else {
-            "bot has access to this chat"
+            tr(keys::Q_OPS_BOT_ACCESS)
         }
     }
 
@@ -71,9 +72,9 @@ impl BusinessBotManageBar {
     /// The destructive menu item; reading-only bots are "revoked".
     pub fn remove_label(&self) -> &'static str {
         if self.toggle().is_some() {
-            "Remove bot from this chat"
+            tr(keys::Q_OPS_BOT_REMOVE)
         } else {
-            "Revoke access to this chat"
+            tr(keys::Q_OPS_BOT_REVOKE)
         }
     }
 

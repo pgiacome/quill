@@ -1,0 +1,16 @@
+// Send Location's map picker (tdesktop ui/controls/location_picker.cpp).
+"qll_location_venues_failed" = "Не удалось загрузить места.";
+"qll_location_venues_retry" = "Повторить";
+"qll_location_denied" = "Quill не может использовать вашу геопозицию. Включите её в настройках конфиденциальности системы или перетащите карту к нужному месту.";
+"qll_location_unavailable" = "Ваша геопозиция сейчас недоступна. Перетащите карту к нужному месту.";
+"qll_location_my_location" = "Показать мою геопозицию";
+"qll_location_map" = "Карта. Перетащите её, чтобы переместить метку.";
+"qll_location_close_search" = "Закрыть поиск";
+// A bot keyboard's "request location" button (tdesktop only says it is unavailable; Telegram X confirms, then sends).
+"qll_location_request_title" = "Поделиться геопозицией";
+"qll_location_request_text" = "Поделиться текущей геопозицией с {bot_name}?";
+"qll_location_request_locating" = "Определение геопозиции…";
+"qll_location_request_denied" = "Quill не может использовать вашу геопозицию. Включите её в настройках конфиденциальности системы и повторите попытку.";
+"qll_location_request_unavailable" = "Ваша геопозиция сейчас недоступна. Повторите попытку чуть позже.";
+"qll_location_request_retry" = "Повторить";
+"qll_location_request_bot_only" = "Запросить геопозицию может только бот";

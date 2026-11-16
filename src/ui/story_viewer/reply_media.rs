@@ -262,7 +262,12 @@ impl QuillApp {
                 )
                 .is_ok()
         });
-        self.finish_story_reply_media(sent, "sticker", (chat_id, story_id), cx);
+        self.finish_story_reply_media(
+            sent,
+            tr(keys::Q_MEDIA_STICKER_NOUN),
+            (chat_id, story_id),
+            cx,
+        );
         true
     }
 
@@ -305,7 +310,7 @@ impl QuillApp {
                 )
                 .is_ok()
         });
-        self.finish_story_reply_media(sent, "GIF", (chat_id, story_id), cx);
+        self.finish_story_reply_media(sent, tr(keys::Q_MEDIA_GIF), (chat_id, story_id), cx);
         true
     }
 

@@ -2,6 +2,7 @@
 //! `boxes/star_gift_resale_box.cpp`, `ResaleGiftsFilter`).
 
 use super::{array, int32, plural, text};
+use crate::lang::{keys, tr};
 use crate::premium_hub::upgraded::{Collectible, GiftAttribute, GiftBackdrop, parse_collectible};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
@@ -24,18 +25,18 @@ impl ResaleSort {
     /// The pill text (`lng_gift_resale_price` / `_date` / `_number`).
     pub fn label(self) -> &'static str {
         match self {
-            Self::Price => "Price",
-            Self::Date => "Date",
-            Self::Number => "Number",
+            Self::Price => tr(keys::Q_MONEY_RESALE_SORT_PRICE),
+            Self::Date => tr(keys::GIFT_RESALE_DATE),
+            Self::Number => tr(keys::Q_MONEY_RESALE_SORT_NUMBER),
         }
     }
 
     /// The menu item (`lng_gift_resale_sort_*`).
     pub fn menu_label(self) -> &'static str {
         match self {
-            Self::Price => "Sort by Price",
-            Self::Date => "Sort by Date",
-            Self::Number => "Sort by Number",
+            Self::Price => tr(keys::Q_MONEY_RESALE_SORT_BY_PRICE),
+            Self::Date => tr(keys::Q_MONEY_RESALE_SORT_BY_DATE),
+            Self::Number => tr(keys::Q_MONEY_RESALE_SORT_BY_NUMBER),
         }
     }
 

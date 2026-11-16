@@ -810,9 +810,30 @@ fn count_pill(count: i32, muted: bool, cx: &App) -> impl IntoElement {
         .child(super::chat_row::compact_count(count))
 }
 
+/// The topic's icon in a `size` box: its custom emoji (`icon`, decoded at
+/// that size) on its own once loaded, as tdesktop's
+/// `ForumTopic::paintUserpic` draws it with no circle under it; else
+/// [`topic_icon`].
+pub(super) fn topic_icon_or_emoji(
+    topic: &ForumTopic,
+    size: f32,
+    icon: Option<ImageSource>,
+    cx: &App,
+) -> AnyElement {
+    match icon {
+        Some(icon) => img(icon)
+            .id(("topic-row-icon", topic.forum_topic_id as u64))
+            .size(px(size))
+            .flex_none()
+            .object_fit(ObjectFit::Contain)
+            .into_any_element(),
+        None => topic_icon(topic, size, cx),
+    }
+}
+
 /// The round topic icon: `forumTopicIcon.color` with the name's first
 /// letter (Telegram Desktop's `TopicIconEmojiEntity`); the General topic
-/// gets a muted "#". Custom-emoji icons fall back to the letter.
+/// gets a muted "#". [`topic_icon_or_emoji`] draws a custom-emoji icon.
 pub(super) fn topic_icon(topic: &ForumTopic, size: f32, cx: &App) -> AnyElement {
     if topic.is_general {
         return div()

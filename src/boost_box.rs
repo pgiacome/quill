@@ -23,6 +23,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::RequestId;
+use crate::lang::{keys, tr, tr_with, trn, trn_with};
 use crate::local_time::{civil_local, day_label};
 use crate::telegram::envelope::{ParsedBoostSlot, ParsedBoostStatus};
 
@@ -56,10 +57,6 @@ pub struct BoostButton {
     pub closes: bool,
 }
 
-fn plural(count: i32, one: &str, other: &str) -> String {
-    format!("{count} {}", if count == 1 { one } else { other })
-}
-
 impl BoostCounters {
     /// Level the next boosts work towards: the one after the current level
     /// unless this is the top.
@@ -83,19 +80,19 @@ impl BoostCounters {
     /// `lng_boost_channel_you_title` and its siblings.
     pub fn title(&self, name: &str, group: bool) -> String {
         if self.mine > 0 {
-            format!("You boosted {name}!")
+            tr_with(keys::Q_MONEY_BOOST_YOU_BOOSTED, &[("name", name)])
         } else if self.next_level_boosts == 0 {
-            "Maximum level reached".into()
+            tr(keys::Q_MONEY_BOOST_MAX_LEVEL).to_string()
         } else if self.level > 0 {
             if group {
-                "Help upgrade group".into()
+                tr(keys::Q_MONEY_BOOST_HELP_UPGRADE_GROUP).to_string()
             } else {
-                "Help upgrade channel".into()
+                tr(keys::Q_MONEY_BOOST_HELP_UPGRADE_CHANNEL).to_string()
             }
         } else if group {
-            "Enable stories for group".into()
+            tr(keys::Q_MONEY_BOOST_ENABLE_STORIES_GROUP).to_string()
         } else {
-            "Enable stories for this channel".into()
+            tr(keys::Q_MONEY_BOOST_ENABLE_STORIES_CHANNEL).to_string()
         }
     }
 
@@ -107,26 +104,28 @@ impl BoostCounters {
     /// The paragraph under the title.
     pub fn text(&self, name: &str, group: bool) -> String {
         let left = self.boosts_left();
-        let what = if group { "group" } else { "channel" };
-        let needs = || {
-            format!(
-                "{name} needs {} to unlock new features.",
-                plural(left, "more boost", "more boosts")
-            )
-        };
+        let needs = || trn_with(keys::Q_MONEY_BOOST_NEEDS_MORE, left, &[("name", name)]);
         if self.mine == 0 && self.next_level_boosts != 0 {
             return needs();
         }
         if left > 0 {
             needs()
         } else if self.level == 0 {
-            format!("This {what} reached Level 1 and can now post stories.")
+            if group {
+                tr(keys::Q_MONEY_BOOST_REACHED_ONE_GROUP).to_string()
+            } else {
+                tr(keys::Q_MONEY_BOOST_REACHED_ONE_CHANNEL).to_string()
+            }
         } else {
-            let stories = self.target_level();
-            format!(
-                "This {what} reached Level {} and can now post {} per day.",
-                self.level,
-                plural(stories, "story", "stories")
+            let key = if group {
+                keys::Q_MONEY_BOOST_REACHED_LEVEL_GROUP
+            } else {
+                keys::Q_MONEY_BOOST_REACHED_LEVEL_CHANNEL
+            };
+            trn_with(
+                key,
+                self.target_level(),
+                &[("level", &self.level.to_string())],
             )
         }
     }
@@ -137,20 +136,20 @@ impl BoostCounters {
     pub fn button(&self, group: bool, allow_multi: bool) -> BoostButton {
         if self.next_level_boosts == 0 || (self.mine > 0 && !allow_multi) {
             BoostButton {
-                label: "OK",
+                label: tr(keys::BOX_OK),
                 closes: true,
             }
         } else if self.mine > 0 {
             BoostButton {
-                label: "Boost Again",
+                label: tr(keys::Q_MONEY_BOOST_AGAIN),
                 closes: false,
             }
         } else {
             BoostButton {
                 label: if group {
-                    "Boost Group"
+                    tr(keys::BOOST_GROUP_BUTTON)
                 } else {
-                    "Boost Channel"
+                    tr(keys::Q_MONEY_BOOST_CHANNEL)
                 },
                 closes: false,
             }
@@ -203,42 +202,58 @@ pub enum BoostNotice {
 impl BoostNotice {
     pub fn title(&self) -> &'static str {
         match self {
-            Self::Already => "Already Boosted!",
-            Self::GiftMore { .. } => "More boosts needed",
-            Self::PremiumNeeded => "Premium needed",
-            Self::GiftedNoBoosts => "Can't boost with gifted Premium!",
-            Self::Flood { .. } => "Can't boost too often!",
+            Self::Already => tr(keys::Q_MONEY_BOOST_ALREADY_TITLE),
+            Self::GiftMore { .. } => tr(keys::Q_MONEY_BOOST_MORE_NEEDED_TITLE),
+            Self::PremiumNeeded => tr(keys::Q_MONEY_BOOST_PREMIUM_NEEDED_TITLE),
+            Self::GiftedNoBoosts => tr(keys::Q_MONEY_BOOST_GIFTED_NO_BOOSTS_TITLE),
+            Self::Flood { .. } => tr(keys::Q_MONEY_BOOST_FLOOD_TITLE),
         }
     }
 
     pub fn text(&self, name: &str, group: bool) -> String {
-        let what = if group { "group" } else { "channel" };
         match self {
-            Self::GiftMore { receive, again } => format!(
-                "To boost {name}{}, gift Telegram Premium to a friend and get {}.",
-                if *again { " again" } else { "" },
-                if *again {
-                    plural(*receive, "additional boost", "additional boosts")
+            Self::GiftMore { receive, again } => {
+                let receive = if *again {
+                    trn(keys::Q_MONEY_BOOST_ADDITIONAL, *receive)
                 } else {
-                    plural(*receive, "boost", "boosts")
-                }
-            ),
-            Self::Already => format!("You are already boosting this {what}."),
-            Self::PremiumNeeded => format!(
-                "Only Telegram Premium subscribers can boost {what}s. Do you want to subscribe to Telegram Premium?"
-            ),
-            Self::GiftedNoBoosts => format!(
-                "Because your Telegram Premium subscription was gifted to you, you can't use it to boost {what}s."
-            ),
+                    trn(keys::Q_MONEY_BOOST_PLAIN, *receive)
+                };
+                let key = if *again {
+                    keys::Q_MONEY_BOOST_GIFT_TO_BOOST_AGAIN
+                } else {
+                    keys::Q_MONEY_BOOST_GIFT_TO_BOOST
+                };
+                tr_with(key, &[("name", name), ("receive", &receive)])
+            }
+            Self::Already => if group {
+                tr(keys::Q_MONEY_BOOST_ALREADY_TEXT_GROUP)
+            } else {
+                tr(keys::Q_MONEY_BOOST_ALREADY_TEXT_CHANNEL)
+            }
+            .to_string(),
+            Self::PremiumNeeded => if group {
+                tr(keys::Q_MONEY_BOOST_PREMIUM_NEEDED_TEXT_GROUP)
+            } else {
+                tr(keys::Q_MONEY_BOOST_PREMIUM_NEEDED_TEXT_CHANNEL)
+            }
+            .to_string(),
+            Self::GiftedNoBoosts => if group {
+                tr(keys::Q_MONEY_BOOST_GIFTED_TEXT_GROUP)
+            } else {
+                tr(keys::Q_MONEY_BOOST_GIFTED_TEXT_CHANNEL)
+            }
+            .to_string(),
             Self::Flood {
                 seconds_left,
                 group,
             } => {
-                let what = if *group { "group" } else { "channel" };
-                format!(
-                    "You can only change the {what} you boost once a day. You will be able to boost in {}.",
-                    left_text(*seconds_left)
-                )
+                let left = left_text(*seconds_left);
+                let key = if *group {
+                    keys::Q_MONEY_BOOST_FLOOD_TEXT_GROUP
+                } else {
+                    keys::Q_MONEY_BOOST_FLOOD_TEXT_CHANNEL
+                };
+                tr_with(key, &[("left", &left)])
             }
         }
     }
@@ -252,17 +267,14 @@ impl BoostNotice {
 /// `ReassignBoostFloodBox`: days, hours, minutes or seconds.
 pub fn left_text(seconds: i64) -> String {
     let (days, hours, minutes) = (seconds / 86_400, seconds / 3_600, seconds / 60);
-    let unit = |count: i64, one: &str, other: &str| {
-        format!("{count} {}", if count == 1 { one } else { other })
-    };
     if days > 1 {
-        unit(days, "day", "days")
+        trn(keys::DAYS, days)
     } else if hours > 1 {
-        unit(hours, "hour", "hours")
+        trn(keys::HOURS, hours)
     } else if minutes > 1 {
-        unit(minutes, "minute", "minutes")
+        trn(keys::MINUTES, minutes)
     } else {
-        unit(seconds, "second", "seconds")
+        trn(keys::SECONDS, seconds)
     }
 }
 
@@ -341,21 +353,21 @@ pub fn is_waiting(slot: &ParsedBoostSlot, now: i64) -> bool {
 pub fn available_in(slot: &ParsedBoostSlot, now: i64) -> String {
     let seconds = (i64::from(slot.cooldown_until_date) - now).max(0);
     let (hours, minutes) = (seconds / 3_600, seconds / 60);
-    if hours > 0 {
-        format!(
-            "available in {hours}:{:02}:{:02}",
-            minutes % 60,
-            seconds % 60
-        )
+    let time = if hours > 0 {
+        format!("{hours}:{:02}:{:02}", minutes % 60, seconds % 60)
     } else {
-        format!("available in {minutes}:{:02}", seconds % 60)
-    }
+        format!("{minutes}:{:02}", seconds % 60)
+    };
+    tr_with(keys::Q_MONEY_BOOST_AVAILABLE_IN, &[("time", &time)])
 }
 
 /// "boost expires on October 6" (`lng_boosts_list_status`).
 pub fn expires_on(slot: &ParsedBoostSlot, now: i64) -> String {
     let at = civil_local(i64::from(slot.expiration_date));
-    format!("boost expires on {}", day_label(&at, &civil_local(now)))
+    tr_with(
+        keys::BOOSTS_LIST_STATUS,
+        &[("date", &day_label(&at, &civil_local(now)))],
+    )
 }
 
 /// A row's status line.
@@ -370,30 +382,32 @@ pub fn row_status(slot: &ParsedBoostSlot, now: i64) -> String {
 /// Tapping a row that is cooling down (`lng_boost_available_in_toast`).
 pub fn waiting_note(receive: i32) -> String {
     if receive > 0 {
-        format!(
-            "Wait until the boost is available or get {} by gifting a Telegram Premium subscription.",
-            plural(receive, "more boost", "more boosts")
-        )
+        let receive = trn(keys::Q_MONEY_BOOST_MORE, receive);
+        tr_with(keys::Q_MONEY_BOOST_WAIT_OR_GIFT, &[("receive", &receive)])
     } else {
-        "Wait until the boost is available.".into()
+        tr(keys::Q_MONEY_BOOST_WAIT).to_string()
     }
 }
 
 /// The line over the reassign list (`lng_boost_reassign_text`).
 pub fn reassign_text(name: &str, receive: i32) -> String {
     if receive > 0 {
-        format!(
-            "To boost {name}, reassign a previous boost or gift Telegram Premium to a friend to get {}.",
-            plural(receive, "additional boost", "additional boosts")
+        let receive = trn(keys::Q_MONEY_BOOST_ADDITIONAL, receive);
+        tr_with(
+            keys::Q_MONEY_BOOST_REASSIGN_GIFT,
+            &[("name", name), ("receive", &receive)],
         )
     } else {
-        format!("To boost {name}, reassign a previous boost.")
+        tr_with(keys::Q_MONEY_BOOST_REASSIGN, &[("name", name)])
     }
 }
 
 /// "You currently boost A. Do you want to boost B instead?"
 pub fn replace_question(from: &str, to: &str) -> String {
-    format!("You currently boost {from}. Do you want to boost {to} instead?")
+    tr_with(
+        keys::Q_MONEY_BOOST_REPLACE_QUESTION,
+        &[("from", from), ("to", to)],
+    )
 }
 
 /// How many distinct groups and channels the picked slots come from.
@@ -424,17 +438,20 @@ pub fn sources(
 /// `lng_boost_reassign_done`.
 pub fn reassign_done_text(count: usize, groups: usize, channels: usize) -> String {
     let from = if groups == 0 {
-        format!("{channels} channel{}", if channels == 1 { "" } else { "s" })
+        trn(keys::Q_MONEY_BOOST_CHANNELS, channels as i64)
     } else if channels == 0 {
-        format!("{groups} group{}", if groups == 1 { "" } else { "s" })
+        trn(keys::Q_MONEY_BOOST_GROUPS, groups as i64)
     } else {
-        format!("{} groups and channels", groups + channels)
+        tr_with(
+            keys::Q_MONEY_BOOST_GROUPS_AND_CHANNELS,
+            &[("count", &(groups + channels).to_string())],
+        )
     };
-    if count == 1 {
-        format!("1 boost is reassigned from {from}.")
-    } else {
-        format!("{count} boosts are reassigned from {from}.")
-    }
+    trn_with(
+        keys::Q_MONEY_BOOST_REASSIGNED,
+        count as i64,
+        &[("from", &from)],
+    )
 }
 
 /// What a box that is working waits for. Closing the box, or an error, ends

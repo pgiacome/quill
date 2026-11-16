@@ -163,6 +163,8 @@ jobs:
         run: bash scripts/test-refresh-interval.sh
       - name: tests (vendored GPUI window list)
         run: bash scripts/test-window-list.sh
+      - name: tests (vendored GPUI X11 scale)
+        run: bash scripts/test-x11-scale.sh
       - name: tests (vendored GPUI timer queue)
         run: bash scripts/test-timer-queue.sh
       - name: tests (vendored GPUI timer thread steps)

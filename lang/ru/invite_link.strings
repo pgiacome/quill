@@ -1,0 +1,4 @@
+// invite_link: the New Link / Edit Link box (tdesktop ui/boxes/edit_invite_link.cpp, edit_invite_link_session.cpp).
+"qll_invite_link_could_not_load_more_members" = "Не удалось загрузить больше участников";
+"qll_invite_link_could_not_load_more_requests" = "Не удалось загрузить больше заявок";
+"qll_invite_link_could_not_load_more_join_requests" = "Не удалось загрузить больше заявок на вступление";

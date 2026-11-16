@@ -5,6 +5,7 @@
 //! tab when the peer chose one. Quill's profile shows the shared-media
 //! gallery for every tab: Posts opens the Stories tab, Gifts the Gifts tab.
 #![deny(clippy::indexing_slicing)]
+use crate::lang::{keys, tr};
 use crate::state::SharedMediaTab;
 use serde_json::Value;
 
@@ -61,14 +62,14 @@ impl ProfileTab {
     /// Label in the chooser.
     pub fn label(self) -> &'static str {
         match self {
-            ProfileTab::Posts => "Posts",
-            ProfileTab::Gifts => "Gifts",
-            ProfileTab::Media => "Media",
-            ProfileTab::Files => "Files",
-            ProfileTab::Links => "Links",
-            ProfileTab::Music => "Music",
-            ProfileTab::Voice => "Voice messages",
-            ProfileTab::Gifs => "GIFs",
+            ProfileTab::Posts => tr(keys::Q_PEOPLE_PROFILE_TAB_POSTS),
+            ProfileTab::Gifts => tr(keys::Q_PEOPLE_PROFILE_TAB_GIFTS),
+            ProfileTab::Media => tr(keys::MEDIA_TYPE_MEDIA),
+            ProfileTab::Files => tr(keys::MEDIA_TYPE_FILES),
+            ProfileTab::Links => tr(keys::Q_PEOPLE_PROFILE_TAB_LINKS),
+            ProfileTab::Music => tr(keys::Q_PEOPLE_PROFILE_TAB_MUSIC),
+            ProfileTab::Voice => tr(keys::Q_PEOPLE_PROFILE_TAB_VOICE),
+            ProfileTab::Gifs => tr(keys::MEDIA_ANIMATION_TITLE),
         }
     }
 

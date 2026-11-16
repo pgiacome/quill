@@ -28,7 +28,7 @@ mod transport;
 /// mismatched, or already-joined call.
 #[test]
 fn join_video_chat_guard_allows_tracked_unjoined_call() {
-    const UNJOINED_CALL: &str = r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":555,"unique_id":"999","title":"Demo voice","invite_link":"","paid_message_star_count":0,"scheduled_start_date":0,"enabled_start_notification":false,"is_active":true,"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":false,"need_rejoin":false,"is_owned":false,"can_be_managed":true,"participant_count":0,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":false,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0}}"#;
+    const UNJOINED_CALL: &str = r#"{"@type":"groupCall","id":555,"unique_id":"999","title":"Demo voice","invite_link":"","paid_message_star_count":0,"scheduled_start_date":0,"enabled_start_notification":false,"is_active":true,"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":false,"need_rejoin":false,"is_owned":false,"can_be_managed":true,"participant_count":0,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":false,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0}"#;
 
     let store = MemorySecretStore::new();
     let (dir, prepared) = prepared_tmp(&store);
@@ -44,10 +44,9 @@ fn join_video_chat_guard_allows_tracked_unjoined_call() {
     // No tracked call: rejected.
     assert_invalid(driver.join_video_chat(555));
 
-    // Track call 555 unjoined, as `getGroupCall` would: join allowed.
-    driver
-        .ingest(copy_and_parse(UNJOINED_CALL, &seq, &dyn_sink).unwrap())
-        .unwrap();
+    // Track call 555 unjoined, as the answer to the person's own
+    // `getGroupCall`: join allowed.
+    answer_group_call_fetch(&mut driver, &seq, &dyn_sink, UNJOINED_CALL);
     assert!(
         driver
             .session

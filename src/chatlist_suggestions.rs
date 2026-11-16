@@ -10,6 +10,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::RequestId;
+use crate::lang::{keys, tr, tr_with};
 use std::collections::BTreeSet;
 
 pub const ACTION_BIRTHDATE: &str = "suggestedActionSetBirthdate";
@@ -246,29 +247,39 @@ pub fn dismiss_action(suggestion: &Suggestion) -> Option<&'static str> {
 /// Label of a birthday in the contacts list: Yesterday / Today / Tomorrow
 /// relative to `month`/`day`, else the date.
 pub fn birthday_label(b: &CloseBirthday, month: u8, day: u8) -> String {
-    const MONTHS: [&str; 12] = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    const MONTHS: [crate::lang::Key; 12] = [
+        keys::MONTH_DAY1,
+        keys::MONTH_DAY2,
+        keys::MONTH_DAY3,
+        keys::MONTH_DAY4,
+        keys::MONTH_DAY5,
+        keys::MONTH_DAY6,
+        keys::MONTH_DAY7,
+        keys::MONTH_DAY8,
+        keys::MONTH_DAY9,
+        keys::MONTH_DAY10,
+        keys::MONTH_DAY11,
+        keys::MONTH_DAY12,
     ];
     if b.month == month && b.day == day {
-        return "Today".into();
+        return tr(keys::Q_CHATLIST_TODAY).into();
     }
     // Month edges: the day after the 28th-31st is the 1st of the next
     // month, so compare by shape instead of arithmetic.
     let tomorrow = day_after(month, day);
     let yesterday = day_before(month, day);
     if (b.month, b.day) == tomorrow {
-        "Tomorrow".into()
+        tr(keys::Q_CHATLIST_TOMORROW).into()
     } else if (b.month, b.day) == yesterday {
-        "Yesterday".into()
+        tr(keys::Q_CHATLIST_YESTERDAY).into()
     } else {
-        format!(
-            "{} {}",
-            MONTHS
-                .get(usize::from(b.month.clamp(1, 12)) - 1)
-                .copied()
-                .unwrap_or_default(),
-            b.day
-        )
+        let name = MONTHS
+            .get(usize::from(b.month.clamp(1, 12)) - 1)
+            .copied()
+            .map(tr)
+            .unwrap_or_default();
+        let day = b.day.to_string();
+        tr_with(keys::MONTH_DAY, &[("month", name), ("day", &day)])
     }
 }
 
@@ -474,6 +485,6 @@ mod tests {
         assert_eq!(birthday_label(&b(1, 1), 12, 31), "Tomorrow");
         assert_eq!(birthday_label(&b(12, 31), 1, 1), "Yesterday");
         assert_eq!(birthday_label(&b(3, 1), 2, 29), "Tomorrow");
-        assert_eq!(birthday_label(&b(7, 4), 3, 14), "Jul 4");
+        assert_eq!(birthday_label(&b(7, 4), 3, 14), "July 4");
     }
 }

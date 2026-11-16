@@ -6,6 +6,7 @@
 //! Pure pixels and numbers; the editor UI is `ui/photo_editor_set.rs`.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 #[cfg(feature = "ui")]
 use image::RgbaImage;
 
@@ -39,10 +40,10 @@ impl Corners {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Large => "Large",
-            Self::Medium => "Medium",
-            Self::Small => "Small",
-            Self::None => "None",
+            Self::Large => tr(keys::Q_MISC_CORNERS_LARGE),
+            Self::Medium => tr(keys::Q_MISC_CORNERS_MEDIUM),
+            Self::Small => tr(keys::Q_MISC_CORNERS_SMALL),
+            Self::None => tr(keys::Q_MISC_CORNERS_NONE),
         }
     }
 

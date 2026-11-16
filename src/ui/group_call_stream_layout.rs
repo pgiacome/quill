@@ -83,6 +83,8 @@ pub(crate) enum StreamJoinIntent {
     /// The chat's video chat button or a stream link: this call, joined
     /// when it is a stream.
     Call(i32),
+    /// The Calls tab's Join: join this call whatever its kind.
+    Join(i32),
     /// You created the chat's new call (tdesktop `createGroupCall` joins
     /// it right away): joined whatever its kind, as `join_as` when set.
     Created {
@@ -94,7 +96,7 @@ pub(crate) enum StreamJoinIntent {
 impl StreamJoinIntent {
     pub(super) fn matches(self, call: i32, chat: Option<i64>) -> bool {
         match self {
-            Self::Call(id) => id == call,
+            Self::Call(id) | Self::Join(id) => id == call,
             Self::Created { chat: id, .. } => chat == Some(id),
         }
     }
@@ -250,8 +252,11 @@ impl QuillApp {
         };
         if let Some(calls) = calls {
             calls.group_call_error = None;
-            if let StreamJoinIntent::Call(id) = intent {
-                calls.take_group_call_fetch_failure(id);
+            match intent {
+                StreamJoinIntent::Call(id) | StreamJoinIntent::Join(id) => {
+                    calls.take_group_call_fetch_failure(id);
+                }
+                StreamJoinIntent::Created { .. } => {}
             }
         }
         // Asking again brings a window you closed back.

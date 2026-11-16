@@ -13,7 +13,8 @@
 //! `connect::suggested_posts`, the screens in `ui::suggested_posts_ui`.
 
 use crate::ids::{ChatId, MessageId, RequestId};
-use crate::local_time::{CivilTime, hhmm, month_name};
+use crate::lang::{keys, tr, tr_with};
+use crate::local_time::{CivilTime, hhmm, short_month_name};
 use serde_json::{Value, json};
 use std::collections::{HashMap, VecDeque};
 
@@ -200,11 +201,9 @@ impl SuggestTerms {
 }
 
 /// The suggest bar's title (`lng_suggest_bar_title`).
-pub const BAR_TITLE: &str = "Suggest a Post Below";
-/// The bar's and the price box's title when changing an offer
-/// (`lng_suggest_options_change`).
-pub const CHANGE_TITLE: &str = "Suggest Changes";
-
+pub fn bar_title() -> &'static str {
+    tr(keys::Q_MONEY_SUGGEST_A_POST_BELOW)
+}
 /// The suggest bar's second line (`SuggestOptionsBar::composeText`). The
 /// amount is drawn as the currency icon followed by the number, so the
 /// line comes in parts.
@@ -221,13 +220,17 @@ pub enum BarLine {
 }
 
 /// `lng_suggest_bar_text`.
-pub const BAR_PROMPT: &str = "Click to offer a price for publishing.";
+pub fn bar_prompt() -> &'static str {
+    tr(keys::Q_MONEY_CLICK_TO_OFFER_A_PRICE_FOR)
+}
 /// What follows the amount in `lng_suggest_bar_priced`.
-pub const BAR_PRICED_TAIL: &str = " for publishing anytime.";
+pub fn bar_priced_tail() -> &'static str {
+    tr(keys::Q_MONEY_FOR_PUBLISHING_ANYTIME)
+}
 
 /// "Publish on {date}" (`lng_suggest_bar_dated`).
 pub fn bar_dated(date: &str) -> String {
-    format!("Publish on {date}")
+    tr_with(keys::Q_MONEY_PUBLISH_ON, &[("date", date)])
 }
 
 /// What follows the amount when both are set: three spaces, the calendar
@@ -239,21 +242,35 @@ pub fn bar_both_tail(date: &str) -> String {
 /// "Mar 5 at 10:00", or "Mar 5, 2027 at 10:00" in another year
 /// (tdesktop `langDateTime` as the bar and the boxes show a time).
 pub fn date_time_label(date: &CivilTime, now: &CivilTime) -> String {
-    let month = month_name(date.month).get(..3).unwrap_or_default();
-    let time = hhmm(date);
-    if date.year == now.year {
-        format!("{month} {} at {time}", date.day)
+    let day = date.day.to_string();
+    let date_text = if date.year == now.year {
+        tr_with(
+            keys::MONTH_DAY,
+            &[("month", short_month_name(date.month)), ("day", &day)],
+        )
     } else {
-        format!("{month} {}, {} at {time}", date.day, date.year)
-    }
+        tr_with(
+            keys::MONTH_DAY_YEAR,
+            &[
+                ("month", short_month_name(date.month)),
+                ("day", &day),
+                ("year", &date.year.to_string()),
+            ],
+        )
+    };
+    tr_with(
+        keys::MEDIAVIEW_DATE_TIME,
+        &[("date", &date_text), ("time", &hhmm(date))],
+    )
 }
 
 /// The block's time: "today at 10:00", "yesterday at 10:00", else
 /// [`date_time_label`] (tdesktop `FormatDateTime`).
 pub fn block_time_label(date: &CivilTime, now: &CivilTime) -> String {
+    let time = hhmm(date);
     match now.day_number().checked_sub(date.day_number()) {
-        Some(0) => format!("today at {}", hhmm(date)),
-        Some(1) => format!("yesterday at {}", hhmm(date)),
+        Some(0) => tr_with(keys::MEDIAVIEW_TODAY, &[("time", &time)]),
+        Some(1) => tr_with(keys::MEDIAVIEW_YESTERDAY, &[("time", &time)]),
         _ => date_time_label(date, now),
     }
 }
@@ -262,7 +279,7 @@ pub fn block_time_label(date: &CivilTime, now: &CivilTime) -> String {
 /// with `civil_at` giving the local time of an instant.
 pub fn time_value(send_date: i32, now_unix: i64, civil_at: impl Fn(i64) -> CivilTime) -> String {
     if send_date <= 0 {
-        return "Anytime".into();
+        return tr(keys::Q_MONEY_ANYTIME).to_string();
     }
     date_time_label(&civil_at(i64::from(send_date)), &civil_at(now_unix))
 }
@@ -283,15 +300,15 @@ impl SuggestMode {
     pub fn price_title(self) -> &'static str {
         match self {
             Self::New | Self::Publish => "Suggest a Message",
-            Self::Change => CHANGE_TITLE,
+            Self::Change => tr(keys::Q_MONEY_SUGGEST_CHANGES),
         }
     }
 
     /// The time box title ("Time" / "Edit Time").
     pub fn time_title(self) -> &'static str {
         match self {
-            Self::New | Self::Publish => "Time",
-            Self::Change => "Edit Time",
+            Self::New | Self::Publish => tr(keys::Q_MONEY_SUGGEST_TIME),
+            Self::Change => tr(keys::Q_MONEY_SUGGEST_EDIT_TIME),
         }
     }
 
@@ -714,8 +731,8 @@ impl SuggestBar {
 
     pub fn title(&self) -> &'static str {
         match self.mode() {
-            SuggestMode::Change => CHANGE_TITLE,
-            SuggestMode::New | SuggestMode::Publish => BAR_TITLE,
+            SuggestMode::Change => tr(keys::Q_MONEY_SUGGEST_CHANGES),
+            SuggestMode::New | SuggestMode::Publish => bar_title(),
         }
     }
 }
