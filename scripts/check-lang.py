@@ -6,6 +6,11 @@ Fails when:
   baseline (scripts/lang-baseline.txt, "<count> <path>"); files not listed
   must have none;
 - a key in lang/en/*.strings is not used anywhere in src/;
+- a qll_* key copies the English of an existing lng_* key (same text and
+  plural forms) and is not in scripts/lng-reuse-baseline.txt. Telegram
+  already translates lng_* in every language; a qll_* gets a translation
+  only from a hand-written overlay. Reuse the lng_* key instead. The
+  baseline lists the duplicates that predate the check and may only shrink;
 - a status note (set_note / set_status_note / StatusNote::*) is built from a
   Rust Debug dump (`{err:?}`): map the error with user_error() instead.
 
@@ -23,6 +28,10 @@ import re
 import sys
 
 BASELINE = 'scripts/lang-baseline.txt'
+LNG_BASELINE = 'scripts/lng-reuse-baseline.txt'
+ENGLISH_PAIR = re.compile(
+    r'^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"\s*;'
+)
 SKIP_PATH = re.compile(r'test|demo|fixture')
 SKIP_LINE = re.compile(
     r'^\s*(#\[|//)|\b(debug|info|warn|error|trace|log|eprintln|println|panic|unreachable|todo|assert\w*)!'
@@ -89,6 +98,59 @@ def load_baseline():
     return out
 
 
+def english_values():
+    """Base key -> {form or '': value} from every lang/en file."""
+    out = {}
+    for name in sorted(os.listdir('lang/en')):
+        if not name.endswith('.strings'):
+            continue
+        path = os.path.join('lang/en', name)
+        for line in open(path, encoding='utf-8'):
+            match = ENGLISH_PAIR.match(line.strip())
+            if not match:
+                continue
+            key, value = match.groups()
+            base, _, form = key.partition('#')
+            out.setdefault(base, {})[form] = value
+    return out
+
+
+def lng_duplicates(values=None):
+    """qll_* keys whose English text and forms equal an lng_* key's."""
+    values = values or english_values()
+    by_text = {}
+    for key, forms in values.items():
+        if key.startswith('lng_'):
+            by_text.setdefault(tuple(sorted(forms.items())), []).append(key)
+    out = {}
+    for key, forms in values.items():
+        if key.startswith('qll_'):
+            match = by_text.get(tuple(sorted(forms.items())))
+            if match:
+                out[key] = sorted(match)
+    return out
+
+
+def load_lng_baseline():
+    if not os.path.exists(LNG_BASELINE):
+        return set()
+    return {
+        line.strip()
+        for line in open(LNG_BASELINE, encoding='utf-8')
+        if line.strip() and not line.startswith('#')
+    }
+
+
+def write_lng_baseline(keys):
+    lines = [
+        '# qll_* keys whose English already equals an lng_* key.',
+        '# Telegram translates lng_*; a qll_* only gets a hand-written overlay.',
+        '# Reuse the lng_* key. This baseline may only shrink (run --update).',
+    ]
+    lines.extend(sorted(keys))
+    open(LNG_BASELINE, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
+
+
 def unused_keys():
     used = set()
     for root, _, names in os.walk('src'):
@@ -143,6 +205,23 @@ def main():
             if count:
                 lines.append('%d %s' % (count, path))
         open(BASELINE, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
+    values = english_values()
+    duplicates = lng_duplicates(values)
+    known_duplicates = load_lng_baseline()
+    for key, lngs in sorted(duplicates.items()):
+        if key in known_duplicates:
+            continue
+        failed = True
+        forms = values[key]
+        text = forms.get('') or forms.get('other') or next(iter(forms.values()))
+        print('LNG-REUSE %s = "%s": reuse %s instead of a new qll_* key.' % (key, text, ', '.join(lngs)))
+    stale = known_duplicates - set(duplicates)
+    if update:
+        write_lng_baseline(known_duplicates & set(duplicates))
+    else:
+        for key in sorted(stale):
+            failed = True
+            print('LNG-REUSE-STALE %s: no longer copies an lng_* value; run --update to shrink the baseline.' % key)
     for path in ui_files():
         for line in debug_dump_notes(path):
             failed = True
