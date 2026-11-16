@@ -50,7 +50,7 @@ use super::{
     XimCallbackEvent, XimHandler, button_or_scroll_from_event_detail, check_reply,
     clipboard::{self, Clipboard},
     get_reply, get_valuator_axis_index, handle_connection_error, modifiers_from_state,
-    next_frame_at, pressed_button_from_mask, xcb_flush, xsettings_scale_factor,
+    next_frame_at, pressed_button_from_mask, xcb_flush, xsettings_scale_factor, CoreScreen,
 };
 
 use crate::linux::{
@@ -2837,18 +2837,27 @@ fn get_scale_factor(
 }
 
 /// Quill: the scale the desktop's XSETTINGS manager asks for, or `None` when
-/// no manager runs on this screen or its property cannot be read.
+/// no manager runs on this screen, its property cannot be read or it says
+/// nothing about scale.
 fn get_xsettings_scale_factor(connection: &XCBConnection, screen_index: usize) -> Option<f32> {
     // The property's length in 32-bit units; real ones are a few kilobytes.
     const MAX_PROPERTY_WORDS: u32 = 1 << 18;
 
-    let selection_name = format!("_XSETTINGS_S{screen_index}");
-    let selection = connection
-        .intern_atom(false, selection_name.as_bytes())
-        .ok()?
-        .reply()
-        .ok()?
-        .atom;
+    let screen = connection.setup().roots.get(screen_index)?;
+    let core_screen = CoreScreen {
+        width_px: screen.width_in_pixels,
+        height_px: screen.height_in_pixels,
+        width_mm: screen.width_in_millimeters,
+        height_mm: screen.height_in_millimeters,
+    };
+
+    // only_if_exists: an atom no manager ever interned answers NONE, and
+    // the server is not left holding a new one.
+    let intern = |name: &[u8]| {
+        let atom = connection.intern_atom(true, name).ok()?.reply().ok()?.atom;
+        (atom != x11rb::NONE).then_some(atom)
+    };
+    let selection = intern(format!("_XSETTINGS_S{screen_index}").as_bytes())?;
     let owner = connection
         .get_selection_owner(selection)
         .ok()?
@@ -2859,12 +2868,7 @@ fn get_xsettings_scale_factor(connection: &XCBConnection, screen_index: usize) -
         return None;
     }
 
-    let property = connection
-        .intern_atom(false, b"_XSETTINGS_SETTINGS")
-        .ok()?
-        .reply()
-        .ok()?
-        .atom;
+    let property = intern(b"_XSETTINGS_SETTINGS")?;
     let settings = connection
         .get_property(
             false,
@@ -2881,8 +2885,7 @@ fn get_xsettings_scale_factor(connection: &XCBConnection, screen_index: usize) -
         return None;
     }
 
-    let scale = xsettings_scale_factor(&settings.value)?;
-    valid_scale_factor(scale).then_some(scale)
+    xsettings_scale_factor(&settings.value, core_screen)
 }
 
 fn get_randr_scale_factor(connection: &XCBConnection, screen_index: usize) -> Option<f32> {

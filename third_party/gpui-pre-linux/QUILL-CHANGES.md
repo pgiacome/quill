@@ -75,14 +75,18 @@ desktop's scale instead of the monitor's pixel density
 (`docs/decisions/x11-desktop-scale.md`):
 
 - `src/linux/x11/xsettings_scale.rs` (new): reads the scale from an
-  `_XSETTINGS_SETTINGS` property the way GTK 3 does
-  (`Gdk/WindowScalingFactor` times `Gdk/UnscaledDPI`, else `Xft/DPI`, over
-  96). A manager that publishes no scale key asks for 1.0. Unit tests run
-  with `scripts/test-x11-scale.sh`.
+  `_XSETTINGS_SETTINGS` property: `Gdk/WindowScalingFactor` times a chosen
+  text DPI (`Gdk/UnscaledDPI`, else `Xft/DPI`) over 96, the rule Chromium
+  and Qt use (GTK 3 applies the DPI to fonts only). An `Xft/DPI` equal to
+  the DPI xfsettingsd measures from the core screen, and any out-of-range
+  value, count as unset. A manager that sets neither a window scale nor a
+  chosen DPI gives no answer. Unit tests, including bytes captured from
+  xfsettingsd and xsettingsd (`xsettings_fixtures/`), run with
+  `scripts/test-x11-scale.sh`.
 - `src/linux/x11/client.rs`: `get_scale_factor` asks the XSETTINGS manager
   (`get_xsettings_scale_factor`) after `GPUI_X11_SCALE_FACTOR` and `Xft.dpi`
-  and before the RandR physical-size guess, which is now only reached when
-  no XSETTINGS manager runs. This replaces upstream's
+  and before the RandR physical-size guess, which is now reached only when
+  no XSETTINGS manager answers. This replaces upstream's
   `TODO: Use scale factor from XSettings here`.
 - `src/linux/x11.rs`: declares the new module.
 
