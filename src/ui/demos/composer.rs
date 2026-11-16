@@ -50,7 +50,8 @@ register_demos![
             app.composer_ui.file_drag = crate::ui::drop_zones::FileDrag::Preview(state);
         }
     }),
-    // Ready chat draft with typos underlined (red wavy).
+    // Ready chat draft with typos underlined (red wavy);
+    // `QUILL_DEMO_SPELL_TEXT` sets the draft.
     DemoSpec::chat_list("ready-spellcheck").setup(|app, window, cx| app.demo_spellcheck(
         SpellcheckDemo::Spellcheck,
         window,
@@ -261,6 +262,9 @@ impl QuillApp {
         } else {
             "Teh quick brown fox has a speling error"
         };
+        // `QUILL_DEMO_SPELL_TEXT` replaces the draft (mixed-direction checks).
+        let custom = std::env::var("QUILL_DEMO_SPELL_TEXT").ok();
+        let draft = custom.as_deref().unwrap_or(draft);
         self.composer.update(cx, |input, cx| {
             input.set_value(draft, window, cx);
         });
