@@ -1,0 +1,4 @@
+"qll_payment_card_processing_error" = "Извините, произошла ошибка обработки.";
+"qll_payment_card_smartglocal_error" = "Ошибка SmartGlocal: {id}";
+"qll_payment_card_stripe_error" = "Ошибка Stripe: {id}";
+"qll_payment_test_title" = "{title} (тест)";

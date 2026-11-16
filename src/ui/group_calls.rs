@@ -821,17 +821,19 @@ impl QuillApp {
     }
 
     /// Phase C2h: copy the RTMP URL or stream key.
-    pub(super) fn copy_rtmp_value(&mut self, label: &str, value: &str, cx: &mut Context<Self>) {
+    pub(super) fn copy_rtmp_value(
+        &mut self,
+        copied: quill::lang::Key,
+        value: &str,
+        cx: &mut Context<Self>,
+    ) {
         // A box over the call window waits for no one under the lock
         // (`calls::lock_layers`).
         if self.refused_while_locked() {
             return;
         }
         cx.write_to_clipboard(ClipboardItem::new_string(value.to_string()));
-        self.set_note(StatusNote::info(tr_with(
-            keys::Q_NOTES_VALUE_COPIED,
-            &[("label", label)],
-        )));
+        self.set_note(StatusNote::info(tr(copied)));
         cx.notify();
     }
 

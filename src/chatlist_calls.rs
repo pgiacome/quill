@@ -6,15 +6,25 @@
 //! the same with one request, `deleteAllCallMessages(revoke)`.
 #![deny(clippy::indexing_slicing)]
 
-use crate::lang::{keys, tr_with};
+use crate::lang::{keys, tr, tr_with};
 use crate::local_time::{CivilTime, hhmm, month_name, needs_year, short_date};
 
-pub const CLEAR_TITLE: &str = "Clear calls";
-pub const CLEAR_ABOUT: &str = "Are you sure you want to completely clear your calls log?";
-pub const CLEAR_REVOKE_LABEL: &str = "Delete for everyone";
-pub const CLEAR_BUTTON: &str = "Clear";
-pub const CLEAR_ALL_LABEL: &str = "Clear all";
-
+/// The confirm box's title.
+pub fn clear_title() -> &'static str {
+    tr(keys::Q_OPS_CLEAR_CALLS)
+}
+/// The confirm box's question.
+pub fn clear_about() -> &'static str {
+    tr(keys::Q_OPS_CLEAR_CALLS_ABOUT)
+}
+/// The "delete for everyone" checkbox label.
+pub fn clear_revoke_label() -> &'static str {
+    tr(keys::Q_CHAT_DELETE_FOR_EVERYONE)
+}
+/// The confirm button.
+pub fn clear_button() -> &'static str {
+    tr(keys::Q_OPS_CLEAR)
+}
 /// Whether the "Clear all" action is offered: there is something to
 /// clear and no clear is already in flight.
 pub fn can_clear(entry_count: usize, clearing: bool) -> bool {
@@ -23,7 +33,10 @@ pub fn can_clear(entry_count: usize, clearing: bool) -> bool {
 
 /// Toast after the server refuses the request.
 pub fn clear_failed(code: i32) -> String {
-    format!("could not clear the call history (error {code})")
+    tr_with(
+        keys::Q_OPS_COULD_NOT_CLEAR_THE_CALL_HISTORY,
+        &[("code", &code.to_string())],
+    )
 }
 
 /// The status line of a call row: "12:34" today, "yesterday at 12:34",

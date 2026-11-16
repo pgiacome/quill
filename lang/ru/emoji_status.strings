@@ -1,0 +1,5 @@
+// emoji_status: the emoji status selector and its "Set Status for..." box (tdesktop English).
+"qll_emoji_status_collectibles" = "Коллекционные";
+"qll_emoji_status_search" = "Поиск эмодзи-статусов";
+"qll_emoji_status_selector" = "Эмодзи-статус";
+"qll_emoji_status_time_picker" = "Длительность статуса";

@@ -27,7 +27,7 @@ pub(in crate::ui) fn call_title(
     if is_video {
         tr_with(keys::Q_OPS_VIDEO_CALL_4, &[("what", what)])
     } else {
-        format!("{what} call")
+        tr_with(keys::Q_OPS_VOICE_CALL_4, &[("what", what)])
     }
 }
 
@@ -194,6 +194,25 @@ mod tests {
         assert_eq!(call_title(false, &HungUp, false), "Incoming call");
         assert_eq!(call_title(false, &Disconnected, false), "Incoming call");
         assert!(call_missed(&Declined) && call_missed(&Missed) && !call_missed(&HungUp));
+    }
+
+    #[test]
+    fn voice_titles_cover_every_reason() {
+        for (reason, expected) in [
+            (Missed, "Missed call"),
+            (Declined, "Declined call"),
+            (HungUp, "Incoming call"),
+            (Disconnected, "Incoming call"),
+        ] {
+            assert_eq!(call_title(false, &reason, false), expected);
+        }
+        for (reason, expected) in [
+            (Missed, "Cancelled call"),
+            (HungUp, "Outgoing call"),
+            (Disconnected, "Outgoing call"),
+        ] {
+            assert_eq!(call_title(false, &reason, true), expected);
+        }
     }
 
     #[test]

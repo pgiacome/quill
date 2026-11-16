@@ -310,11 +310,17 @@ pub(super) fn viewer_error_message(
     error: &crate::ui::video_player::PlayerError,
 ) -> String {
     use crate::ui::video_player::ErrorKind;
-    let noun = if item.loops() { "animation" } else { "video" };
+    let (noun, noun_gen) = if item.loops() {
+        (keys::Q_AV_NOUN_ANIMATION, keys::Q_AV_NOUN_ANIMATION_GEN)
+    } else {
+        (keys::Q_AV_NOUN_VIDEO, keys::Q_AV_NOUN_VIDEO_GEN)
+    };
     match error.kind {
-        ErrorKind::Unsupported => tr_with(keys::Q_AV_FORMAT_NOT_SUPPORTED, &[("noun", noun)]),
+        ErrorKind::Unsupported => {
+            tr_with(keys::Q_AV_FORMAT_NOT_SUPPORTED, &[("noun", tr(noun_gen))])
+        }
         ErrorKind::Open | ErrorKind::Decode => {
-            tr_with(keys::Q_AV_COULDNT_PLAY_THIS, &[("noun", noun)])
+            tr_with(keys::Q_AV_COULDNT_PLAY_THIS, &[("noun", tr(noun))])
         }
     }
 }

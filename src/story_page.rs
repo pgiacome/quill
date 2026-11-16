@@ -6,6 +6,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::{ChatId, RequestId};
+use crate::lang::{keys, tr};
 use crate::state::RequestPurpose;
 
 /// Phase 9.7: one chat's `getChatPostedToChatPageStories` state — the
@@ -226,23 +227,23 @@ impl StoryPageOpKind {
     /// The status-line wording.
     pub fn label(self) -> &'static str {
         match self {
-            Self::LoadAlbums => "loading albums",
-            Self::LoadAlbumStories => "loading album stories",
-            Self::CreateAlbum => "creating album",
-            Self::ReorderAlbums => "reordering albums",
-            Self::DeleteAlbum => "deleting album",
-            Self::RenameAlbum => "renaming album",
-            Self::AddAlbumStories => "adding stories to album",
-            Self::RemoveAlbumStories => "removing stories from album",
-            Self::ReorderAlbumStories => "reordering album stories",
-            Self::LoadArchive => "loading archived stories",
-            Self::LoadChatPage => "loading chat page stories",
-            Self::PinStories => "pinning stories",
-            Self::LoadCloseFriends => "loading close friends",
-            Self::SaveCloseFriends => "saving close friends",
-            Self::MoveStories => "moving stories",
-            Self::ToggleProfileStory => "updating profile stories",
-            Self::Other => "story request",
+            Self::LoadAlbums => tr(keys::Q_STORIES_LIVE_LOADING_ALBUMS),
+            Self::LoadAlbumStories => tr(keys::Q_STORIES_LIVE_LOADING_ALBUM_STORIES),
+            Self::CreateAlbum => tr(keys::Q_STORIES_LIVE_CREATING_ALBUM),
+            Self::ReorderAlbums => tr(keys::Q_STORIES_LIVE_REORDERING_ALBUMS),
+            Self::DeleteAlbum => tr(keys::Q_STORIES_LIVE_DELETING_ALBUM),
+            Self::RenameAlbum => tr(keys::Q_STORIES_LIVE_RENAMING_ALBUM),
+            Self::AddAlbumStories => tr(keys::Q_STORIES_LIVE_ADDING_STORIES_TO_ALBUM),
+            Self::RemoveAlbumStories => tr(keys::Q_STORIES_LIVE_REMOVING_STORIES_FROM_ALBUM),
+            Self::ReorderAlbumStories => tr(keys::Q_STORIES_LIVE_REORDERING_ALBUM_STORIES),
+            Self::LoadArchive => tr(keys::Q_STORIES_LIVE_LOADING_ARCHIVED_STORIES),
+            Self::LoadChatPage => tr(keys::Q_STORIES_LIVE_LOADING_CHAT_PAGE_STORIES),
+            Self::PinStories => tr(keys::Q_STORIES_LIVE_PINNING_STORIES),
+            Self::LoadCloseFriends => tr(keys::Q_STORIES_LIVE_LOADING_CLOSE_FRIENDS),
+            Self::SaveCloseFriends => tr(keys::Q_STORIES_LIVE_SAVING_CLOSE_FRIENDS),
+            Self::MoveStories => tr(keys::Q_STORIES_LIVE_MOVING_STORIES),
+            Self::ToggleProfileStory => tr(keys::Q_STORIES_LIVE_UPDATING_PROFILE_STORIES),
+            Self::Other => tr(keys::Q_STORIES_LIVE_STORY_REQUEST),
         }
     }
 }

@@ -13,7 +13,7 @@ use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::dialog::Dialog;
 use gpui_kit::*;
 use quill::chatlist_calls::{
-    CLEAR_ABOUT, CLEAR_BUTTON, CLEAR_REVOKE_LABEL, CLEAR_TITLE, can_clear,
+    can_clear, clear_about, clear_button, clear_revoke_label, clear_title,
 };
 use quill::lang::{keys, tr};
 
@@ -85,11 +85,11 @@ impl QuillApp {
                 .flex()
                 .flex_col()
                 .gap_3()
-                .child(div().text_sm().child(CLEAR_ABOUT))
+                .child(div().text_sm().child(clear_about()))
                 .child(
                     Checkbox::new("clear-calls-revoke")
                         .checked(revoke)
-                        .label(CLEAR_REVOKE_LABEL)
+                        .label(clear_revoke_label())
                         .on_click(cx.listener(|this, &on, _, cx| {
                             if let Some(clear) = this.chat_list.global.clear_calls.as_mut() {
                                 clear.revoke = on;
@@ -112,7 +112,7 @@ impl QuillApp {
                 )
                 .child(
                     Button::new("clear-calls-confirm")
-                        .label(CLEAR_BUTTON)
+                        .label(clear_button())
                         .danger()
                         .on_click(cx.listener(|this, _, window, cx| {
                             this.confirm_clear_calls(cx);
@@ -121,7 +121,7 @@ impl QuillApp {
                 );
             finish_dialog(
                 dialog,
-                CLEAR_TITLE.to_string(),
+                clear_title().to_string(),
                 body.into_any_element(),
                 Some(footer.into_any_element()),
                 on_close,

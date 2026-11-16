@@ -14,7 +14,7 @@ use gpui_kit::component::table::{Table, TableBody, TableRow};
 use gpui_kit::component::*;
 use gpui_kit::*;
 use quill::data_settings::top_chats_by_size;
-use quill::lang::{keys, tr, tr_with, trn_with};
+use quill::lang::{keys, tr, tr_with, trn, trn_with};
 use quill::limit_steps::{keep_limit_index, size_limit_index};
 use quill::storage_limits::{StorageOptionValue, keep_label, options_for, size_limit_label};
 use quill::telegram::envelope::{StorageStats, storage_category_entries};
@@ -189,14 +189,17 @@ impl QuillApp {
         };
         let question = match pending {
             StorageClear::All => tr(keys::Q_OPS_CLEAR_ALL_CACHED_FILES).to_string(),
-            StorageClear::Selected => tr_with(
-                keys::Q_LEFTOVERS_CLEAR_SELECTED_SURE,
-                &[
-                    ("count", &(selected.len()).to_string()),
-                    ("kind", (if selected.len() == 1 { "type" } else { "types" })),
-                    ("size", &(format_storage_bytes(selected_size)).to_string()),
-                ],
-            ),
+            StorageClear::Selected => {
+                let kind = trn(keys::Q_LEFTOVERS_TYPE, selected.len() as i64);
+                tr_with(
+                    keys::Q_LEFTOVERS_CLEAR_SELECTED_SURE,
+                    &[
+                        ("count", &(selected.len()).to_string()),
+                        ("kind", &kind),
+                        ("size", &(format_storage_bytes(selected_size)).to_string()),
+                    ],
+                )
+            }
             StorageClear::Chat(chat_id) => tr_with(
                 keys::Q_OPS_CLEAR_THE_CACHED_FILES_OF,
                 &[(

@@ -1,0 +1,4 @@
+// tone upload (tdesktop RingtonesBox "Upload Sound").
+"qll_tone_delete_failed" = "Не удалось удалить звук. Повторите попытку.";
+"qll_tone_upload_failed" = "Не удалось добавить звук. Повторите попытку.";
+"qll_tone_uploading" = "Загрузка…";

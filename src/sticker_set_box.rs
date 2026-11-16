@@ -2,6 +2,7 @@
 //! link, its wording and which entries the three-dot menu offers. Kept
 //! pure so it is unit tested.
 #![deny(clippy::indexing_slicing)]
+use crate::lang::{keys, tr};
 
 /// Public host for `addstickers` / `addemoji` links.
 const LINK_BASE: &str = "https://t.me/";
@@ -165,8 +166,8 @@ impl SetKind {
     /// "Add to Sticker Set" / "Add to Emoji Set" (`lng_stickers_add_to_set`).
     pub fn add_to_set_label(self) -> &'static str {
         match self {
-            Self::Stickers => "Add to Sticker Set",
-            Self::Emoji => "Add to Emoji Set",
+            Self::Stickers => tr(keys::Q_CHAT_MENU_ADD_TO_STICKER_SET),
+            Self::Emoji => tr(keys::Q_CHAT_MENU_ADD_TO_EMOJI_SET),
         }
     }
 }

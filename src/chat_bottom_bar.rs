@@ -4,6 +4,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::RequestId;
+use crate::lang::{keys, tr};
 use crate::telegram::envelope::ChannelMemberStatus;
 
 /// The action bar shown in place of the composer.
@@ -111,15 +112,15 @@ impl BottomBar {
     /// Button text. Sentence case, as the rest of Quill's copy.
     pub fn label(self) -> &'static str {
         match self {
-            BottomBar::Unblock { restart: true } => "Restart",
-            BottomBar::Unblock { restart: false } => "Unblock",
-            BottomBar::JoinChannel => "Join channel",
-            BottomBar::JoinGroup => "Join group",
-            BottomBar::ApplyToJoin => "Apply to join group",
-            BottomBar::MuteUnmute { muted: true } => "Unmute",
-            BottomBar::MuteUnmute { muted: false } => "Mute",
-            BottomBar::Start | BottomBar::Starting { .. } => "Start",
-            BottomBar::PremiumRequired => "Go Premium",
+            BottomBar::Unblock { restart: true } => tr(keys::Q_CHAT_BOTTOM_RESTART),
+            BottomBar::Unblock { restart: false } => tr(keys::Q_CHAT_BOTTOM_UNBLOCK),
+            BottomBar::JoinChannel => tr(keys::Q_CHAT_BOTTOM_JOIN_CHANNEL),
+            BottomBar::JoinGroup => tr(keys::Q_CHAT_BOTTOM_JOIN_GROUP),
+            BottomBar::ApplyToJoin => tr(keys::Q_CHAT_BOTTOM_APPLY_JOIN_GROUP),
+            BottomBar::MuteUnmute { muted: true } => tr(keys::MUTE_MENU_UNMUTE),
+            BottomBar::MuteUnmute { muted: false } => tr(keys::MUTE_MENU_MUTE),
+            BottomBar::Start | BottomBar::Starting { .. } => tr(keys::Q_CHAT_BOTTOM_START),
+            BottomBar::PremiumRequired => tr(keys::Q_CHAT_BOTTOM_GO_PREMIUM),
         }
     }
 }

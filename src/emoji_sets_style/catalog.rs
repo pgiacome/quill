@@ -3,6 +3,7 @@
 //! `ComputeState`, `StateDescription`).
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use std::path::{Path, PathBuf};
 
 /// Release of shinycake/quill the packs are attached to. A pinned tag keeps
@@ -45,7 +46,7 @@ impl EmojiSetId {
         match self {
             Self::System if cfg!(target_os = "macos") => "Apple",
             Self::System if cfg!(target_os = "windows") => "Segoe",
-            Self::System => "System",
+            Self::System => tr(keys::Q_MEDIA_EMOJI_SET_SYSTEM),
             Self::Noto => "Noto",
             Self::Twemoji => "Twemoji",
         }

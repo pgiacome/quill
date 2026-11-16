@@ -7,7 +7,7 @@
 //! Nothing here buys anything: the subscribe button opens @PremiumBot.
 
 use super::{BusinessFeature, PremiumFeature, PremiumInfo, flag, int, text_of};
-use crate::lang::{keys, tr};
+use crate::lang::{keys, tr, tr_with};
 use crate::premium_limits::{LimitPair, PremiumLimitKind};
 use crate::telegram::envelope::format_payment_price;
 use serde_json::Value;
@@ -274,8 +274,11 @@ pub fn button_plan(plans: &[PremiumPlan]) -> Option<&PremiumPlan> {
 /// "Subscribe for {price} per month" (`lng_premium_subscribe_button`).
 pub fn subscribe_label(plans: &[PremiumPlan]) -> String {
     match button_plan(plans) {
-        Some(plan) => format!("Subscribe for {} per month", plan.per_month_text()),
-        None => "Subscribe".into(),
+        Some(plan) => tr_with(
+            keys::Q_MONEY_PREMIUM_SUBSCRIBE_FOR,
+            &[("price", &plan.per_month_text())],
+        ),
+        None => tr(keys::Q_MONEY_PREMIUM_SUBSCRIBE).into(),
     }
 }
 
@@ -324,7 +327,7 @@ pub fn limit_lines(info: Option<&PremiumInfo>) -> Vec<LimitLine> {
             .iter()
             .filter_map(|row| {
                 Some(LimitLine {
-                    label: row.title?.to_string(),
+                    label: tr(row.title?).to_string(),
                     default_value: row.default_value,
                     premium_value: row.premium_value,
                     unit: PremiumLimitKind::from_td_limit_type(&row.type_name)

@@ -211,11 +211,13 @@ pub fn send_started_note(offline: bool, scheduling: ComposerScheduling, online_n
         return online_note;
     }
     match scheduling {
-        ComposerScheduling::None => "You're offline — will send when you reconnect",
+        ComposerScheduling::None => crate::lang::tr(crate::lang::keys::Q_CHAT_OFFLINE_SEND),
         ComposerScheduling::SendAtDate { .. } => {
-            "You're offline — will schedule when you reconnect"
+            crate::lang::tr(crate::lang::keys::Q_CHAT_OFFLINE_SCHEDULE)
         }
-        ComposerScheduling::SendWhenOnline => "You're offline — will send when they're online",
+        ComposerScheduling::SendWhenOnline => {
+            crate::lang::tr(crate::lang::keys::Q_CHAT_OFFLINE_WHEN_ONLINE)
+        }
     }
 }
 

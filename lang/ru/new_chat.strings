@@ -1,0 +1,3 @@
+// new_chat: the New Group / New Channel flow (tdesktop add_contact_box.cpp GroupInfoBox and SetupChannelBox, add_participants_box.cpp, menu_ttl.cpp).
+"qll_new_chat_failed" = "Не удалось создать чат: {reason}";
+"qll_new_chat_photo_failed" = "Чат создан, но не удалось установить его фото.";

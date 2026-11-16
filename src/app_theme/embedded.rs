@@ -13,6 +13,7 @@
 
 use super::keys::PaletteKey;
 use super::palette::{Palette, ThemeBackground};
+use crate::lang::{keys, tr};
 use crate::theme_colorize::Colorizer;
 
 /// One of the built-in themes. After Quill's two, the names are tdesktop's:
@@ -41,12 +42,12 @@ impl BuiltinTheme {
 
     pub fn name(self) -> &'static str {
         match self {
-            BuiltinTheme::QuillLight => "Quill Light",
-            BuiltinTheme::QuillDark => "Quill Dark",
-            BuiltinTheme::Classic => "Classic",
-            BuiltinTheme::Day => "Day",
-            BuiltinTheme::Tinted => "Tinted",
-            BuiltinTheme::Night => "Night",
+            BuiltinTheme::QuillLight => tr(keys::Q_MISC_THEME_QUILL_LIGHT),
+            BuiltinTheme::QuillDark => tr(keys::Q_MISC_THEME_QUILL_DARK),
+            BuiltinTheme::Classic => tr(keys::Q_MISC_THEME_CLASSIC),
+            BuiltinTheme::Day => tr(keys::Q_MISC_THEME_DAY),
+            BuiltinTheme::Tinted => tr(keys::Q_MISC_THEME_TINTED),
+            BuiltinTheme::Night => tr(keys::Q_MISC_THEME_NIGHT),
         }
     }
 

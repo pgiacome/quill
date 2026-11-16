@@ -1,0 +1,18 @@
+// search filters and tabs (hand-written; tdesktop keys in misc and the other files).
+"qll_search_voice" = "Голосовые";
+"qll_search_date_any" = "За всё время";
+"qll_search_date_week" = "За неделю";
+"qll_search_date_month" = "За месяц";
+"qll_search_date_year" = "За год";
+"qll_search_date_older" = "Более старые";
+"qll_search_hint_chats" = "Введите запрос для поиска по чатам и сообщениям.";
+"qll_search_hint_channels" = "Введите запрос для поиска по каналам.";
+"qll_search_hint_posts" = "Введите запрос для поиска по постам публичных каналов.";
+"qll_search_none_photos" = "Нет фотографий.";
+"qll_search_none_videos" = "Нет видео.";
+"qll_search_none_downloads" = "Загрузок пока нет.";
+"qll_search_none_links" = "Нет ссылок.";
+"qll_search_none_files" = "Нет файлов.";
+"qll_search_none_music" = "Нет музыки.";
+"qll_search_none_voice" = "Нет голосовых сообщений.";
+"qll_business_start_page_how" = "Как?";

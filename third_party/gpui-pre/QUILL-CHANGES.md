@@ -598,3 +598,8 @@ The Quill project added `App::active_drag_is::<T>()` in `src/app.rs` in 2026:
 whether the active drag's payload is a `T`, so a lifted message drag is told
 from any other drag by its payload type instead of by a marker global kept
 in step with the drag by hand.
+
+The Quill project added `MenuRole` and `Menu::role` / `OwnedMenu::role` in
+`src/platform/app_menu.rs` in 2026, so the platform finds the Window menu by
+its role instead of by the English name "Window", which a translated menu bar
+does not have.

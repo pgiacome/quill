@@ -25,6 +25,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::business_info::{BusinessLocation, OpeningHours};
+use crate::lang::{keys, tr};
 use serde_json::{Value, json};
 
 /// The quick reply shortcut that holds the greeting messages.
@@ -75,10 +76,10 @@ impl ChatType {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::NewChats => "New Chats",
-            Self::ExistingChats => "Existing Chats",
-            Self::Contacts => "Contacts",
-            Self::NonContacts => "Non-Contacts",
+            Self::NewChats => tr(keys::Q_OPS_BUSINESS_NEW_CHATS),
+            Self::ExistingChats => tr(keys::Q_OPS_BUSINESS_EXISTING_CHATS),
+            Self::Contacts => tr(keys::FILTERS_TYPE_CONTACTS),
+            Self::NonContacts => tr(keys::FILTERS_TYPE_NON_CONTACTS),
         }
     }
 }

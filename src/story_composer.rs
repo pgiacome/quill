@@ -17,6 +17,7 @@
 //! message / weather / gift areas, editing, posting as a channel.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use serde_json::{Value, json};
 
 /// Media kinds the composer accepts, detected from the path extension.
@@ -48,9 +49,9 @@ impl StoryMediaKind {
 
     pub fn label(&self) -> &'static str {
         match self {
-            StoryMediaKind::Photo => "Photo",
-            StoryMediaKind::Video => "Video",
-            StoryMediaKind::Unknown => "Unknown type",
+            StoryMediaKind::Photo => tr(keys::IN_DLG_PHOTO),
+            StoryMediaKind::Video => tr(keys::IN_DLG_VIDEO),
+            StoryMediaKind::Unknown => tr(keys::Q_MEDIA_STORY_MEDIA_UNKNOWN),
         }
     }
 }
@@ -77,10 +78,10 @@ impl StoryPrivacy {
 
     pub fn label(&self) -> &'static str {
         match self {
-            StoryPrivacy::Everyone => "Everyone",
-            StoryPrivacy::Contacts => "Contacts",
-            StoryPrivacy::CloseFriends => "Close friends",
-            StoryPrivacy::SelectedUsers => "Selected users",
+            StoryPrivacy::Everyone => tr(keys::Q_MEDIA_STORY_PRIVACY_EVERYONE),
+            StoryPrivacy::Contacts => tr(keys::Q_MEDIA_STORY_PRIVACY_CONTACTS),
+            StoryPrivacy::CloseFriends => tr(keys::Q_MEDIA_STORY_PRIVACY_CLOSE_FRIENDS),
+            StoryPrivacy::SelectedUsers => tr(keys::Q_MEDIA_STORY_PRIVACY_SELECTED),
         }
     }
 

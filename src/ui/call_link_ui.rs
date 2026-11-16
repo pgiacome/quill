@@ -6,12 +6,25 @@ use super::group_call_stream_layout::StreamJoinIntent;
 use super::link_info_boxes::finish;
 use super::shell::{DialogKind, QuillShell};
 use crate::ui::status_note::StatusNote;
+use crate::ui::user_error::user_error_for;
 use gpui_kit::component::button::*;
 use gpui_kit::component::dialog::Dialog;
 use gpui_kit::*;
-use quill::call_link::{BAD_LINK_NOTE, CallLinkStep, step_note};
+use quill::call_link::{BAD_LINK_NOTE, CallLinkStep, OfferMode, step_note};
+use quill::connect::ConnectSendError;
 use quill::ids::ChatId;
 use quill::lang::{keys, tr};
+
+/// What an offered call asks the window to do: the Calls tab's Join takes
+/// the call whatever its kind, while a link opens a stream (and keeps the
+/// call screen's Join for the other kinds). Pure, so the choice is tested
+/// without a live driver.
+pub(super) fn offered_call_intent(group_call_id: i32, mode: OfferMode) -> StreamJoinIntent {
+    match mode {
+        OfferMode::Join => StreamJoinIntent::Join(group_call_id),
+        OfferMode::OpenScreen => StreamJoinIntent::Call(group_call_id),
+    }
+}
 
 impl QuillApp {
     /// The link's chat is open: offer its call. The call screen's Join
@@ -28,38 +41,59 @@ impl QuillApp {
             cx.notify();
             return;
         };
-        match live
+        let step = live
             .driver
-            .offer_call_link(chat_id, invite_hash, live_stream)
-        {
-            Ok(step) => {
-                // A stream opened from its link joins in its window.
-                if let CallLinkStep::Offer { group_call_id } = step {
-                    self.note_stream_join_intent(StreamJoinIntent::Call(group_call_id));
-                }
-                // Busy: the leave confirmation shows in this window.
-                if matches!(step, CallLinkStep::OtherCallOn) {
-                    self.open_box(crate::ui::shell::DialogKind::CallLinkLeave);
-                }
-                self.set_note(match step_note(step, live_stream) {
-                    Some(note) => StatusNote::info(note),
-                    None if matches!(step, CallLinkStep::Offer { .. }) => {
-                        if live_stream {
-                            StatusNote::silent(tr(keys::Q_OPS_OPENING_THE_LIVE_STREAM))
-                        } else {
-                            StatusNote::silent(tr(keys::Q_OPS_OPENING_THE_VOICE_CHAT))
-                        }
-                    }
-                    None => self.screen.connection.note().clone(),
-                });
+            .offer_call_link(chat_id, invite_hash, live_stream);
+        self.show_call_offer(step, live_stream, OfferMode::OpenScreen, cx);
+    }
+
+    /// What the window does with an offer's step, for a link and for the
+    /// Calls tab's Join alike: the offered call is noted for the window
+    /// (`offered_call_intent`), a busy one asks to leave the running call
+    /// first, and the note says what happened. A link that leads nowhere
+    /// says the link is bad; a listed call that cannot be offered says
+    /// something went wrong.
+    pub(super) fn show_call_offer(
+        &mut self,
+        step: Result<CallLinkStep, ConnectSendError>,
+        live_stream: bool,
+        mode: OfferMode,
+        cx: &mut Context<Self>,
+    ) {
+        let failed = |err: Option<&ConnectSendError>| match (mode, err) {
+            (OfferMode::OpenScreen, _) => StatusNote::info(BAD_LINK_NOTE),
+            (OfferMode::Join, Some(err)) => {
+                StatusNote::error(user_error_for(keys::Q_NOTES_SOMETHING_WENT_WRONG, err))
             }
-            Err(_) => self.set_note(StatusNote::info(BAD_LINK_NOTE)),
-        }
+            (OfferMode::Join, None) => StatusNote::error(tr(keys::Q_NOTES_SOMETHING_WENT_WRONG)),
+        };
+        let note = match step {
+            Ok(CallLinkStep::Offer { group_call_id }) => {
+                self.note_stream_join_intent(offered_call_intent(group_call_id, mode));
+                opening_note(live_stream)
+            }
+            // Busy: the leave confirmation shows in this window.
+            Ok(CallLinkStep::OtherCallOn) => {
+                self.open_box(crate::ui::shell::DialogKind::CallLinkLeave);
+                self.screen.connection.note().clone()
+            }
+            Ok(step @ CallLinkStep::AlreadyJoined) => step_note(step, live_stream)
+                .map_or_else(|| self.screen.connection.note().clone(), StatusNote::info),
+            Ok(step @ (CallLinkStep::JustOpen | CallLinkStep::NoCall)) => match mode {
+                OfferMode::OpenScreen => step_note(step, live_stream)
+                    .map_or_else(|| self.screen.connection.note().clone(), StatusNote::info),
+                // The call ended between the list and the press.
+                OfferMode::Join => failed(None),
+            },
+            Err(err) => failed(Some(&err)),
+        };
+        self.set_note(note);
         cx.notify();
     }
 
     /// A confirmed link offered its call once the old one ended: what the
-    /// link's own press does, a stream opening in its window and the note.
+    /// link's own press does, a stream opening in its window, the Calls tab
+    /// joining the call, and the note.
     pub(super) fn take_offered_call_link(&mut self, cx: &mut Context<Self>) {
         let Some(offered) = self
             .live
@@ -68,12 +102,8 @@ impl QuillApp {
         else {
             return;
         };
-        self.note_stream_join_intent(StreamJoinIntent::Call(offered.group_call_id));
-        self.set_note(StatusNote::silent(tr(if offered.live_stream {
-            keys::Q_OPS_OPENING_THE_LIVE_STREAM
-        } else {
-            keys::Q_OPS_OPENING_THE_VOICE_CHAT
-        })));
+        self.note_stream_join_intent(offered_call_intent(offered.group_call_id, offered.mode));
+        self.set_note(opening_note(offered.live_stream));
         cx.notify();
     }
 
@@ -154,4 +184,13 @@ crate::ui::shell::register_dialogs! {
         QuillApp::build_call_link_leave_dialog,
     )
     .close(|app, _, cx| app.cancel_call_link_leave(cx)),
+}
+
+/// The quiet note while an offered call opens.
+fn opening_note(live_stream: bool) -> StatusNote {
+    StatusNote::silent(tr(if live_stream {
+        keys::Q_OPS_OPENING_THE_LIVE_STREAM
+    } else {
+        keys::Q_OPS_OPENING_THE_VOICE_CHAT
+    }))
 }

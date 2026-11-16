@@ -17,6 +17,7 @@
 //! limits live in [`crate::folder_limits`]; they keep their own box.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr};
 use std::collections::HashMap;
 
 /// Which limit a box talks about.
@@ -188,20 +189,20 @@ impl PremiumLimitKind {
     /// Row name on the "Doubled limits" page.
     pub fn label(self) -> &'static str {
         match self {
-            Self::Pins => "Pinned chats",
-            Self::PinsArchive => "Pins in the archive",
-            Self::Caption => "Caption length",
-            Self::SavedGifs => "Saved GIFs",
-            Self::Channels => "Groups and channels",
-            Self::PublicLinks => "Public links",
-            Self::FileSize => "File size",
-            Self::FavoriteStickers => "Favorite stickers",
-            Self::SavedPins => "Pinned saved chats",
-            Self::SimilarChats => "Similar channels",
-            Self::OwnedBots => "Bots",
-            Self::ActiveStories => "Active stories",
-            Self::WeeklyStories => "Stories per week",
-            Self::MonthlyStories => "Stories per month",
+            Self::Pins => tr(keys::Q_MONEY_PREMIUM_LIMIT_PINS),
+            Self::PinsArchive => tr(keys::Q_MONEY_PREMIUM_LIMIT_PINS_ARCHIVE),
+            Self::Caption => tr(keys::Q_MONEY_PREMIUM_LIMIT_CAPTION),
+            Self::SavedGifs => tr(keys::Q_MONEY_PREMIUM_LIMIT_SAVED_GIFS),
+            Self::Channels => tr(keys::Q_MONEY_PREMIUM_LIMIT_CHANNELS),
+            Self::PublicLinks => tr(keys::Q_MONEY_PREMIUM_LIMIT_PUBLIC_LINKS),
+            Self::FileSize => tr(keys::Q_MONEY_PREMIUM_LIMIT_FILE_SIZE),
+            Self::FavoriteStickers => tr(keys::Q_MONEY_PREMIUM_LIMIT_FAVORITE_STICKERS),
+            Self::SavedPins => tr(keys::Q_MONEY_PREMIUM_LIMIT_SAVED_PINS),
+            Self::SimilarChats => tr(keys::SIMILAR_CHANNELS_TITLE),
+            Self::OwnedBots => tr(keys::Q_MONEY_PREMIUM_LIMIT_OWNED_BOTS),
+            Self::ActiveStories => tr(keys::Q_MONEY_PREMIUM_LIMIT_ACTIVE_STORIES),
+            Self::WeeklyStories => tr(keys::Q_MONEY_PREMIUM_LIMIT_WEEKLY_STORIES),
+            Self::MonthlyStories => tr(keys::Q_MONEY_PREMIUM_LIMIT_MONTHLY_STORIES),
         }
     }
 

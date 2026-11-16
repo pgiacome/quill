@@ -13,7 +13,7 @@ use gpui_kit::component::dialog::Dialog;
 use gpui_kit::component::*;
 use gpui_kit::*;
 use quill::lang::{keys, tr, tr_with};
-use quill::local_time::{now_unix, weekday_name};
+use quill::local_time::{now_unix, short_weekday_name};
 use quill::search_filters::{SearchMediaKind, YearMonth, day_number, local_day_number};
 use std::cell::Cell;
 use std::rc::Rc;
@@ -24,6 +24,12 @@ const EARLIEST: YearMonth = YearMonth {
     month: 8,
 };
 const CELL: f32 = 36.;
+
+/// The seven weekday column headers: the pack's abbreviated names, never a
+/// byte slice of the full name (Cyrillic short names are two letters, not one).
+fn weekday_headers() -> [&'static str; 7] {
+    [0, 1, 2, 3, 4, 5, 6].map(short_weekday_name)
+}
 
 impl QuillApp {
     pub(super) fn open_jump_date_ui(&mut self, cx: &mut Context<Self>) {
@@ -155,7 +161,7 @@ impl QuillApp {
             );
 
         let mut weekdays = div().flex();
-        for weekday in 0..7u8 {
+        for label in weekday_headers() {
             weekdays = weekdays.child(
                 div()
                     .w(px(CELL))
@@ -163,12 +169,7 @@ impl QuillApp {
                     .justify_center()
                     .text_xs()
                     .text_color(theme.muted_foreground)
-                    .child(
-                        weekday_name(weekday)
-                            .get(..2)
-                            .unwrap_or_default()
-                            .to_string(),
-                    ),
+                    .child(label.to_string()),
             );
         }
 

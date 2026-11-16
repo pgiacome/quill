@@ -1,0 +1,8 @@
+// The Edit box's manage rows, their counts and toggles, and the history
+// visibility box (tdesktop edit_peer_info_box.cpp,
+// edit_peer_history_visibility_box.cpp, edit_peer_reactions.cpp).
+"qll_people_upgrade_supergroup_sure" = "Обновить «{title}» до супергруппы? Старая группа будет деактивирована, а её участники перейдут в новую. Это нельзя отменить.";
+"qll_people_secret_passcode_about" = "Если вы установите дополнительный код-пароль, его нужно будет вводить при каждом доступе к чату ({name}). Предпросмотр сообщений будет скрыт в списке чатов.\n\nПримечание: если вы его забудете, содержимое этого чата будет утеряно.\n\nЕсли вам нужен общий код-пароль, используйте «Настройки → Конфиденциальность и безопасность → Блокировка кодом».";
+"qll_people_set_photo_button" = "Установить фото";
+"qll_people_photo_suggested" = "Фото предложено";
+"qll_people_photo_reset_done" = "Фото сброшено";

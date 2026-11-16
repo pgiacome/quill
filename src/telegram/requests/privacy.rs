@@ -1,3 +1,4 @@
+use crate::lang::{keys, tr};
 use serde_json::{Value, json};
 
 /// Phase C2i: Everybody / Contacts / Nobody mapping for the two call
@@ -48,9 +49,9 @@ impl PrivacyWho {
 
     pub fn label(self) -> &'static str {
         match self {
-            PrivacyWho::Everybody => "Everybody",
-            PrivacyWho::Contacts => "My contacts",
-            PrivacyWho::Nobody => "Nobody",
+            PrivacyWho::Everybody => tr(keys::EDIT_PRIVACY_EVERYONE),
+            PrivacyWho::Contacts => tr(keys::Q_PREFS_PRIVACY_CONTACTS),
+            PrivacyWho::Nobody => tr(keys::Q_PREFS_PRIVACY_NOBODY),
         }
     }
 }

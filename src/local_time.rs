@@ -7,6 +7,7 @@
 //! days-from-civil inverse.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{Key, keys, tr, tr_with};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// A broken-down wall-clock time.
@@ -179,42 +180,101 @@ pub fn civil_local(unix: i64) -> CivilTime {
     civil_at(unix, utc_offset_at(unix))
 }
 
-const MONTHS: [&str; 12] = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+const MONTH_KEYS: [Key; 12] = [
+    keys::MONTH_DAY1,
+    keys::MONTH_DAY2,
+    keys::MONTH_DAY3,
+    keys::MONTH_DAY4,
+    keys::MONTH_DAY5,
+    keys::MONTH_DAY6,
+    keys::MONTH_DAY7,
+    keys::MONTH_DAY8,
+    keys::MONTH_DAY9,
+    keys::MONTH_DAY10,
+    keys::MONTH_DAY11,
+    keys::MONTH_DAY12,
 ];
-const WEEKDAYS: [&str; 7] = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
+const MONTH_NOMINATIVE_KEYS: [Key; 12] = [
+    keys::MONTH1,
+    keys::MONTH2,
+    keys::MONTH3,
+    keys::MONTH4,
+    keys::MONTH5,
+    keys::MONTH6,
+    keys::MONTH7,
+    keys::MONTH8,
+    keys::MONTH9,
+    keys::MONTH10,
+    keys::MONTH11,
+    keys::MONTH12,
+];
+const SHORT_MONTH_KEYS: [Key; 12] = [
+    keys::MONTH1_SMALL,
+    keys::MONTH2_SMALL,
+    keys::MONTH3_SMALL,
+    keys::MONTH4_SMALL,
+    keys::MONTH5_SMALL,
+    keys::MONTH6_SMALL,
+    keys::MONTH7_SMALL,
+    keys::MONTH8_SMALL,
+    keys::MONTH9_SMALL,
+    keys::MONTH10_SMALL,
+    keys::MONTH11_SMALL,
+    keys::MONTH12_SMALL,
+];
+const WEEKDAY_KEYS: [Key; 7] = [
+    keys::Q_MISC_WEEKDAY1,
+    keys::Q_MISC_WEEKDAY2,
+    keys::Q_MISC_WEEKDAY3,
+    keys::Q_MISC_WEEKDAY4,
+    keys::Q_MISC_WEEKDAY5,
+    keys::Q_MISC_WEEKDAY6,
+    keys::Q_MISC_WEEKDAY7,
+];
+const SHORT_WEEKDAY_KEYS: [Key; 7] = [
+    keys::WEEKDAY1,
+    keys::WEEKDAY2,
+    keys::WEEKDAY3,
+    keys::WEEKDAY4,
+    keys::WEEKDAY5,
+    keys::WEEKDAY6,
+    keys::WEEKDAY7,
 ];
 
-pub fn month_name(month: u8) -> &'static str {
-    MONTHS
-        .get(usize::from(month.clamp(1, 12) - 1))
-        .copied()
-        .unwrap_or_default()
+/// The name at `index` of a 0-based name table, "" past its end.
+fn pick(table: &[Key], index: usize) -> &'static str {
+    table.get(index).map(|key| tr(*key)).unwrap_or_default()
 }
 
+/// 0-based index of a 1-based month, clamped to the year.
+fn month_index(month: u8) -> usize {
+    usize::from(month.clamp(1, 12)).saturating_sub(1)
+}
+
+/// The full month name, "January" / «января».
+pub fn month_name(month: u8) -> &'static str {
+    pick(&MONTH_KEYS, month_index(month))
+}
+
+/// The full month name in the nominative, "January" / «Январь», for
+/// calendar captions and tables where no day follows.
+pub fn month_name_nominative(month: u8) -> &'static str {
+    pick(&MONTH_NOMINATIVE_KEYS, month_index(month))
+}
+
+/// The abbreviated month name, "Jan" / «янв.».
+pub fn short_month_name(month: u8) -> &'static str {
+    pick(&SHORT_MONTH_KEYS, month_index(month))
+}
+
+/// The full weekday name, "Monday" / «Понедельник».
 pub fn weekday_name(weekday: u8) -> &'static str {
-    WEEKDAYS
-        .get(usize::from(weekday.min(6)))
-        .copied()
-        .unwrap_or_default()
+    pick(&WEEKDAY_KEYS, usize::from(weekday.min(6)))
+}
+
+/// The abbreviated weekday name, "Mon" / «Пн».
+pub fn short_weekday_name(weekday: u8) -> &'static str {
+    pick(&SHORT_WEEKDAY_KEYS, usize::from(weekday.min(6)))
 }
 
 /// The time of day in the system's clock style: `21:42` or `9:42 PM`
@@ -245,10 +305,21 @@ pub fn needs_year(date: &CivilTime, now: &CivilTime) -> bool {
 /// the year by [`needs_year`] ("October 6, 2024") — always the date,
 /// never "Today".
 pub fn day_label(date: &CivilTime, now: &CivilTime) -> String {
+    let day = date.day.to_string();
     if !needs_year(date, now) {
-        format!("{} {}", month_name(date.month), date.day)
+        tr_with(
+            keys::MONTH_DAY,
+            &[("month", month_name(date.month)), ("day", &day)],
+        )
     } else {
-        format!("{} {}, {}", month_name(date.month), date.day, date.year)
+        tr_with(
+            keys::MONTH_DAY_YEAR,
+            &[
+                ("month", month_name(date.month)),
+                ("day", &day),
+                ("year", &date.year.to_string()),
+            ],
+        )
     }
 }
 
@@ -265,19 +336,18 @@ pub fn chat_list_stamp(date: &CivilTime, now: &CivilTime) -> String {
     }
     match age {
         i64::MIN..=0 => hhmm(date),
-        1..=6 => weekday_name(date.weekday)
-            .get(..3)
-            .unwrap_or_default()
-            .to_string(),
+        1..=6 => short_weekday_name(date.weekday).to_string(),
         _ if date.year == now.year => {
-            format!(
-                "{} {}",
-                date.day,
-                month_name(date.month).get(..3).unwrap_or_default()
-            )
+            format!("{} {}", date.day, short_month_name(date.month))
         }
         _ => short_date(date),
     }
+}
+
+/// A list row's timestamp for a message sent at `date` (Unix seconds), as
+/// of now: [`chat_list_stamp`], or `None` when there is no message (0).
+pub fn list_stamp(date: i32) -> Option<String> {
+    (date > 0).then(|| chat_list_stamp(&civil_local(i64::from(date)), &civil_local(now_unix())))
 }
 
 /// The numeric short date, `12.03.25` (tdesktop prints
@@ -303,22 +373,20 @@ pub fn full_stamp(time: &CivilTime) -> String {
 }
 
 /// The media viewer's date under the sender's name: "today at 14:05",
-/// "yesterday at 09:30", "12 March at 21:42" this year and
-/// "12 March 2025 at 21:42" earlier (Telegram Desktop `langDateTime`).
+/// "yesterday at 09:30", "March 12 at 21:42" this year and
+/// "March 12, 2025 at 21:42" earlier (Telegram Desktop `langDateTime`).
 pub fn viewer_stamp(date: &CivilTime, now: &CivilTime) -> String {
     let time = hhmm(date);
     match now.day_number() - date.day_number() {
-        0 => format!("today at {time}"),
-        1 => format!("yesterday at {time}"),
-        _ if !needs_year(date, now) => {
-            format!("{} {} at {time}", date.day, month_name(date.month))
+        0 => tr_with(keys::MEDIAVIEW_TODAY, &[("time", &time)]),
+        1 => tr_with(keys::MEDIAVIEW_YESTERDAY, &[("time", &time)]),
+        _ => {
+            let date_text = day_label(date, now);
+            tr_with(
+                keys::MEDIAVIEW_DATE_TIME,
+                &[("date", &date_text), ("time", &time)],
+            )
         }
-        _ => format!(
-            "{} {} {} at {time}",
-            date.day,
-            month_name(date.month),
-            date.year
-        ),
     }
 }
 
@@ -340,11 +408,11 @@ mod tests {
         );
         assert_eq!(
             viewer_stamp(&civil_at(1_790_631_720 - 5 * 86_400, 0), &now),
-            "23 September at 21:42"
+            "September 23 at 21:42"
         );
         assert_eq!(
             viewer_stamp(&civil_at(951_782_400 + 3600, 0), &now),
-            "29 February 2000 at 01:00"
+            "February 29, 2000 at 01:00"
         );
     }
 

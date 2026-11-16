@@ -158,14 +158,15 @@ impl QuillApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let place = if is_channel { "channel" } else { "group" };
         let (title, text, ok) = if approve {
+            let key = if is_channel {
+                keys::Q_CHAT_DO_YOU_WANT_TO_ADD_CHANNEL
+            } else {
+                keys::Q_CHAT_DO_YOU_WANT_TO_ADD_GROUP
+            };
             (
                 tr(keys::Q_CHAT_ADD_ALL),
-                tr_with(
-                    keys::Q_CHAT_DO_YOU_WANT_TO_ADD,
-                    &[("count", &count.to_string()), ("place", place)],
-                ),
+                tr_with(key, &[("count", &count.to_string())]),
                 tr(keys::Q_CHAT_ADD_ALL),
             )
         } else {

@@ -292,8 +292,8 @@ pub(in crate::ui) fn app_menus_with(
         MenuItem::action(tr(keys::Q_PREFS_QUIT_QUILL), QuitApp),
     ]));
     menus.extend([
-        Menu::new("File").items(file_items),
-        Menu::new("Edit").items([
+        Menu::new(tr(keys::Q_MISC_MENU_FILE)).items(file_items),
+        Menu::new(tr(keys::MAC_MENU_EDIT)).items([
             MenuItem::action(tr(keys::Q_PREFS_UNDO), UndoAction),
             MenuItem::action(tr(keys::Q_PREFS_REDO), RedoAction),
             MenuItem::separator(),
@@ -307,9 +307,11 @@ pub(in crate::ui) fn app_menus_with(
                 OsAction::SelectAll,
             ),
         ]),
-        Menu::new("View").items(view_items),
-        Menu::new("Window").items(window_items),
-        Menu::new("Help").items([
+        Menu::new(tr(keys::Q_MISC_MENU_VIEW)).items(view_items),
+        Menu::new(tr(keys::Q_MISC_MENU_WINDOW))
+            .role(MenuRole::Window)
+            .items(window_items),
+        Menu::new(tr(keys::Q_MISC_MENU_HELP)).items([
             MenuItem::action(tr(keys::Q_PREFS_KEYBOARD_SHORTCUTS_2), OpenShortcuts),
             MenuItem::action(tr(keys::Q_PREFS_QUILL_ON_GITHUB), OpenHelp),
         ]),
@@ -318,7 +320,8 @@ pub(in crate::ui) fn app_menus_with(
 }
 
 /// kit Phase 7: install the app menus — native on macOS, kit `AppMenuBar`
-/// data on Linux/Windows. Call once after `gpui_kit::init` + `bind_keys`.
+/// data on Linux/Windows. Call once after `gpui_kit::init` + `bind_keys`:
+/// it also registers the macOS app actions, which must not be added twice.
 pub fn setup_app_menus(cx: &mut App) {
     #[cfg(target_os = "macos")]
     {
@@ -326,6 +329,22 @@ pub fn setup_app_menus(cx: &mut App) {
         cx.on_action(|_: &HideOtherApps, cx| cx.hide_other_apps());
         cx.on_action(|_: &ShowAllApps, cx| cx.unhide_other_apps());
     }
+    set_app_menus(cx);
+}
+
+/// Rebuilds the app menus in the current language, if they were installed
+/// already. Before that (macOS installs them after the first frame), the
+/// later [`setup_app_menus`] reads the current language itself.
+pub fn refresh_app_menus(cx: &mut App) {
+    let installed = cx
+        .try_global::<GlobalState>()
+        .is_some_and(|state| !state.app_menus().is_empty());
+    if installed {
+        set_app_menus(cx);
+    }
+}
+
+fn set_app_menus(cx: &mut App) {
     let owned: Vec<OwnedMenu> = app_menus().into_iter().map(Menu::owned).collect();
     cx.set_menus(app_menus());
     GlobalState::global_mut(cx).set_app_menus(owned);

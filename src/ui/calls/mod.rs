@@ -627,7 +627,7 @@ impl QuillApp {
             let kind = if is_video {
                 tr(keys::Q_OPS_VIDEO_CALL_2)
             } else {
-                "call"
+                tr(keys::Q_OPS_VOICE_CALL_2)
             };
             let footer = div()
                 .flex()
@@ -910,6 +910,10 @@ crate::ui::shell::register_dialogs! {
     ),
 }
 
+mod active_calls;
+#[cfg(test)]
+#[cfg(feature = "demo-capture")]
+mod active_calls_tests;
 #[cfg(feature = "demo-capture")]
 mod add_people_demo;
 mod call_again;

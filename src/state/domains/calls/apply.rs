@@ -65,7 +65,7 @@ impl Session {
             // `updateChatVideoChat` refreshes the chat's join affordance.
             // All signaling-only — no media transport until Phase C2.
             CallsPayload::UpdateGroupCall { group_call } => {
-                self.accept_group_call_update(&group_call);
+                self.accept_group_call_update(&group_call, pending);
                 // The answer to the handover's own `getGroupCall` with no
                 // link ends the handover; an update never does.
                 if let Some(pending) = pending

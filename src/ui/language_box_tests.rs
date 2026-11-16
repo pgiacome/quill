@@ -223,3 +223,75 @@ fn quitting_flushes_the_writes_still_out(cx: &mut TestAppContext) {
     drop(done);
     assert_eq!(*quill::locks::lock_or_recover(&written), vec!["A", "B"]);
 }
+
+/// The Russian demo's strings: the shipped `qll_*` overlay and the demo's
+/// Russian `lng_*` fixture both land in one snapshot, so the box and the
+/// chat screens are Russian together.
+#[test]
+fn the_russian_demo_snapshot_translates_the_overlay_and_the_box() {
+    quill::lang::isolate_thread();
+    let choice = quill::lang::prefs::LanguageChoice {
+        pack_id: "ru".into(),
+        plural_code: "ru".into(),
+        name: "Russian".into(),
+        native_name: "Русский".into(),
+        ..Default::default()
+    };
+    let pack = crate::ui::language_demo::demo_ru_pack();
+    let snapshot = quill::lang::prefs::build_snapshot(&choice, &[], &pack);
+    quill::lang::install(Some(snapshot));
+    assert_eq!(
+        tr(keys::Q_CHAT_TYPING),
+        "печатает",
+        "the qll_* overlay (chat)"
+    );
+    assert_eq!(
+        tr(keys::Q_AV_SPEAKING),
+        "говорит",
+        "the qll_* overlay (calls)"
+    );
+    assert_eq!(
+        tr(keys::MENU_SETTINGS),
+        "Настройки",
+        "the demo's lng_* fixture"
+    );
+}
+
+/// A pack installed after the menus exist rebuilds them in its language,
+/// and the Window menu keeps its role under a translated name (the macOS
+/// platform finds it by role).
+#[gpui_kit::test]
+fn installing_a_pack_rebuilds_the_app_menus(cx: &mut TestAppContext) {
+    use gpui_kit::{MenuRole, base::GlobalState};
+    let (app, mut vcx) = new_app(cx);
+    let vcx = &mut vcx;
+    vcx.update(|_, cx| crate::ui::setup_app_menus(cx));
+    let names = |vcx: &mut VisualTestContext| {
+        vcx.update(|_, cx| {
+            GlobalState::global(cx)
+                .app_menus()
+                .iter()
+                .map(|menu| (menu.name.to_string(), menu.role))
+                .collect::<Vec<_>>()
+        })
+    };
+    assert!(names(vcx).contains(&("Window".to_string(), MenuRole::Window)));
+
+    let choice = quill::lang::prefs::LanguageChoice {
+        pack_id: "ru".into(),
+        plural_code: "ru".into(),
+        ..Default::default()
+    };
+    let pack = crate::ui::language_demo::demo_ru_pack();
+    let snapshot = quill::lang::prefs::build_snapshot(&choice, &[], &pack);
+    app.update(vcx, |_, cx| {
+        crate::ui::language_ui::install_pack(Some(snapshot), cx);
+    });
+    vcx.run_until_parked();
+    let menus = names(vcx);
+    assert!(
+        menus.contains(&("Окно".to_string(), MenuRole::Window)),
+        "{menus:?}"
+    );
+    assert!(menus.iter().all(|(name, _)| name != "Window"));
+}

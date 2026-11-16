@@ -32,9 +32,14 @@ impl QuillApp {
             .child(
                 RadioGroup::vertical("media-pref-quick-action-group")
                     .selected_index(Some(current.index()))
-                    .children(QuickAction::ALL.iter().map(|(_, label)| {
-                        Radio::new(format!("quick-action-{label}")).label(*label)
-                    }))
+                    .children(
+                        QuickAction::ALL
+                            .iter()
+                            .enumerate()
+                            .map(|(index, (_, key))| {
+                                Radio::new(format!("quick-action-{index}")).label(tr(*key))
+                            }),
+                    )
                     .on_click(cx.listener(|this, &ix: &usize, _, cx| {
                         if let Some(action) = QuickAction::ALL
                             .get(ix.min(QuickAction::ALL.len() - 1))
