@@ -775,9 +775,15 @@ fn a_splice_keeps_the_reader_where_they_were(cx: &mut TestAppContext) {
     let vcx = &mut vcx;
     mixed_group(&app, vcx);
     app.update(vcx, |app, cx| {
-        app.history
-            .scroller
-            .update(cx, |state, cx| state.scroll_to_item_offset(40, 12., cx));
+        app.history.scroller.update(cx, |state, cx| {
+            state.scroll_to_offset(
+                gpui_kit::ListOffset {
+                    item_ix: 40,
+                    offset_in_item: px(12.),
+                },
+                cx,
+            )
+        });
     });
     frames(vcx);
     let left = top_message(&app, vcx).expect("scrolled away from the tail");
@@ -924,9 +930,15 @@ fn a_live_trim_leaves_the_reader_where_they_were(cx: &mut TestAppContext) {
     let room = room_below_the_cap(&app, vcx);
     let next = live_past_the_end(&app, vcx, MESSAGES, room);
     app.update(vcx, |app, cx| {
-        app.history
-            .scroller
-            .update(cx, |state, cx| state.scroll_to_item_offset(1_000, 12., cx));
+        app.history.scroller.update(cx, |state, cx| {
+            state.scroll_to_offset(
+                gpui_kit::ListOffset {
+                    item_ix: 1_000,
+                    offset_in_item: px(12.),
+                },
+                cx,
+            )
+        });
     });
     frames(vcx);
     let left = top_message(&app, vcx).expect("away from the tail");

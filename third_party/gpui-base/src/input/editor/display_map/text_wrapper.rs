@@ -9,7 +9,7 @@ use std::ops::Range;
 use std::rc::Rc;
 
 use gpui::{
-    App, Bounds, ContentMask, Font, LineFragment, Pixels, Point, ShapedLine, Size, TextAlign,
+    App, Bounds, ContentMask, Font, Pixels, Point, ShapedLine, Size, TextAlign,
     Window, point, px, size,
 };
 use ropey::Rope;

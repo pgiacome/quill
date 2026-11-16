@@ -1321,7 +1321,7 @@ impl<M: InputModeKind> InputBaseState<M> {
                 let prev_lines_offset = last_layout.visible_line_byte_offsets[vi];
                 let local_offset = offset.saturating_sub(prev_lines_offset).min(line.len());
                 let pos = line
-                    .position_for_index(local_offset, last_layout, false)
+                    .position_for_index(local_offset, last_layout, line_end_affinity)
                     .unwrap_or_else(|| point(px(0.), px(0.)));
                 let sub_line_index = (pos.y / line_height) as usize;
                 let adjusted_pos = point(pos.x + last_layout.line_number_width, pos.y + y_offset);

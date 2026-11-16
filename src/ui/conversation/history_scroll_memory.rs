@@ -151,7 +151,13 @@ impl QuillApp {
         self.end_landing();
         if let ScrollOpen::Restore { row, offset } = open {
             self.history.scroller.update(cx, |state, cx| {
-                state.scroll_to_item_offset(row, offset, cx);
+                state.scroll_to_offset(
+                    gpui_kit::ListOffset {
+                        item_ix: row,
+                        offset_in_item: px(offset.max(0.)),
+                    },
+                    cx,
+                );
             });
             return;
         }

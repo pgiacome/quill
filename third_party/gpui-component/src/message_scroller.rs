@@ -209,20 +209,6 @@ impl MessageScrollerState {
             .then(|| (top.item_ix, f32::from(top.offset_in_item)))
     }
 
-    /// Scroll so row `index` starts `offset` pixels above the viewport top.
-    pub fn scroll_to_item_offset(&mut self, index: usize, offset: f32, cx: &mut Context<Self>) -> bool {
-        if index >= self.list_state.item_count() {
-            return false;
-        }
-
-        self.list_state.scroll_to(ListOffset {
-            item_ix: index,
-            offset_in_item: px(offset.max(0.)),
-        });
-        cx.notify();
-        true
-    }
-
     /// QUILL: scroll the rows by `distance` pixels (positive: toward the
     /// latest row) from where they are, measured over the rows laid out so
     /// far.

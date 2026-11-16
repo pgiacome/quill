@@ -108,6 +108,7 @@ fn kit_strings_follow_the_pack_where_the_kit_has_the_language() {
         ("ru-raw", "ru", "ru"),
         ("my-custom-pack", "ru", "ru"),
         ("pt-br", "pt-br", "pt-BR"),
+        ("ja", "ja", "ja"),
         ("classic-zh-cn", "zh", "zh-CN"),
         ("zhcncc", "zh", "zh-CN"),
         ("zh-hant-raw", "zh", "zh-TW"),

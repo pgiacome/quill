@@ -1,6 +1,6 @@
 //! The message field as an element: the kit `Textarea` over the composer's
 //! state with what is drawn on it (the inline bot's hint, spelling
-//! underlines, the words that have an emoji). One state, drawn in one
+//! underlines as text decorations, the words that have an emoji). One state, drawn in one
 //! place at a time: the composer bar, or the send box while picked files
 //! wait in it, where the field is the caption (`send_card`).
 
@@ -9,6 +9,8 @@ use quill::lang::{keys, tr};
 
 impl QuillApp {
     pub(in crate::ui) fn composer_field(&self, cx: &mut Context<Self>) -> Stateful<Div> {
+        // Red wavy underlines under the misspelled words.
+        self.sync_spellcheck_decorations(cx);
         div()
             .id("composer-field")
             .relative()
@@ -44,10 +46,6 @@ impl QuillApp {
             // The inline bot's hint after `@bot `.
             .when_some(self.inline_bot_hint_overlay(cx), |wrap, hint| {
                 wrap.child(hint)
-            })
-            // Red wavy underlines over the misspelled words.
-            .when_some(self.spellcheck_underlines(cx), |wrap, lines| {
-                wrap.child(lines)
             })
             // Words that have an emoji.
             .when_some(self.emoji_word_highlights(cx), |wrap, wash| {

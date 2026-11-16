@@ -131,7 +131,7 @@ fn apply_thermal(cx: &mut App) {
     quill::battery_saving::set_thermal(thermal);
     quill::battery_saving::apply();
     if before != quill::battery_saving::forcing() {
-        cx.set_reduce_motion(quill::power_saving::reduce_motion_now());
+        crate::ui::reduce_motion_probe::apply(cx);
         cx.refresh_windows();
     }
 }
@@ -149,7 +149,7 @@ fn apply_answer(answer: Option<bool>, cx: &mut App) {
         quill::battery_saving::forcing(),
     );
     if before != after {
-        cx.set_reduce_motion(quill::power_saving::reduce_motion_now());
+        crate::ui::reduce_motion_probe::apply(cx);
         cx.refresh_windows();
     }
 }
