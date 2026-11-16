@@ -236,8 +236,10 @@ impl Session {
 
     /// Phase C3a: `updateGroupCall` state machine. The current call holds
     /// one group call at a time (like the single 1:1 call):
-    /// - a different call id replaces the tracked call (participants
-    ///   reload via updates);
+    /// - a different call id replaces the tracked call only when
+    ///   `group_call_update_may_take_slot` allows it: a joined call, or
+    ///   the answer to the `getGroupCall` the person asked for last
+    ///   (participants reload via updates);
     /// - `need_rejoin` makes a rejoin due (`GroupCallRejoin::want`) so the
     ///   UI shows "Reconnecting…" and the driver re-issues the join;
     /// - a joined, non-`need_rejoin` update that follows a not-joined one
@@ -246,7 +248,12 @@ impl Session {
     ///
     /// The watched live story's call goes to its own slot
     /// (`story_stream`); any other live story is not tracked.
-    pub(crate) fn accept_group_call_update(&mut self, group_call: &ParsedGroupCall) {
+    pub(crate) fn accept_group_call_update(
+        &mut self,
+        group_call: &ParsedGroupCall,
+        pending: Option<&PendingRequest>,
+    ) {
+        self.note_live_group_call(group_call);
         // TDLib confirms the leave: later joined updates are real again.
         if !group_call.is_joined
             && let Some(call) = self.calls.group_call_mut(group_call.id)
@@ -258,8 +265,12 @@ impl Session {
             self.accept_story_stream_update(group_call);
             return;
         }
-        if group_call.is_live_story || !self.group_call_update_may_take_slot(group_call) {
+        if group_call.is_live_story || !self.group_call_update_may_take_slot(group_call, pending) {
             return;
+        }
+        // The wanted answer arrived: the ask is over.
+        if pending.is_some_and(|request| self.calls.wanted_group_call == Some(request.id)) {
+            self.calls.wanted_group_call = None;
         }
         if !group_call.is_active {
             // Phase C2h: a scheduled (not yet started) video chat is
@@ -467,8 +478,15 @@ impl Session {
     }
 
     /// Phase C3a: `updateChatVideoChat`. Refreshes the chat's join
-    /// affordance (`group_call_id` 0 → no active video chat).
+    /// affordance (`group_call_id` 0 → no active video chat). The call the
+    /// chat used to point at is forgotten when the chat moves off it; an
+    /// empty call (`has_participants` false) stays listed.
     pub(crate) fn accept_chat_video_chat(&mut self, chat_id: ChatId, video_chat: &ParsedVideoChat) {
+        let old_id = self
+            .chats
+            .get(&chat_id.0)
+            .and_then(|chat| chat.video_chat.as_ref())
+            .map(|call| call.group_call_id);
         let chat = self
             .chats
             .entry(chat_id.0)
@@ -482,6 +500,13 @@ impl Session {
                 default_participant_id: video_chat.default_participant_id,
             })
         };
+        // The chat moved off its call (it ended, or another one started
+        // while the app was away): what was known about the old call goes.
+        if let Some(old_id) = old_id
+            && old_id != video_chat.group_call_id
+        {
+            self.calls.group_call_details.remove(&old_id);
+        }
     }
 
     /// `getVideoChatAvailableParticipants` answer: store the "join as"
@@ -492,12 +517,11 @@ impl Session {
         request: Option<RequestId>,
         senders: Vec<MessageSender>,
     ) {
-        let default = self.chats.values().find_map(|chat| {
-            chat.video_chat
-                .as_ref()
-                .filter(|vc| vc.group_call_id == group_call_id)
-                .and_then(|vc| vc.default_participant_id)
-        });
+        let default = self
+            .chat_for_group_call(group_call_id)
+            .and_then(|chat| self.chats.get(&chat.0))
+            .and_then(|chat| chat.video_chat.as_ref())
+            .and_then(|vc| vc.default_participant_id);
         if let Some(tracked) = self.calls.active_group_call.as_mut()
             && tracked.id == group_call_id
             && request.is_some_and(|request| tracked.join_as_options.waits_for(request))
@@ -529,26 +553,43 @@ impl Session {
         }
     }
 
+    /// The person asked for this `getGroupCall` (the driver's
+    /// `fetch_group_call`): its answer may take the current call slot, and
+    /// any earlier ask's answer no longer may.
+    pub fn want_group_call(&mut self, request: RequestId) {
+        self.calls.wanted_group_call = Some(request);
+    }
+
     /// Whether an update (or a `getGroupCall` answer) for `group_call`
     /// may take the current call slot. An update for the tracked call
-    /// always may. One you are not in never replaces a call you are in,
-    /// scheduled updates included (a looked-up `getGroupCall` or another
-    /// chat's call). A late joined update for the call just left is not
-    /// tracked either.
-    fn group_call_update_may_take_slot(&self, group_call: &ParsedGroupCall) -> bool {
+    /// always may. A call nobody joined takes the slot only as the answer
+    /// to the `getGroupCall` the person asked for last
+    /// (`CallsState::wanted_group_call`), and never over a call they are in
+    /// (joined, reconnecting, or its join in flight). A late joined update
+    /// for the call just left is not tracked either.
+    fn group_call_update_may_take_slot(
+        &self,
+        group_call: &ParsedGroupCall,
+        pending: Option<&PendingRequest>,
+    ) -> bool {
         if group_call.is_joined {
             return !self.calls.group_call_left(group_call.id);
         }
         match self.calls.active_group_call.as_ref() {
-            Some(tracked) => tracked.id == group_call.id || !tracked.is_joined,
-            None => true,
+            Some(tracked) if tracked.id == group_call.id => true,
+            Some(_) if self.group_call_joined_or_joining(None) => false,
+            _ => pending.is_some_and(|request| self.calls.wanted_group_call == Some(request.id)),
         }
     }
 
     /// Phase C3a: drop the tracked group call after the local user
-    /// leaves or ends it. The driver's `drop_group_call_locally` also
-    /// stops the call's native transport.
+    /// leaves or ends it. A `getGroupCall` still out is no longer wanted:
+    /// its answer must not bring the window back. The call's details stay
+    /// (it may still run; `updateGroupCall` says when it ends). The
+    /// driver's `drop_group_call_locally` also stops the call's native
+    /// transport.
     pub fn leave_group_call_local(&mut self) {
+        self.calls.wanted_group_call = None;
         self.calls.active_group_call = None;
         self.calls.call_link_stage.forget_hash(None);
     }

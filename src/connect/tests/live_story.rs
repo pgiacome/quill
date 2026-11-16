@@ -10,6 +10,7 @@ use crate::platform::MemorySecretStore;
 use crate::state::Session;
 use crate::telegram::client::copy_and_parse;
 use crate::telegram::envelope::MessageSender;
+use serde_json::Value;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
@@ -334,8 +335,9 @@ fn leaving_drops_pending_stars_and_the_call() {
 fn a_looked_up_call_does_not_replace_the_joined_story() {
     let mut h = watching();
     h.ingest(&LIVE_CALL.replace("JOINED", "true"));
-    h.ingest(
-        r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":555,"title":"Other","is_active":true,"is_video_chat":true,"is_joined":false}}"#,
+    look_at_call(
+        &mut h,
+        r#"{"@type":"groupCall","id":555,"title":"Other","is_active":true,"is_video_chat":true,"is_joined":false}"#,
     );
     assert_eq!(story_id(&h), Some(4242));
     assert_eq!(current_id(&h), Some(555));
@@ -361,6 +363,15 @@ fn current_id(h: &Harness) -> Option<i32> {
         .active_group_call
         .as_ref()
         .map(|c| c.id)
+}
+
+/// The person pressed a video chat's affordance: the app asks for the
+/// call, and only its `getGroupCall` answer opens the slot.
+fn look_at_call(h: &mut Harness, group_call: &str) {
+    let call: Value = serde_json::from_str(group_call).expect("groupCall");
+    let id = call["id"].as_i64().expect("group call id") as i32;
+    h.driver.fetch_group_call(id).expect("fetch sends");
+    h.answer("getGroupCall", group_call);
 }
 
 #[test]
@@ -396,8 +407,9 @@ fn a_looked_at_video_chat_stays_beside_a_live_story() {
     // Joining (the request is out): left with `leaveGroupCall`.
     assert_eq!(h.sent("leaveGroupCall"), 1);
     // A video chat you only looked at.
-    h.ingest(
-        r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":555,"title":"Chat","is_active":true,"is_video_chat":true,"is_joined":false}}"#,
+    look_at_call(
+        &mut h,
+        r#"{"@type":"groupCall","id":555,"title":"Chat","is_active":true,"is_video_chat":true,"is_joined":false}"#,
     );
     assert_eq!(current_id(&h), Some(555));
     add_other_live_story(&mut h);
@@ -572,14 +584,25 @@ fn ban_user_waits_for_the_delete_to_go_out() {
     assert_eq!(h.sent("setMessageSenderBlockList"), 1);
 }
 
-const LOOKED_AT_CHAT: &str = r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":555,"title":"Chat","is_active":true,"is_video_chat":true,"is_joined":false,"need_rejoin":NEED}}"#;
+const LOOKED_AT_CHAT: &str = r#"{"@type":"groupCall","id":555,"title":"Chat","is_active":true,"is_video_chat":true,"is_joined":false,"need_rejoin":NEED}"#;
 
 #[test]
 fn a_reconnecting_video_chat_stays_beside_a_live_story() {
     let mut h = watching();
     h.driver.leave_live_story().unwrap();
-    // Network loss: TDLib reports the chat as not joined, needing a rejoin.
-    h.ingest(&LOOKED_AT_CHAT.replace("NEED", "true"));
+    // You are in the chat's video chat; then network loss: TDLib reports
+    // it as not joined, needing a rejoin.
+    h.ingest(&format!(
+        r#"{{"@type":"updateGroupCall","group_call":{}}}"#,
+        LOOKED_AT_CHAT
+            .replace("NEED", "false")
+            .replace(r#""is_joined":false"#, r#""is_joined":true"#)
+    ));
+    h.ingest(&format!(
+        r#"{{"@type":"updateGroupCall","group_call":{}}}"#,
+        LOOKED_AT_CHAT.replace("NEED", "true")
+    ));
+    assert_eq!(current_id(&h), Some(555));
     assert!(h.driver.session.group_call_joined_or_joining(None));
     assert_ne!(
         h.driver.session.current_call_for_create(None),
@@ -600,7 +623,7 @@ fn a_video_chat_beside_a_live_story_keeps_its_transport() {
     let mock = crate::calls::engine::MockEngine::new();
     let handle = mock.clone();
     h.driver.set_call_engine(Box::new(mock));
-    h.ingest(&LOOKED_AT_CHAT.replace("NEED", "false"));
+    look_at_call(&mut h, &LOOKED_AT_CHAT.replace("NEED", "false"));
     let key = crate::calls::live_video::LiveKey::Video {
         call_id: 555,
         user_id: 42,
@@ -665,8 +688,9 @@ fn a_late_joined_update_for_the_call_just_left_does_not_return() {
 #[test]
 fn a_scheduled_video_chat_stays_beside_a_live_story() {
     let mut h = harness();
-    h.ingest(
-        r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":556,"title":"Later","is_active":false,"scheduled_start_date":1900000000,"is_video_chat":true,"is_joined":false}}"#,
+    look_at_call(
+        &mut h,
+        r#"{"@type":"groupCall","id":556,"title":"Later","is_active":false,"scheduled_start_date":1900000000,"is_video_chat":true,"is_joined":false}"#,
     );
     assert_eq!(current_id(&h), Some(556));
     add_other_live_story(&mut h);

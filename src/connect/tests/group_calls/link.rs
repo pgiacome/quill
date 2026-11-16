@@ -109,6 +109,11 @@ fn another_joined_call_blocks_the_offer() {
             current_is_channel: false
         }
     );
+    assert_eq!(
+        ask.mode,
+        crate::call_link::OfferMode::OpenScreen,
+        "a link only opens the call screen"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -131,6 +136,7 @@ fn confirming_leaves_the_old_call_and_offers_the_new_one() {
         CallLinkStage::Offered { offered, .. } if *offered == crate::call_link::OfferedCallLink {
             group_call_id: 555,
             live_stream: false,
+            mode: crate::call_link::OfferMode::OpenScreen,
         }
     ));
     assert_eq!(driver.session.calls.call_link_stage.hash_for(555), "AbC");
@@ -186,6 +192,47 @@ fn a_confirmed_stream_link_keeps_its_live_stream_into_the_offer() {
         &driver.session.calls.call_link_stage,
         CallLinkStage::Offered { offered, .. } if offered.live_stream && offered.group_call_id == 555
     ));
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A reconnecting call is still "in a call": its join has not landed after
+/// a network loss (`need_rejoin`), so a different call must ask first.
+#[test]
+fn a_reconnecting_call_blocks_the_offer() {
+    let (dir, mut driver, recorder, _handle, _sink, _seq) = ready_group_call_driver();
+    let mut other = tracked_group_call(true, false, false);
+    other.is_joined = false;
+    driver.session.calls.active_group_call = Some(other);
+    let before = recorder.snapshot().len();
+    let step = driver.offer_call_link(ChatId(51), "AbC", false).unwrap();
+    assert_eq!(step, CallLinkStep::OtherCallOn);
+    assert_eq!(recorder.snapshot().len(), before, "nothing is fetched");
+    let ask = driver
+        .session
+        .calls
+        .call_link_stage
+        .confirm()
+        .cloned()
+        .expect("asks");
+    assert_eq!(ask.chat_id, 51);
+    assert_eq!(
+        ask.leave,
+        LeaveKind::GroupCall {
+            current_is_channel: false
+        }
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The Calls tab's Join arm for a non-stream call makes the same join the
+/// call screen's Join does: `joinVideoChat` for the tracked call.
+#[test]
+fn a_non_stream_join_reaches_join_video_chat() {
+    let (dir, mut driver, recorder, _handle, _sink, _seq) = ready_group_call_driver();
+    driver.join_video_chat(555).expect("join sends");
+    let join = sent_request(&recorder, "joinVideoChat");
+    assert_eq!(join["group_call_id"], 555);
+    assert_eq!(join["invite_hash"], "");
     let _ = std::fs::remove_dir_all(&dir);
 }
 

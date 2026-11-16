@@ -102,6 +102,13 @@ impl QuillApp {
     /// Recent calls; preferences live in Settings.
     pub(in crate::ui) fn calls_list(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let mut list = div().id("calls-list").flex().flex_col().gap_1().px_1();
+        let live = self
+            .session()
+            .map(|session| session.live_group_calls())
+            .unwrap_or_default();
+        if !live.is_empty() {
+            list = list.child(self.active_calls_section(&live, cx));
+        }
         let (entries, loading, failed, has_more, clearing) = self
             .session()
             .map(|session| {

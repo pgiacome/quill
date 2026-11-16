@@ -126,6 +126,7 @@ mod session_chatlist;
 mod session_composer_topic;
 mod session_connection;
 mod session_date_jump;
+mod session_live_group_calls;
 pub use session_date_jump::JumpLookups;
 mod session_direct_messages;
 mod session_drafts;
