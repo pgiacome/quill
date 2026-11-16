@@ -344,6 +344,12 @@ pub fn chat_list_stamp(date: &CivilTime, now: &CivilTime) -> String {
     }
 }
 
+/// A list row's timestamp for a message sent at `date` (Unix seconds), as
+/// of now: [`chat_list_stamp`], or `None` when there is no message (0).
+pub fn list_stamp(date: i32) -> Option<String> {
+    (date > 0).then(|| chat_list_stamp(&civil_local(i64::from(date)), &civil_local(now_unix())))
+}
+
 /// The numeric short date, `12.03.25` (tdesktop prints
 /// `QLocale().toString(date, ShortFormat)`).
 pub fn short_date(date: &CivilTime) -> String {

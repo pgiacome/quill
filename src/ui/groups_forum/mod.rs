@@ -927,6 +927,7 @@ crate::ui::shell::register_dialogs! {
 }
 
 mod closed_sends;
+mod forum_topic_row;
 mod forum_topics_pane;
 pub(super) use closed_sends::ClosedTopicSend;
 
@@ -963,3 +964,8 @@ mod forum_editor_tests {
 #[cfg(feature = "demo-capture")]
 #[path = "topic_editor_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[cfg(feature = "demo-capture")]
+#[path = "forum_topics_pane_tests.rs"]
+mod forum_topics_pane_tests;

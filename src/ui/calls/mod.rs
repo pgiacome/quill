@@ -910,6 +910,10 @@ crate::ui::shell::register_dialogs! {
     ),
 }
 
+mod active_calls;
+#[cfg(test)]
+#[cfg(feature = "demo-capture")]
+mod active_calls_tests;
 #[cfg(feature = "demo-capture")]
 mod add_people_demo;
 mod call_again;

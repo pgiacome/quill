@@ -356,6 +356,38 @@ pub struct GroupCallVerificationState {
     pub emojis: Vec<String>,
 }
 
+/// What a running group call is, as the Calls tab lists it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GroupCallKind {
+    VoiceChat,
+    VideoChat,
+    LiveStream,
+}
+
+/// What `updateGroupCall` said about a running call nobody here joined:
+/// what the Calls tab shows about it beyond its chat.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupCallDetails {
+    /// The call's own title, often empty.
+    pub title: String,
+    pub kind: GroupCallKind,
+    pub participant_count: i32,
+}
+
+/// A running group call the Calls tab lists: a chat whose `video_chat`
+/// points at it, and what updates said about it, when any arrived.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LiveGroupCall {
+    pub id: i32,
+    pub chat_id: ChatId,
+    /// The name the row shows: the chat's title, or the call's own when
+    /// the chat has none.
+    pub name: String,
+    /// `None` while only the chat's `video_chat` is known: what kind of
+    /// call it is and who is in it are not known yet.
+    pub details: Option<GroupCallDetails>,
+}
+
 /// Phase C3a: the tracked group call / voice chat (**signaling
 /// only** — no media transport; real group audio/video is the C2
 /// program). State follows TDLib's `groupCall` (schema 1.8.67, line

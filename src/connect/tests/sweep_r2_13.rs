@@ -151,6 +151,7 @@ fn a_refused_topic_refetch_leaves_the_mention_badge_cleared_by_the_read_ok() {
         unread_count: 3,
         order: 5,
         last_message_preview: String::new(),
+        last_message: None,
         icon_color: 0,
         icon_custom_emoji_id: 0,
         last_message_id: 0,

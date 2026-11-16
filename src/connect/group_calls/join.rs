@@ -209,14 +209,8 @@ impl<S: JsonSender> ConnectDriver<S> {
     /// has no `video_chat`: its poster's chat is the one.
     pub(crate) fn group_call_chat_id(&self, group_call_id: i32) -> Option<i64> {
         self.session
-            .chats
-            .values()
-            .find(|chat| {
-                chat.video_chat
-                    .as_ref()
-                    .is_some_and(|video_chat| video_chat.group_call_id == group_call_id)
-            })
-            .map(|chat| chat.id.0)
+            .chat_for_group_call(group_call_id)
+            .map(|chat| chat.0)
             .or_else(|| {
                 self.session
                     .stories
@@ -360,9 +354,23 @@ impl<S: JsonSender> ConnectDriver<S> {
     }
 
     /// Phase C3a: `getGroupCall` for a known call id (schema 1.8.67,
-    /// :14274). Used to start tracking a voice chat found via a chat's
+    /// :14274), the call the person asked to open: its answer may take the
+    /// current call slot (`Session::want_group_call`), unless a later ask
+    /// replaced it. Used to start tracking a voice chat found via a chat's
     /// `video_chat` affordance.
     pub fn fetch_group_call(&mut self, group_call_id: i32) -> Result<RequestId, ConnectSendError> {
+        let extra = self.send_get_group_call(group_call_id)?;
+        self.session.want_group_call(extra);
+        Ok(extra)
+    }
+
+    /// `getGroupCall` whose answer only refreshes what is known about the
+    /// call (a live story's call goes to its own slot): it never takes the
+    /// current call slot by itself.
+    pub(crate) fn send_get_group_call(
+        &mut self,
+        group_call_id: i32,
+    ) -> Result<RequestId, ConnectSendError> {
         if !self.chats_path_active() {
             return Err(ConnectSendError::InvalidRequest);
         }
@@ -387,7 +395,15 @@ impl<S: JsonSender> ConnectDriver<S> {
         }
         let queued: Vec<i32> = std::mem::take(&mut self.session.calls.group_call_fetch_queue);
         for group_call_id in queued {
-            if let Err(err) = self.fetch_group_call(group_call_id) {
+            // A call already tracked (a conference handover) only needs its
+            // details again; it must not replace the call the person asked
+            // for last.
+            let sent = if self.session.calls.is_current_group_call(group_call_id) {
+                self.send_get_group_call(group_call_id)
+            } else {
+                self.fetch_group_call(group_call_id)
+            };
+            if let Err(err) = sent {
                 // Best-effort: re-queue for the next ingest tick; the
                 // `updateGroupCall` backstop still tracks the call.
                 let _ = err;

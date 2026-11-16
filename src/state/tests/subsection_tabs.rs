@@ -482,3 +482,62 @@ fn forum_unread_follows_topic_updates() {
     assert_eq!(session.forum_topics_unread(ChatId(41)), 0);
     assert_eq!(session.forum_topics_unread(ChatId(41)), badges(&session));
 }
+
+/// A topic row's sender, time and "You" follow each new message, as its
+/// preview does; a service message names its actor itself, and an older
+/// message never replaces the newest.
+#[test]
+fn a_topic_row_follows_its_newest_message() {
+    let (mut session, sink) = session();
+    let seq = AtomicU64::new(0);
+    apply_json(&mut session, &seq, &sink, &bot_user(41, true, true));
+    apply_json(&mut session, &seq, &sink, &private_chat(41));
+    apply_json(
+        &mut session,
+        &seq,
+        &sink,
+        r#"{"@type":"updateUser","user":{"id":5,"first_name":"Maya","last_name":"Smith","type":{"@type":"userTypeRegular"}}}"#,
+    );
+    let extra = session.ask_forum_topics(ChatId(41));
+    apply_json(&mut session, &seq, &sink, &topics_answer(extra.0, 41, &[3]));
+    let message = |id: i64, date: i32, outgoing: bool, content: &str| {
+        format!(
+            r#"{{"@type":"updateNewMessage","message":{{"id":{id},"chat_id":41,"date":{date},"is_outgoing":{outgoing},"sender_id":{{"@type":"messageSenderUser","user_id":5}},"topic_id":{{"@type":"messageTopicForum","forum_topic_id":3}},"content":{content}}}}}"#
+        )
+    };
+    let text =
+        r#"{"@type":"messageText","text":{"@type":"formattedText","text":"hi","entities":[]}}"#;
+    let row = |session: &Session| {
+        let topic = session
+            .ordered_forum_topics(ChatId(41))
+            .into_iter()
+            .find(|t| t.forum_topic_id == 3)
+            .unwrap();
+        let last = topic.last_message.clone().unwrap();
+        (
+            topic.last_message_preview,
+            last.date,
+            session.topic_preview_sender(&last),
+        )
+    };
+
+    apply_json(&mut session, &seq, &sink, &message(500, 1_000, false, text));
+    assert_eq!(row(&session), ("hi".into(), 1_000, Some("Maya".into())));
+
+    apply_json(&mut session, &seq, &sink, &message(600, 2_000, true, text));
+    assert_eq!(row(&session), ("hi".into(), 2_000, Some("You".into())));
+
+    // An older message arriving late leaves the row on the newest one.
+    apply_json(&mut session, &seq, &sink, &message(550, 1_500, false, text));
+    assert_eq!(row(&session).2, Some("You".into()));
+
+    let pinned = r#"{"@type":"messagePinMessage","message_id":500}"#;
+    apply_json(
+        &mut session,
+        &seq,
+        &sink,
+        &message(700, 3_000, false, pinned),
+    );
+    let (_, date, sender) = row(&session);
+    assert_eq!((date, sender), (3_000, None));
+}

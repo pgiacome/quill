@@ -37,11 +37,13 @@ pub enum CallLinkStep {
     Offer { group_call_id: i32 },
 }
 
-/// The call that is tracked or joined right now.
+/// The call that is tracked or in use right now.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CurrentCall {
     pub group_call_id: i32,
-    pub joined: bool,
+    /// The person is in the call, not merely looking at it: joined,
+    /// reconnecting after a network loss, or its join is in flight.
+    pub in_call: bool,
 }
 
 /// Decide what a call link does. `video_chat` is the chat's group call id,
@@ -52,8 +54,18 @@ pub fn plan(
     video_chat: Option<i32>,
     current: Option<CurrentCall>,
     private_call: bool,
+    mode: OfferMode,
 ) -> CallLinkStep {
-    if !matches!(kind, ChatKind::Supergroup { .. }) {
+    // A link's hash is only followed for supergroups and channels; the
+    // Calls tab lists basic groups' calls too.
+    let follows = match mode {
+        OfferMode::OpenScreen => matches!(kind, ChatKind::Supergroup { .. }),
+        OfferMode::Join => matches!(
+            kind,
+            ChatKind::Supergroup { .. } | ChatKind::BasicGroup { .. }
+        ),
+    };
+    if !follows {
         return CallLinkStep::JustOpen;
     }
     let Some(id) = video_chat.filter(|id| *id != 0) else {
@@ -63,8 +75,8 @@ pub fn plan(
         return CallLinkStep::OtherCallOn;
     }
     match current {
-        Some(call) if call.group_call_id == id && call.joined => CallLinkStep::AlreadyJoined,
-        Some(call) if call.joined => CallLinkStep::OtherCallOn,
+        Some(call) if call.group_call_id == id && call.in_call => CallLinkStep::AlreadyJoined,
+        Some(call) if call.in_call => CallLinkStep::OtherCallOn,
         _ => CallLinkStep::Offer { group_call_id: id },
     }
 }
@@ -104,6 +116,18 @@ pub struct CallLinkConfirm {
     pub live_stream: bool,
     pub target_is_channel: bool,
     pub leave: LeaveKind,
+    /// What the offer does once the old call ends.
+    pub mode: OfferMode,
+}
+
+/// What an offered call does once it is tracked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OfferMode {
+    /// A call link: the call screen opens and its Join button joins (a
+    /// stream joins in its window).
+    OpenScreen,
+    /// The Calls tab's Join: the call is joined whatever its kind.
+    Join,
 }
 
 impl CallLinkConfirm {
@@ -173,6 +197,7 @@ pub enum LeavingCall {
 pub struct OfferedCallLink {
     pub group_call_id: i32,
     pub live_stream: bool,
+    pub mode: OfferMode,
 }
 
 /// Where a call link is: one stage, since each follows the last (asked,
@@ -302,21 +327,43 @@ mod tests {
     }
 
     #[test]
+    fn the_calls_tab_offers_a_basic_groups_call_a_link_does_not() {
+        let basic = ChatKind::BasicGroup { basic_group_id: 3 };
+        assert_eq!(
+            plan(&basic, Some(call(4)), None, false, OfferMode::OpenScreen),
+            CallLinkStep::JustOpen
+        );
+        assert_eq!(
+            plan(&basic, Some(call(4)), None, false, OfferMode::Join),
+            CallLinkStep::Offer { group_call_id: 4 }
+        );
+    }
+
+    #[test]
     fn only_groups_and_channels_follow_the_link() {
         let user = ChatKind::Private {
             user_id: crate::ids::UserId(5),
         };
         assert_eq!(
-            plan(&user, Some(call(4)), None, false),
+            plan(&user, Some(call(4)), None, false, OfferMode::OpenScreen),
             CallLinkStep::JustOpen
         );
     }
 
     #[test]
     fn no_call_is_a_bad_link() {
-        assert_eq!(plan(&channel(), None, None, false), CallLinkStep::NoCall);
         assert_eq!(
-            plan(&channel(), Some(call(0)), None, false),
+            plan(&channel(), None, None, false, OfferMode::OpenScreen),
+            CallLinkStep::NoCall
+        );
+        assert_eq!(
+            plan(
+                &channel(),
+                Some(call(0)),
+                None,
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::NoCall
         );
         assert_eq!(
@@ -328,36 +375,60 @@ mod tests {
     #[test]
     fn a_call_is_offered_not_joined() {
         assert_eq!(
-            plan(&channel(), Some(call(4)), None, false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                None,
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::Offer { group_call_id: 4 }
         );
         // The same call tracked but not joined yet still gets the offer.
         let tracked = CurrentCall {
             group_call_id: 4,
-            joined: false,
+            in_call: false,
         };
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(tracked), false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                Some(tracked),
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::Offer { group_call_id: 4 }
         );
     }
 
     #[test]
     fn a_running_call_blocks_the_offer() {
-        let joined = |id| CurrentCall {
+        let in_call = |id| CurrentCall {
             group_call_id: id,
-            joined: true,
+            in_call: true,
         };
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(joined(4)), false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                Some(in_call(4)),
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::AlreadyJoined
         );
         assert_eq!(
-            plan(&channel(), Some(call(4)), Some(joined(9)), false),
+            plan(
+                &channel(),
+                Some(call(4)),
+                Some(in_call(9)),
+                false,
+                OfferMode::OpenScreen
+            ),
             CallLinkStep::OtherCallOn
         );
         assert_eq!(
-            plan(&channel(), Some(call(4)), None, true),
+            plan(&channel(), Some(call(4)), None, true, OfferMode::OpenScreen),
             CallLinkStep::OtherCallOn
         );
         assert_eq!(step_note(CallLinkStep::OtherCallOn, true), None);
@@ -371,6 +442,7 @@ mod tests {
             live_stream: target_is_channel,
             target_is_channel,
             leave,
+            mode: OfferMode::OpenScreen,
         };
         let private = ask(LeaveKind::PrivateCall, false);
         assert_eq!(private.button(), "End call");

@@ -128,7 +128,7 @@ impl QuillApp {
         };
         // The fetch of the call it asked for failed: no call will come for
         // this wish, whatever other call is tracked meanwhile.
-        if let StreamJoinIntent::Call(id) = intent {
+        if let StreamJoinIntent::Call(id) | StreamJoinIntent::Join(id) = intent {
             let failed = if let Some(live) = self.live.as_mut() {
                 live.driver.session.calls.take_group_call_fetch_failure(id)
             } else {
@@ -170,6 +170,11 @@ impl QuillApp {
             return;
         }
         match intent {
+            StreamJoinIntent::Join(id) if stream => self.join_stream(id, cx),
+            StreamJoinIntent::Join(_) => {
+                self.send_group_call_join();
+                cx.notify();
+            }
             StreamJoinIntent::Call(_) if stream => self.join_stream(id, cx),
             StreamJoinIntent::Call(_) => {}
             StreamJoinIntent::Created { join_as, .. } => {

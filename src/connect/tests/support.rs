@@ -273,6 +273,23 @@ pub(crate) fn ingest_call_json(
         .unwrap();
 }
 
+/// The person asked for a call (`fetch_group_call`) and TDLib answered
+/// with `group_call`, a `groupCall` object without `@extra`: the answer
+/// comes back carrying the request's `@extra`, as TDLib's does.
+pub(crate) fn answer_group_call_fetch(
+    driver: &mut ConnectDriver<Arc<RecordingSender>>,
+    seq: &AtomicU64,
+    sink: &Arc<dyn DiagnosticSink>,
+    group_call: &str,
+) -> crate::ids::RequestId {
+    let mut answer: Value = serde_json::from_str(group_call).expect("groupCall json");
+    let id = answer["id"].as_i64().expect("group call id") as i32;
+    let extra = driver.fetch_group_call(id).expect("fetch sends");
+    answer["@extra"] = Value::String(extra.0.to_string());
+    ingest_call_json(driver, seq, sink, &answer.to_string());
+    extra
+}
+
 pub(crate) fn sent_request(recorder: &RecordingSender, type_name: &str) -> Value {
     recorder
         .snapshot()

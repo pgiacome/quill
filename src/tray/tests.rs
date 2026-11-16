@@ -470,6 +470,7 @@ fn topic(id: i32, unread_count: i32) -> crate::telegram::envelope::ForumTopic {
         unread_count,
         order: i64::from(id),
         last_message_preview: String::new(),
+        last_message: None,
         icon_color: 0,
         icon_custom_emoji_id: 0,
         last_message_id: 100,

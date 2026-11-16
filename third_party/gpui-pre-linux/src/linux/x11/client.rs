@@ -1,6 +1,7 @@
 // Modified by the Quill project (2026) from gpui-pre-linux 0.3.9 (Apache-2.0):
-// the refresh timer parks while the window is idle, and a bad
-// GPUI_X11_SCALE_FACTOR is ignored with a warning instead of panicking.
+// the refresh timer parks while the window is idle, a bad
+// GPUI_X11_SCALE_FACTOR is ignored with a warning instead of panicking, and
+// the scale factor follows the desktop's XSETTINGS before guessing from RandR.
 // See third_party/gpui-pre-linux/QUILL-CHANGES.md.
 use anyhow::{Context as _, anyhow};
 use ashpd::WindowIdentifier;
@@ -49,7 +50,7 @@ use super::{
     XimCallbackEvent, XimHandler, button_or_scroll_from_event_detail, check_reply,
     clipboard::{self, Clipboard},
     get_reply, get_valuator_axis_index, handle_connection_error, modifiers_from_state,
-    next_frame_at, pressed_button_from_mask, xcb_flush,
+    next_frame_at, pressed_button_from_mask, xcb_flush, xsettings_scale_factor,
 };
 
 use crate::linux::{
@@ -2807,8 +2808,6 @@ fn get_scale_factor(
         DpiMode::NotSet => {}
     }
 
-    // TODO: Use scale factor from XSettings here
-
     if let Some(dpi) = resource_database
         .get_value::<f32>("Xft.dpi", "Xft.dpi")
         .ok()
@@ -2819,6 +2818,15 @@ fn get_scale_factor(
         return scale;
     }
 
+    // Quill: a desktop that sets no Xft.dpi (Xfce, MATE, LXQt at their
+    // defaults) still says which scale it wants through XSETTINGS. Follow it
+    // before guessing from the monitor's physical size, which makes the
+    // window larger than everything else on that desktop.
+    if let Some(scale) = get_xsettings_scale_factor(connection, screen_index) {
+        log::info!("Using scale factor from XSETTINGS: {}", scale);
+        return scale;
+    }
+
     if let Some(scale) = get_randr_scale_factor(connection, screen_index) {
         log::info!("Using RandR scale factor: {}", scale);
         return scale;
@@ -2826,6 +2834,50 @@ fn get_scale_factor(
 
     log::info!("Using default scale factor: 1.0");
     1.0
+}
+
+/// Quill: the scale the desktop's XSETTINGS manager asks for, or `None` when
+/// no manager runs on this screen, its property cannot be read or it says
+/// nothing about scale.
+fn get_xsettings_scale_factor(connection: &XCBConnection, screen_index: usize) -> Option<f32> {
+    // The property's length in 32-bit units; real ones are a few kilobytes.
+    const MAX_PROPERTY_WORDS: u32 = 1 << 18;
+
+    // only_if_exists: an atom no manager ever interned answers NONE, and
+    // the server is not left holding a new one.
+    let intern = |name: &[u8]| {
+        let atom = connection.intern_atom(true, name).ok()?.reply().ok()?.atom;
+        (atom != x11rb::NONE).then_some(atom)
+    };
+    let selection = intern(format!("_XSETTINGS_S{screen_index}").as_bytes())?;
+    let owner = connection
+        .get_selection_owner(selection)
+        .ok()?
+        .reply()
+        .ok()?
+        .owner;
+    if owner == x11rb::NONE {
+        return None;
+    }
+
+    let property = intern(b"_XSETTINGS_SETTINGS")?;
+    let settings = connection
+        .get_property(
+            false,
+            owner,
+            property,
+            xproto::AtomEnum::ANY,
+            0,
+            MAX_PROPERTY_WORDS,
+        )
+        .ok()?
+        .reply()
+        .ok()?;
+    if settings.format != 8 || settings.bytes_after != 0 {
+        return None;
+    }
+
+    xsettings_scale_factor(&settings.value)
 }
 
 fn get_randr_scale_factor(connection: &XCBConnection, screen_index: usize) -> Option<f32> {
