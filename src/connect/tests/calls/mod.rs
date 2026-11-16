@@ -46,28 +46,7 @@ fn join_video_chat_guard_allows_tracked_unjoined_call() {
 
     // Track call 555 unjoined, as the answer to the person's own
     // `getGroupCall`: join allowed.
-    driver.fetch_group_call(555).expect("fetch sends");
-    let extra = {
-        let sent = recorder
-            .snapshot()
-            .last()
-            .cloned()
-            .expect("getGroupCall sent");
-        serde_json::from_str::<Value>(&sent).expect("json")["@extra"]
-            .as_str()
-            .expect("@extra")
-            .to_string()
-    };
-    driver
-        .ingest(
-            copy_and_parse(
-                &UNJOINED_CALL.replacen('{', &format!(r#"{{"@extra":"{extra}","#), 1),
-                &seq,
-                &dyn_sink,
-            )
-            .unwrap(),
-        )
-        .unwrap();
+    answer_group_call_fetch(&mut driver, &seq, &dyn_sink, UNJOINED_CALL);
     assert!(
         driver
             .session

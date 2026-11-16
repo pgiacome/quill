@@ -237,8 +237,8 @@ impl Session {
     /// Phase C3a: `updateGroupCall` state machine. The current call holds
     /// one group call at a time (like the single 1:1 call):
     /// - a different call id replaces the tracked call only when
-    ///   `group_call_update_may_take_slot` allows it — a joined call, or
-    ///   an unjoined one whose `getGroupCall` the person asked for
+    ///   `group_call_update_may_take_slot` allows it: a joined call, or
+    ///   the answer to the `getGroupCall` the person asked for last
     ///   (participants reload via updates);
     /// - `need_rejoin` makes a rejoin due (`GroupCallRejoin::want`) so the
     ///   UI shows "Reconnecting…" and the driver re-issues the join;
@@ -327,108 +327,6 @@ impl Session {
             // group-call error line would lie now.
             self.calls.group_call_error = None;
         }
-    }
-
-    /// Remember the details `updateGroupCall` gave for a running call.
-    /// An unjoined call is listed in `group_call_details`; a joined,
-    /// ended or live-story call is not. The chat is resolved when the
-    /// list is read, so the update does not wait for the chat to load.
-    fn note_live_group_call(&mut self, group_call: &ParsedGroupCall) {
-        if group_call.is_active && !group_call.is_joined && !group_call.is_live_story {
-            let kind = if group_call.is_rtmp_stream {
-                GroupCallKind::LiveStream
-            } else if group_call.is_video_chat {
-                GroupCallKind::VideoChat
-            } else {
-                GroupCallKind::VoiceChat
-            };
-            self.calls.group_call_details.insert(
-                group_call.id,
-                LiveGroupCall {
-                    id: group_call.id,
-                    chat_id: None,
-                    title: group_call.title.clone(),
-                    kind: Some(kind),
-                    participant_count: group_call.participant_count,
-                },
-            );
-        } else {
-            self.calls.group_call_details.remove(&group_call.id);
-        }
-    }
-
-    /// The chat whose `video_chat` points at `group_call_id`, if any.
-    pub fn chat_id_for_group_call(&self, group_call_id: i32) -> Option<i64> {
-        self.chats
-            .values()
-            .find(|chat| {
-                chat.video_chat
-                    .as_ref()
-                    .is_some_and(|call| call.group_call_id == group_call_id)
-            })
-            .map(|chat| chat.id.0)
-    }
-
-    /// Every running group call the Calls tab lists: the details
-    /// `updateGroupCall` sent about unjoined calls, plus chats that report
-    /// participants but whose update never arrived (a bare row). Calls
-    /// owned by the call window (`active_group_call` once joined,
-    /// `story_stream`) are left to it.
-    pub fn live_group_calls(&self) -> Vec<LiveGroupCall> {
-        let mut calls: Vec<LiveGroupCall> =
-            self.calls.group_call_details.values().cloned().collect();
-        for call in &mut calls {
-            call.chat_id = call
-                .chat_id
-                .or_else(|| self.chat_id_for_group_call(call.id));
-        }
-        for chat in self.chats.values() {
-            let Some(video_chat) = chat.video_chat.as_ref() else {
-                continue;
-            };
-            if !video_chat.has_participants || video_chat.group_call_id == 0 {
-                continue;
-            }
-            if calls.iter().any(|call| call.id == video_chat.group_call_id) {
-                continue;
-            }
-            calls.push(LiveGroupCall {
-                id: video_chat.group_call_id,
-                chat_id: Some(chat.id.0),
-                title: chat.title.clone(),
-                kind: None,
-                participant_count: 0,
-            });
-        }
-        let shown = |id: i32| {
-            // The window slot hides a call only when that call is joined:
-            // a call being opened stays listed until it is joined.
-            self.calls
-                .active_group_call
-                .as_ref()
-                .is_none_or(|call| call.id != id || !call.is_joined)
-                && self
-                    .calls
-                    .story_stream
-                    .as_ref()
-                    .is_none_or(|call| call.id != id)
-        };
-        calls.retain(|call| shown(call.id));
-        calls.sort_by(|a, b| {
-            fn rank(kind: Option<GroupCallKind>) -> u8 {
-                match kind {
-                    Some(GroupCallKind::LiveStream) => 0,
-                    Some(GroupCallKind::VideoChat) => 1,
-                    Some(GroupCallKind::VoiceChat) => 2,
-                    None => 3,
-                }
-            }
-            rank(a.kind)
-                .cmp(&rank(b.kind))
-                .then_with(|| a.title.to_lowercase().cmp(&b.title.to_lowercase()))
-                .then_with(|| a.id.cmp(&b.id))
-        });
-        calls
     }
 
     fn accept_story_stream_update(&mut self, group_call: &ParsedGroupCall) {
@@ -576,9 +474,9 @@ impl Session {
     }
 
     /// Phase C3a: `updateChatVideoChat`. Refreshes the chat's join
-    /// affordance (`group_call_id` 0 → no active video chat). Only the
-    /// call the chat used to point at is forgotten when the chat says it
-    /// has none; an empty call (`has_participants` false) stays listed.
+    /// affordance (`group_call_id` 0 → no active video chat). The call the
+    /// chat used to point at is forgotten when the chat moves off it; an
+    /// empty call (`has_participants` false) stays listed.
     pub(crate) fn accept_chat_video_chat(&mut self, chat_id: ChatId, video_chat: &ParsedVideoChat) {
         let old_id = self
             .chats
@@ -598,8 +496,10 @@ impl Session {
                 default_participant_id: video_chat.default_participant_id,
             })
         };
-        if video_chat.group_call_id == 0
-            && let Some(old_id) = old_id
+        // The chat moved off its call (it ended, or another one started
+        // while the app was away): what was known about the old call goes.
+        if let Some(old_id) = old_id
+            && old_id != video_chat.group_call_id
         {
             self.calls.group_call_details.remove(&old_id);
         }
@@ -613,12 +513,11 @@ impl Session {
         request: Option<RequestId>,
         senders: Vec<MessageSender>,
     ) {
-        let default = self.chats.values().find_map(|chat| {
-            chat.video_chat
-                .as_ref()
-                .filter(|vc| vc.group_call_id == group_call_id)
-                .and_then(|vc| vc.default_participant_id)
-        });
+        let default = self
+            .chat_for_group_call(group_call_id)
+            .and_then(|chat| self.chats.get(&chat.0))
+            .and_then(|chat| chat.video_chat.as_ref())
+            .and_then(|vc| vc.default_participant_id);
         if let Some(tracked) = self.calls.active_group_call.as_mut()
             && tracked.id == group_call_id
             && request.is_some_and(|request| tracked.join_as_options.waits_for(request))
@@ -650,43 +549,43 @@ impl Session {
         }
     }
 
+    /// The person asked for this `getGroupCall` (the driver's
+    /// `fetch_group_call`): its answer may take the current call slot, and
+    /// any earlier ask's answer no longer may.
+    pub fn want_group_call(&mut self, request: RequestId) {
+        self.calls.wanted_group_call = Some(request);
+    }
+
     /// Whether an update (or a `getGroupCall` answer) for `group_call`
     /// may take the current call slot. An update for the tracked call
-    /// always may. A call nobody joined takes the slot only when it is
-    /// the answer to the person's own `getGroupCall`, and never over a
-    /// call they are in. A late joined update for the call just left is
-    /// not tracked either.
+    /// always may. A call nobody joined takes the slot only as the answer
+    /// to the `getGroupCall` the person asked for last
+    /// (`CallsState::wanted_group_call`), and never over a call they are in
+    /// (joined, reconnecting, or its join in flight). A late joined update
+    /// for the call just left is not tracked either.
     fn group_call_update_may_take_slot(
         &self,
         group_call: &ParsedGroupCall,
         pending: Option<&PendingRequest>,
     ) -> bool {
-        let asked = pending.is_some_and(|request| {
-            matches!(
-                request.purpose,
-                RequestPurpose::Calls(CallsPurpose::GetGroupCall { group_call_id })
-                    if group_call_id == group_call.id
-            )
-        });
         if group_call.is_joined {
             return !self.calls.group_call_left(group_call.id);
         }
         match self.calls.active_group_call.as_ref() {
             Some(tracked) if tracked.id == group_call.id => true,
-            Some(tracked) if tracked.is_joined => false,
-            Some(_) => asked,
-            None => asked,
+            Some(_) if self.group_call_joined_or_joining(None) => false,
+            _ => pending.is_some_and(|request| self.calls.wanted_group_call == Some(request.id)),
         }
     }
 
     /// Phase C3a: drop the tracked group call after the local user
-    /// leaves or ends it. Its details go too, so the Calls tab does not
-    /// list a call that just ended. The driver's
-    /// `drop_group_call_locally` also stops the call's native transport.
+    /// leaves or ends it. A `getGroupCall` still out is no longer wanted:
+    /// its answer must not bring the window back. The call's details stay
+    /// (it may still run; `updateGroupCall` says when it ends). The
+    /// driver's `drop_group_call_locally` also stops the call's native
+    /// transport.
     pub fn leave_group_call_local(&mut self) {
-        if let Some(id) = self.calls.active_group_call.as_ref().map(|call| call.id) {
-            self.calls.group_call_details.remove(&id);
-        }
+        self.calls.wanted_group_call = None;
         self.calls.active_group_call = None;
         self.calls.call_link_stage.forget_hash(None);
     }

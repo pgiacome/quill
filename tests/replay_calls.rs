@@ -363,6 +363,7 @@ fn replay_group_call_signaling() {
         None,
         None,
     );
+    session.want_group_call(req_id);
     let answer = format!(
         r#"{{"@type":"groupCall","@extra":"{}",{}}}"#,
         req_id.0,
@@ -593,13 +594,15 @@ fn replay_get_group_call_bare_response_populates_tracker() {
     let mut session = Session::new(AccountKey::primary(), dyn_sink);
     let seq = AtomicU64::new(0);
 
-    // Register the in-flight `getGroupCall` exactly like the driver does.
+    // Register the in-flight `getGroupCall` exactly like the driver's
+    // `fetch_group_call` does: sent, and the call the person asked for.
     let req_id = session.requests.register(
         quill::ids::AccountGeneration(1),
         RequestPurpose::Calls(CallsPurpose::GetGroupCall { group_call_id: 555 }),
         None,
         None,
     );
+    session.want_group_call(req_id);
 
     // Bare `groupCall` response with the matching `@extra` (fields per
     // schema 1.8.67 line 7154, same shape as `updateGroupCall`'s payload).

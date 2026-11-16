@@ -523,19 +523,11 @@ fn ready_group_call_driver() -> GroupCallDriverHarness {
     );
     // The call nobody joined enters the slot only as the answer to the
     // person's own `getGroupCall` — the chat's affordance was pressed.
-    driver.fetch_group_call(555).expect("fetch sends");
-    let extra = serde_json::from_str::<Value>(recorder.snapshot().last().expect("a request"))
-        .expect("json")["@extra"]
-        .as_str()
-        .expect("@extra")
-        .to_string();
-    ingest_call_json(
+    answer_group_call_fetch(
         &mut driver,
         &seq,
         &sink,
-        &format!(
-            r#"{{"@type":"groupCall","@extra":"{extra}","id":555,"unique_id":"999","title":"Design voice","invite_link":"","paid_message_star_count":0,"scheduled_start_date":0,"enabled_start_notification":false,"is_active":true,"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":false,"need_rejoin":false,"is_owned":false,"can_be_managed":true,"participant_count":0,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":false,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0}}"#
-        ),
+        r#"{"@type":"groupCall","id":555,"unique_id":"999","title":"Design voice","invite_link":"","paid_message_star_count":0,"scheduled_start_date":0,"enabled_start_notification":false,"is_active":true,"is_video_chat":true,"is_live_story":false,"is_rtmp_stream":false,"is_joined":false,"need_rejoin":false,"is_owned":false,"can_be_managed":true,"participant_count":0,"has_hidden_listeners":false,"loaded_all_participants":false,"message_sender_id":null,"recent_speakers":[],"is_my_video_enabled":false,"is_my_video_paused":false,"can_enable_video":true,"mute_new_participants":false,"can_toggle_mute_new_participants":true,"can_send_messages":true,"are_messages_allowed":true,"can_toggle_are_messages_allowed":false,"can_delete_messages":false,"record_duration":0,"is_video_recorded":false,"duration":0}"#,
     );
     (dir, driver, recorder, handle, sink, seq)
 }

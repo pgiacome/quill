@@ -364,20 +364,28 @@ pub enum GroupCallKind {
     LiveStream,
 }
 
-/// A running group call the Calls tab lists: an unjoined one, or a bare
-/// row seeded from a chat. A joined call belongs to the call window; its
-/// details are not kept, and the chat seed can re-add a bare row until the
-/// next update once the window no longer tracks it. [`Self::kind`] is
-/// `None` when only `chat.video_chat` is known, so what kind of call it is
-/// and how many people are in it are not known yet.
+/// What `updateGroupCall` said about a running call nobody here joined:
+/// what the Calls tab shows about it beyond its chat.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupCallDetails {
+    /// The call's own title, often empty.
+    pub title: String,
+    pub kind: GroupCallKind,
+    pub participant_count: i32,
+}
+
+/// A running group call the Calls tab lists: a chat whose `video_chat`
+/// points at it, and what updates said about it, when any arrived.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LiveGroupCall {
     pub id: i32,
-    /// The chat the call belongs to, resolved when the list is read.
-    pub chat_id: Option<i64>,
-    pub title: String,
-    pub kind: Option<GroupCallKind>,
-    pub participant_count: i32,
+    pub chat_id: ChatId,
+    /// The name the row shows: the chat's title, or the call's own when
+    /// the chat has none.
+    pub name: String,
+    /// `None` while only the chat's `video_chat` is known: what kind of
+    /// call it is and who is in it are not known yet.
+    pub details: Option<GroupCallDetails>,
 }
 
 /// Phase C3a: the tracked group call / voice chat (**signaling

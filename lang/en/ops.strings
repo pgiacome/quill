@@ -583,7 +583,6 @@
 "qll_ops_editing_a_message" = "Editing a message.";
 "qll_ops_email_reset_requested_waiting_for" = "Email reset requested — waiting for Telegram";
 "qll_ops_end_answer" = "End & answer";
-"qll_ops_end_current_call_first" = "End the current call first.";
 "qll_ops_end_time" = "End Time";
 "qll_ops_end_to_end_verification" = "End-to-end verification:";
 "qll_ops_ending" = "Ending…";
@@ -693,6 +692,7 @@
 "qll_ops_link_name_optional" = "Link name (optional)";
 "qll_ops_links_by" = "Links by {name}";
 "qll_ops_live_location_sharing" = "Live location sharing";
+"qll_ops_live_stream" = "Live stream";
 "qll_ops_load_a_collectible_by_its" = "Load a collectible by its Telegram gift name, then review the recipient and price before buying.";
 "qll_ops_load_gift" = "Load gift";
 "qll_ops_load_more" = "Load more";
@@ -1003,6 +1003,7 @@
 "qll_ops_video_call_3" = "Video call";
 "qll_ops_video_call_4" = "{what} video call";
 "qll_ops_video_call_again" = "Video call again";
+"qll_ops_video_chat" = "Video chat";
 "qll_ops_video_connecting_tiles_fill_in" = "Video connecting — tiles fill in as cameras stream.";
 "qll_ops_video_unavailable_no_camera_found" = "Video unavailable — no camera found.";
 "qll_ops_view" = "View";
@@ -1010,6 +1011,7 @@
 "qll_ops_view_release_on_github" = "View release on GitHub";
 "qll_ops_viewed" = " · Viewed";
 "qll_ops_voice_call" = "Voice call";
+"qll_ops_voice_chat" = "Voice chat";
 "qll_ops_waiting_for_audio_transport" = "Waiting for audio transport";
 "qll_ops_waiting_for_to_come_online" = "🔒 Waiting for {name} to come online…";
 "qll_ops_waiting_for_to_get_online" = "Waiting for {name} to get online…";

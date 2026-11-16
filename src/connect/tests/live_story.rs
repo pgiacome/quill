@@ -590,8 +590,19 @@ const LOOKED_AT_CHAT: &str = r#"{"@type":"groupCall","id":555,"title":"Chat","is
 fn a_reconnecting_video_chat_stays_beside_a_live_story() {
     let mut h = watching();
     h.driver.leave_live_story().unwrap();
-    // Network loss: TDLib reports the chat as not joined, needing a rejoin.
-    look_at_call(&mut h, &LOOKED_AT_CHAT.replace("NEED", "true"));
+    // You are in the chat's video chat; then network loss: TDLib reports
+    // it as not joined, needing a rejoin.
+    h.ingest(&format!(
+        r#"{{"@type":"updateGroupCall","group_call":{}}}"#,
+        LOOKED_AT_CHAT
+            .replace("NEED", "false")
+            .replace(r#""is_joined":false"#, r#""is_joined":true"#)
+    ));
+    h.ingest(&format!(
+        r#"{{"@type":"updateGroupCall","group_call":{}}}"#,
+        LOOKED_AT_CHAT.replace("NEED", "true")
+    ));
+    assert_eq!(current_id(&h), Some(555));
     assert!(h.driver.session.group_call_joined_or_joining(None));
     assert_ne!(
         h.driver.session.current_call_for_create(None),

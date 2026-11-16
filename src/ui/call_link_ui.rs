@@ -6,10 +6,12 @@ use super::group_call_stream_layout::StreamJoinIntent;
 use super::link_info_boxes::finish;
 use super::shell::{DialogKind, QuillShell};
 use crate::ui::status_note::StatusNote;
+use crate::ui::user_error::user_error_for;
 use gpui_kit::component::button::*;
 use gpui_kit::component::dialog::Dialog;
 use gpui_kit::*;
-use quill::call_link::{BAD_LINK_NOTE, CallLinkStep, OfferedCallLink, step_note};
+use quill::call_link::{BAD_LINK_NOTE, CallLinkStep, OfferMode, step_note};
+use quill::connect::ConnectSendError;
 use quill::ids::ChatId;
 use quill::lang::{keys, tr};
 
@@ -17,25 +19,21 @@ use quill::lang::{keys, tr};
 /// the call whatever its kind, while a link opens a stream (and keeps the
 /// call screen's Join for the other kinds). Pure, so the choice is tested
 /// without a live driver.
-pub(super) fn offered_call_intent(offered: &OfferedCallLink) -> StreamJoinIntent {
-    if offered.join_when_offered {
-        StreamJoinIntent::Join(offered.group_call_id)
-    } else {
-        StreamJoinIntent::Call(offered.group_call_id)
+pub(super) fn offered_call_intent(group_call_id: i32, mode: OfferMode) -> StreamJoinIntent {
+    match mode {
+        OfferMode::Join => StreamJoinIntent::Join(group_call_id),
+        OfferMode::OpenScreen => StreamJoinIntent::Call(group_call_id),
     }
 }
 
 impl QuillApp {
     /// The link's chat is open: offer its call. The call screen's Join
-    /// button joins, with the link's hash. `join_when_offered` is the Calls
-    /// tab's Join: once a busy confirmation is answered, the offer joins the
-    /// call itself instead of waiting for the call screen's Join.
+    /// button joins, with the link's hash.
     pub(super) fn offer_call_link(
         &mut self,
         chat_id: ChatId,
         invite_hash: &str,
         live_stream: bool,
-        join_when_offered: bool,
         cx: &mut Context<Self>,
     ) {
         let Some(live) = self.live.as_mut() else {
@@ -43,41 +41,53 @@ impl QuillApp {
             cx.notify();
             return;
         };
-        match live.driver.offer_call_link_joining(
-            chat_id,
-            invite_hash,
-            live_stream,
-            join_when_offered,
-        ) {
-            Ok(step) => {
-                // The call is offered at once (nothing busy): a stream opens
-                // in its window, the Calls tab's Join asks for it too.
-                if let CallLinkStep::Offer { group_call_id } = step {
-                    let intent = if join_when_offered {
-                        StreamJoinIntent::Join(group_call_id)
-                    } else {
-                        StreamJoinIntent::Call(group_call_id)
-                    };
-                    self.note_stream_join_intent(intent);
-                }
-                // Busy: the leave confirmation shows in this window.
-                if matches!(step, CallLinkStep::OtherCallOn) {
-                    self.open_box(crate::ui::shell::DialogKind::CallLinkLeave);
-                }
-                self.set_note(match step_note(step, live_stream) {
-                    Some(note) => StatusNote::info(note),
-                    None if matches!(step, CallLinkStep::Offer { .. }) => {
-                        if live_stream {
-                            StatusNote::silent(tr(keys::Q_OPS_OPENING_THE_LIVE_STREAM))
-                        } else {
-                            StatusNote::silent(tr(keys::Q_OPS_OPENING_THE_VOICE_CHAT))
-                        }
-                    }
-                    None => self.screen.connection.note().clone(),
-                });
+        let step = live
+            .driver
+            .offer_call_link(chat_id, invite_hash, live_stream);
+        self.show_call_offer(step, live_stream, OfferMode::OpenScreen, cx);
+    }
+
+    /// What the window does with an offer's step, for a link and for the
+    /// Calls tab's Join alike: the offered call is noted for the window
+    /// (`offered_call_intent`), a busy one asks to leave the running call
+    /// first, and the note says what happened. A link that leads nowhere
+    /// says the link is bad; a listed call that cannot be offered says
+    /// something went wrong.
+    pub(super) fn show_call_offer(
+        &mut self,
+        step: Result<CallLinkStep, ConnectSendError>,
+        live_stream: bool,
+        mode: OfferMode,
+        cx: &mut Context<Self>,
+    ) {
+        let failed = |err: Option<&ConnectSendError>| match (mode, err) {
+            (OfferMode::OpenScreen, _) => StatusNote::info(BAD_LINK_NOTE),
+            (OfferMode::Join, Some(err)) => {
+                StatusNote::error(user_error_for(keys::Q_NOTES_SOMETHING_WENT_WRONG, err))
             }
-            Err(_) => self.set_note(StatusNote::info(BAD_LINK_NOTE)),
-        }
+            (OfferMode::Join, None) => StatusNote::error(tr(keys::Q_NOTES_SOMETHING_WENT_WRONG)),
+        };
+        let note = match step {
+            Ok(CallLinkStep::Offer { group_call_id }) => {
+                self.note_stream_join_intent(offered_call_intent(group_call_id, mode));
+                opening_note(live_stream)
+            }
+            // Busy: the leave confirmation shows in this window.
+            Ok(CallLinkStep::OtherCallOn) => {
+                self.open_box(crate::ui::shell::DialogKind::CallLinkLeave);
+                self.screen.connection.note().clone()
+            }
+            Ok(step @ CallLinkStep::AlreadyJoined) => step_note(step, live_stream)
+                .map_or_else(|| self.screen.connection.note().clone(), StatusNote::info),
+            Ok(step @ (CallLinkStep::JustOpen | CallLinkStep::NoCall)) => match mode {
+                OfferMode::OpenScreen => step_note(step, live_stream)
+                    .map_or_else(|| self.screen.connection.note().clone(), StatusNote::info),
+                // The call ended between the list and the press.
+                OfferMode::Join => failed(None),
+            },
+            Err(err) => failed(Some(&err)),
+        };
+        self.set_note(note);
         cx.notify();
     }
 
@@ -92,12 +102,8 @@ impl QuillApp {
         else {
             return;
         };
-        self.note_stream_join_intent(offered_call_intent(&offered));
-        self.set_note(StatusNote::silent(tr(if offered.live_stream {
-            keys::Q_OPS_OPENING_THE_LIVE_STREAM
-        } else {
-            keys::Q_OPS_OPENING_THE_VOICE_CHAT
-        })));
+        self.note_stream_join_intent(offered_call_intent(offered.group_call_id, offered.mode));
+        self.set_note(opening_note(offered.live_stream));
         cx.notify();
     }
 
@@ -178,4 +184,13 @@ crate::ui::shell::register_dialogs! {
         QuillApp::build_call_link_leave_dialog,
     )
     .close(|app, _, cx| app.cancel_call_link_leave(cx)),
+}
+
+/// The quiet note while an offered call opens.
+fn opening_note(live_stream: bool) -> StatusNote {
+    StatusNote::silent(tr(if live_stream {
+        keys::Q_OPS_OPENING_THE_LIVE_STREAM
+    } else {
+        keys::Q_OPS_OPENING_THE_VOICE_CHAT
+    }))
 }

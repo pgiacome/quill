@@ -1,8 +1,7 @@
 //! The Calls tab's active group calls: the section above the history, its
-//! order (the session's) and the Join that asks for a call. The demo app
-//! has no call driver, so a non-busy Join leaves the wish for the window
-//! that will track the call; a busy one offers the call (or, without a
-//! chat to offer, says to end the current call first).
+//! rows, and what the window does with the offer a Join gets back. The
+//! demo app has no call driver; the offer itself is tested at the driver
+//! (`connect::tests::group_calls::unjoined`).
 use crate::ui::app::QuillApp;
 use crate::ui::call_link_ui::offered_call_intent;
 use crate::ui::chat_list_state::SidebarTab;
@@ -13,10 +12,12 @@ use crate::ui::shell::QuillShell;
 use gpui_kit::component::Root;
 use gpui_kit::test::{TestQueryExt, TestWindowExt};
 use gpui_kit::{AppContext, Entity, TestAppContext, VisualTestContext, px, size};
-use quill::call_link::OfferedCallLink;
+use quill::call_link::{BAD_LINK_NOTE, CallLinkStep, OfferMode};
+use quill::connect::ConnectSendError;
 use quill::diagnostics::DiagnosticSink;
+use quill::ids::ChatId;
 use quill::lang::{keys, tr, trn_decimal};
-use quill::state::{GroupCallKind, LiveGroupCall};
+use quill::state::{GroupCallDetails, GroupCallKind, LiveGroupCall};
 use quill::telegram::client::copy_and_parse;
 use std::sync::Arc;
 
@@ -67,55 +68,44 @@ fn feed(app: &mut QuillApp, json: &str) {
 }
 
 /// Two running calls with their chats: a live stream (61, "Design live")
-/// and a voice chat (62) whose call title differs from its chat's, so the
-/// row's name preference is visible.
+/// and a voice chat (62) whose call title differs from its chat's.
 fn seed_two_calls(app: &mut QuillApp) {
-    feed(
-        app,
+    for json in [
         r#"{"@type":"updateNewChat","chat":{"id":51,"title":"Design live",
         "type":{"@type":"chatTypeSupergroup","supergroup_id":51,"is_channel":true},"unread_count":0}}"#,
-    );
-    feed(
-        app,
         r#"{"@type":"updateChatVideoChat","chat_id":51,
         "video_chat":{"@type":"videoChat","group_call_id":61,"has_participants":true,"default_participant_id":null}}"#,
-    );
-    feed(
-        app,
         r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":61,
         "title":"Design live","is_active":true,"is_video_chat":false,"is_joined":false,
         "is_rtmp_stream":true,"participant_count":12}}"#,
-    );
-    feed(
-        app,
         r#"{"@type":"updateNewChat","chat":{"id":52,"title":"Team standup",
         "type":{"@type":"chatTypeSupergroup","supergroup_id":52,"is_channel":false},"unread_count":0}}"#,
-    );
-    feed(
-        app,
         r#"{"@type":"updateChatVideoChat","chat_id":52,
         "video_chat":{"@type":"videoChat","group_call_id":62,"has_participants":true,"default_participant_id":null}}"#,
-    );
-    feed(
-        app,
         r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":62,
         "title":"Old call title","is_active":true,"is_video_chat":false,"is_joined":false,
         "is_rtmp_stream":false,"participant_count":3}}"#,
-    );
+    ] {
+        feed(app, json);
+    }
 }
 
-/// A joined call: the slot is taken, so any Calls-tab Join is busy.
-fn seed_joined_call(app: &mut QuillApp) {
-    feed(
-        app,
-        r#"{"@type":"updateGroupCall","group_call":{"@type":"groupCall","id":77,
-        "title":"Standup room","is_active":true,"is_video_chat":false,"is_joined":true,
-        "is_rtmp_stream":false,"participant_count":4}}"#,
-    );
+fn wish(app: &Entity<QuillApp>, vcx: &VisualTestContext) -> Option<StreamJoinIntent> {
+    app.read_with(vcx, |app, _| {
+        app.group_call_screen
+            .stream_wish()
+            .map(|(intent, _)| intent)
+    })
+}
+
+fn note(app: &Entity<QuillApp>, vcx: &VisualTestContext) -> String {
+    app.read_with(vcx, |app, _| {
+        app.screen.connection.status_note().to_string()
+    })
 }
 
 #[gpui_kit::test]
-fn the_section_orders_streams_first_and_join_sets_the_intent(cx: &mut TestAppContext) {
+fn the_section_lists_running_calls_above_the_history(cx: &mut TestAppContext) {
     let (app, mut vcx) = new_app(cx);
     app.update_in(&mut vcx, |app, _, cx| {
         seed_two_calls(app);
@@ -124,215 +114,160 @@ fn the_section_orders_streams_first_and_join_sets_the_intent(cx: &mut TestAppCon
     });
     frames(&mut vcx);
 
-    // `live_group_calls` orders: LiveStream, VideoChat, VoiceChat, None.
     let listed = app.read_with(&vcx, |app, _| app.session().unwrap().live_group_calls());
     assert_eq!(
-        listed.iter().map(|call| call.id).collect::<Vec<_>>(),
-        vec![61, 62]
-    );
-    assert_eq!(listed[0].chat_id, Some(51));
-    assert_eq!(listed[1].chat_id, Some(52));
-
-    // The row name prefers the loaded chat's title, falling back to the
-    // call's own only when the chat is not loaded.
-    app.read_with(&vcx, |app, _| {
-        let session = app.session();
-        assert_eq!(
-            super::active_calls::row_name(&listed[1], session),
-            "Team standup",
-            "the chat's title wins"
-        );
-        let chatless = LiveGroupCall {
-            chat_id: None,
-            ..listed[1].clone()
-        };
-        assert_eq!(
-            super::active_calls::row_name(&chatless, session),
-            "Old call title",
-            "the call's title is the fallback"
-        );
-    });
-
-    // The section is drawn above the history, one row and one Join per call.
-    assert!(
-        vcx.update(|window, _| window.try_find("calls-clear-all").is_some()),
-        "the Calls tab is drawn"
+        listed
+            .iter()
+            .map(|call| (call.id, call.chat_id, call.name.as_str()))
+            .collect::<Vec<_>>(),
+        vec![
+            (61, ChatId(51), "Design live"),
+            (62, ChatId(52), "Team standup")
+        ],
+        "the stream first; a row shows its chat's title, not the call's"
     );
     for id in [61u64, 62u64] {
         assert!(
             vcx.update(|window, _| window.try_find(("active-call-join", id)).is_some()),
             "row {id} has Join"
         );
-        assert!(
-            vcx.update(|window, _| window.try_find(("active-call-row", id)).is_some()),
-            "row {id} is drawn"
-        );
     }
     assert!(
         vcx.update(|window, _| window.try_find_by_label("Join Team standup").is_some()),
         "the Join label names the call"
     );
-
-    // Not busy: the wish names the call; the window joins once it is tracked.
-    // The button, the row's body and a listed row all ask for the same call.
-    vcx.update(|window, cx| window.click(("active-call-join", 61u64), cx));
-    frames(&mut vcx);
-    app.read_with(&vcx, |app, _| {
-        assert_eq!(
-            app.group_call_screen
-                .stream_wish()
-                .map(|(intent, _)| intent),
-            Some(StreamJoinIntent::Join(61)),
-            "the Join button asks for the call"
-        );
-    });
-    app.update_in(&mut vcx, |app, _, _| {
-        app.group_call_screen.clear_stream_wish();
-    });
-    vcx.update(|window, cx| window.click(("active-call-row", 61u64), cx));
-    frames(&mut vcx);
-    app.read_with(&vcx, |app, _| {
-        assert_eq!(
-            app.group_call_screen
-                .stream_wish()
-                .map(|(intent, _)| intent),
-            Some(StreamJoinIntent::Join(61)),
-            "the row body joins instead of opening the chat"
-        );
-    });
-    app.update_in(&mut vcx, |app, _, cx| {
-        let call = app.session().unwrap().live_group_calls()[0].clone();
-        app.join_listed_group_call(&call, cx);
-    });
-    app.read_with(&vcx, |app, _| {
-        assert_eq!(
-            app.group_call_screen
-                .stream_wish()
-                .map(|(intent, _)| intent),
-            Some(StreamJoinIntent::Join(61))
-        );
-    });
+    let first_row = vcx
+        .update(|window, _| window.try_find(("active-call-row", 61u64)))
+        .expect("the first row is drawn");
+    let recent = vcx
+        .update(|window, _| window.try_find("calls-clear-all"))
+        .expect("the Recent calls row is drawn");
+    assert!(first_row.bounds().origin.y < recent.bounds().origin.y);
 }
 
+/// The demo has no call driver: Join says so and asks for nothing, the
+/// button and the row's body alike.
 #[gpui_kit::test]
-fn a_busy_join_offers_the_call_instead_of_joining(cx: &mut TestAppContext) {
+fn join_without_a_driver_says_calls_need_an_account(cx: &mut TestAppContext) {
     let (app, mut vcx) = new_app(cx);
-    app.update_in(&mut vcx, |app, _, _| {
+    app.update_in(&mut vcx, |app, _, cx| {
         seed_two_calls(app);
-        seed_joined_call(app);
+        app.chat_list.tab = SidebarTab::Calls;
+        app.notify_sidebar(cx);
     });
-    let listed = app.read_with(&vcx, |app, _| app.session().unwrap().live_group_calls());
-    assert_eq!(
-        listed.iter().map(|call| call.id).collect::<Vec<_>>(),
-        vec![61, 62]
-    );
-
-    // With a chat, the call is offered rather than joined: live, that is
-    // `offer_call_link`'s leave confirmation and then the offer; the demo
-    // has no call driver, so the offer is its note and nothing is joined.
-    app.update_in(&mut vcx, |app, _, cx| {
-        app.join_listed_group_call(&listed[0], cx);
-    });
-    app.read_with(&vcx, |app, _| {
-        assert_eq!(
-            app.screen.connection.status_note(),
-            tr(keys::Q_OPS_CALLS_NEED_A_SIGNED_IN),
-            "the offer path runs (a live driver would confirm leaving)"
-        );
-        assert!(
-            app.group_call_screen.stream_wish().is_none(),
-            "a busy Join never asks for the call"
-        );
-    });
-
-    // No chat to offer: the note asks to end the current call first.
-    app.update_in(&mut vcx, |app, _, cx| {
-        let no_chat = LiveGroupCall {
-            id: 63,
-            chat_id: None,
-            title: "Mystery".to_string(),
-            kind: None,
-            participant_count: 0,
-        };
-        app.demo_session
-            .as_deref_mut()
-            .unwrap()
-            .calls
-            .group_call_details
-            .insert(no_chat.id, no_chat.clone());
-        app.join_listed_group_call(&no_chat, cx);
-    });
-    app.read_with(&vcx, |app, _| {
-        assert_eq!(
-            app.screen.connection.status_note(),
-            tr(keys::Q_OPS_END_CURRENT_CALL_FIRST)
-        );
-        assert!(app.group_call_screen.stream_wish().is_none());
-    });
+    frames(&mut vcx);
+    for target in ["active-call-join", "active-call-row"] {
+        vcx.update(|window, cx| window.click((target, 61u64), cx));
+        frames(&mut vcx);
+        assert_eq!(note(&app, &vcx), tr(keys::Q_OPS_CALLS_NEED_A_SIGNED_IN));
+        assert_eq!(wish(&app, &vcx), None, "{target} asks for nothing");
+    }
 }
 
-/// The row says only what the list knows: a `chat.video_chat`-seeded call
-/// has no kind and no count, so its second line is empty.
+/// What the window does with the step a listed Join gets back from the
+/// driver: an offer is joined once tracked, whatever its kind; a call
+/// that cannot be offered says something went wrong, not that a link is
+/// bad (there was no link).
+#[gpui_kit::test]
+fn a_listed_offer_joins_and_its_failures_say_something_went_wrong(cx: &mut TestAppContext) {
+    let (app, mut vcx) = new_app(cx);
+    app.update_in(&mut vcx, |app, _, cx| {
+        app.show_call_offer(
+            Ok(CallLinkStep::Offer { group_call_id: 62 }),
+            false,
+            OfferMode::Join,
+            cx,
+        );
+    });
+    assert_eq!(wish(&app, &vcx), Some(StreamJoinIntent::Join(62)));
+    assert_eq!(note(&app, &vcx), tr(keys::Q_OPS_OPENING_THE_VOICE_CHAT));
+
+    for step in [
+        Ok(CallLinkStep::NoCall),
+        Err(ConnectSendError::InvalidRequest),
+    ] {
+        app.update_in(&mut vcx, |app, _, cx| {
+            app.group_call_screen.clear_stream_wish();
+            app.show_call_offer(step, false, OfferMode::Join, cx);
+        });
+        let shown = note(&app, &vcx);
+        assert!(
+            shown.starts_with(tr(keys::Q_NOTES_SOMETHING_WENT_WRONG)),
+            "a listed call's failure: {shown}"
+        );
+        assert_eq!(wish(&app, &vcx), None);
+    }
+
+    // A link's offer keeps its own notes and only opens the call.
+    app.update_in(&mut vcx, |app, _, cx| {
+        app.show_call_offer(Ok(CallLinkStep::NoCall), false, OfferMode::OpenScreen, cx);
+    });
+    assert_eq!(note(&app, &vcx), BAD_LINK_NOTE);
+    app.update_in(&mut vcx, |app, _, cx| {
+        app.show_call_offer(
+            Ok(CallLinkStep::Offer { group_call_id: 62 }),
+            false,
+            OfferMode::OpenScreen,
+            cx,
+        );
+    });
+    assert_eq!(wish(&app, &vcx), Some(StreamJoinIntent::Call(62)));
+}
+
+/// The row says only what the list knows: a call known only from its
+/// chat has no kind and no count, so its second line is empty.
 #[test]
 fn the_row_status_shows_no_kind_or_count_it_does_not_know() {
     let seeded = LiveGroupCall {
         id: 63,
-        chat_id: None,
-        title: "Mystery".to_string(),
-        kind: None,
-        participant_count: 0,
+        chat_id: ChatId(53),
+        name: "Mystery".to_string(),
+        details: None,
     };
     assert_eq!(super::active_calls::status_line(&seeded), "");
 
-    let stream = LiveGroupCall {
-        kind: Some(GroupCallKind::LiveStream),
-        participant_count: 12,
+    let with = |kind, participant_count| LiveGroupCall {
+        details: Some(GroupCallDetails {
+            title: String::new(),
+            kind,
+            participant_count,
+        }),
         ..seeded.clone()
     };
-    let stream_line = super::active_calls::status_line(&stream);
-    assert!(
-        stream_line.contains(tr(keys::VIEW_BUTTON_VOICE_CHAT_CHANNEL)),
-        "the live-stream label: {stream_line}"
-    );
-    assert!(
-        stream_line.contains(&trn_decimal(keys::GROUP_CALL_RTMP_VIEWERS, 12)),
-        "12 viewers: {stream_line}"
-    );
-
-    let voice = LiveGroupCall {
-        kind: Some(GroupCallKind::VoiceChat),
-        participant_count: 0,
-        ..seeded
-    };
     assert_eq!(
-        super::active_calls::status_line(&voice),
-        tr(keys::Q_AV_VOICE_CHAT_2),
+        super::active_calls::status_line(&with(GroupCallKind::LiveStream, 12)),
+        format!(
+            "{} • {}",
+            tr(keys::Q_OPS_LIVE_STREAM),
+            trn_decimal(keys::GROUP_CALL_RTMP_VIEWERS, 12)
+        )
+    );
+    assert_eq!(
+        super::active_calls::status_line(&with(GroupCallKind::VideoChat, 3)),
+        format!(
+            "{} • {}",
+            tr(keys::Q_OPS_VIDEO_CHAT),
+            trn_decimal(keys::Q_OPS_CALL_PARTICIPANTS, 3)
+        )
+    );
+    assert_eq!(
+        super::active_calls::status_line(&with(GroupCallKind::VoiceChat, 0)),
+        tr(keys::Q_OPS_VOICE_CHAT),
         "the kind alone, no count at zero"
     );
 }
 
-/// A confirmed Calls-tab offer notes the join whatever the call's kind; a
-/// link's offer keeps the call screen's Join for a non-stream call.
+/// A confirmed Calls-tab offer joins whatever the call's kind; a link's
+/// offer keeps the call screen's Join for a non-stream call.
 #[test]
-fn a_confirmed_joining_offer_notes_join_for_a_voice_chat() {
-    let joining = OfferedCallLink {
-        group_call_id: 61,
-        live_stream: false,
-        join_when_offered: true,
-    };
+fn an_offer_joins_only_for_the_calls_tab() {
     assert_eq!(
-        offered_call_intent(&joining),
-        StreamJoinIntent::Join(61),
-        "the Calls tab's Join continues after the old call ends"
+        offered_call_intent(61, OfferMode::Join),
+        StreamJoinIntent::Join(61)
     );
-    let link = OfferedCallLink {
-        join_when_offered: false,
-        ..joining
-    };
     assert_eq!(
-        offered_call_intent(&link),
-        StreamJoinIntent::Call(61),
-        "a link only opens the call screen"
+        offered_call_intent(61, OfferMode::OpenScreen),
+        StreamJoinIntent::Call(61)
     );
 }
 
@@ -348,36 +283,6 @@ fn an_empty_list_draws_no_header(cx: &mut TestAppContext) {
     );
     assert!(
         vcx.update(|window, _| window.try_find("active-calls").is_none()),
-        "no Q_OPS_ACTIVE_CALLS section without calls"
+        "no Active calls section without calls"
     );
-}
-
-/// The busy decision used by the row: a 1:1 call, a joined call, a
-/// reconnecting one and an in-flight UI join all block a new one, while a
-/// tracked call nobody is in does not.
-#[test]
-fn a_listed_join_is_busy_while_a_call_is_joined_reconnecting_or_joining() {
-    let sink: Arc<dyn DiagnosticSink> = Arc::new(quill::diagnostics::MemorySink::new());
-    let mut session = quill::state::Session::new(quill::ids::AccountKey::primary(), sink);
-    let busy = |session: &quill::state::Session, joining| {
-        super::active_calls::listed_join_is_busy(session, joining)
-    };
-    assert!(!busy(&session, None), "no call at all");
-    assert!(!busy(&session, Some(7)), "no tracked call");
-
-    session.calls.active_group_call = Some(quill::state::ActiveGroupCall::fresh(7));
-    assert!(!busy(&session, None), "a call only being looked at");
-
-    let mut joined = quill::state::ActiveGroupCall::fresh(7);
-    joined.is_joined = true;
-    session.calls.active_group_call = Some(joined);
-    assert!(busy(&session, None), "joined");
-
-    let mut reconnecting = quill::state::ActiveGroupCall::fresh(7);
-    reconnecting.rejoin = quill::state::GroupCallRejoin::Wanted { attempts: 0 };
-    session.calls.active_group_call = Some(reconnecting);
-    assert!(busy(&session, None), "a reconnect is still in the call");
-
-    session.calls.active_group_call = Some(quill::state::ActiveGroupCall::fresh(7));
-    assert!(busy(&session, Some(7)), "the UI's join is in flight");
 }

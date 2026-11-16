@@ -1,42 +1,22 @@
 //! The Calls tab's active group calls: the running calls above the recent
-//! history, one row each, and the Join that asks for the call (the window
-//! joins it once it is tracked, [`StreamJoinIntent::Join`]).
+//! history, one row each, and the Join that offers the call the way a call
+//! link does, joining it once the window tracks it
+//! ([`OfferMode::Join`]).
 #![deny(clippy::indexing_slicing)]
 
 use super::*;
 use crate::ui::bidi_line::name_line;
 use crate::ui::chat_row::{CHAT_ROW_AVATAR, chat_avatar};
-use crate::ui::group_call_stream_layout::StreamJoinIntent;
 use crate::ui::pressable::PressableDiv;
 use crate::ui::status_note::StatusNote;
-use crate::ui::user_error::user_error_for;
 use gpui_kit::assets::IconName;
-use quill::ids::ChatId;
+use quill::call_link::OfferMode;
 use quill::lang::{keys, tr, trn_decimal};
-use quill::state::{GroupCallKind, LiveGroupCall, Session};
-
-/// Whether a listed call's Join has a call to replace: a 1:1 call, or a
-/// group call that is joined, reconnecting after a network loss, or whose
-/// join is in flight. `joining` is the call the call window is joining
-/// right now (its UI-side mark; the transport covers the rest).
-pub(super) fn listed_join_is_busy(session: &Session, joining: Option<i32>) -> bool {
-    session.calls.active_call.is_some() || session.group_call_joined_or_joining(joining)
-}
-
-/// The row's name: the loaded chat's title, or the call's own title when
-/// the chat is not loaded yet.
-pub(super) fn row_name(call: &LiveGroupCall, session: Option<&Session>) -> String {
-    call.chat_id
-        .and_then(|chat_id| session.and_then(|session| session.chats.get(&chat_id)))
-        .map(|chat| chat.title.clone())
-        .filter(|title| !title.is_empty())
-        .unwrap_or_else(|| call.title.clone())
-}
+use quill::state::{GroupCallKind, LiveGroupCall};
 
 impl QuillApp {
-    /// The section above Recent calls: the unjoined running group calls (and
-    /// chat-seeded bare rows) the call window does not own. The list is
-    /// already ordered by `Session::live_group_calls`.
+    /// The section above Recent calls: the running group calls the call
+    /// window is not in, already ordered by `Session::live_group_calls`.
     pub(super) fn active_calls_section(
         &self,
         calls: &[LiveGroupCall],
@@ -66,23 +46,22 @@ impl QuillApp {
     /// it, and Join. The row and the button both join; the row does not
     /// open the chat.
     fn active_call_row(&self, call: &LiveGroupCall, cx: &mut Context<Self>) -> impl IntoElement {
-        let name = row_name(call, self.session());
+        let name = call.name.clone();
         let status = status_line(call);
         let spoken = if status.is_empty() {
             name.clone()
         } else {
             format!("{name}, {status}")
         };
-        let photo = call.chat_id.and_then(|chat_id| {
-            self.session()
-                .and_then(|session| session.chat_photo_path(ChatId(chat_id)))
-        });
+        let photo = self
+            .session()
+            .and_then(|session| session.chat_photo_path(call.chat_id));
         let photo = photo.and_then(|path| {
             quill::local_path::sandboxed_display_path(path, &self.media_display_roots())
         });
-        let icon = match call.kind {
+        let icon = match call.details.as_ref().map(|details| details.kind) {
             Some(GroupCallKind::LiveStream | GroupCallKind::VideoChat) => IconName::Video,
-            _ => IconName::Phone,
+            Some(GroupCallKind::VoiceChat) | None => IconName::Phone,
         };
         let row_call = call.clone();
         let button_call = call.clone();
@@ -139,56 +118,42 @@ impl QuillApp {
             .test_support()
     }
 
-    /// Join a running call from the Calls tab. Busy (a 1:1 call, or a group
-    /// call that is joined, reconnecting, or joining right now): the offered
-    /// call waits for the old one to end, as a call link does; without a
-    /// chat there is nothing to offer, so the note asks to end the call
-    /// first. Otherwise the wish names the call and, with a live driver,
-    /// its `getGroupCall` asks for it.
+    /// Join a running call from the Calls tab: the call link's offer for
+    /// the row's chat, joining the call once it is tracked. While another
+    /// call is on, the leave question comes first and the join waits in it.
+    /// Without the call engine nothing is joined, as from the chat header.
     pub(super) fn join_listed_group_call(&mut self, call: &LiveGroupCall, cx: &mut Context<Self>) {
-        let joining = self.group_call_screen.joining_call();
-        let busy = self
-            .session()
-            .is_some_and(|session| listed_join_is_busy(session, joining));
-        if busy {
-            if let Some(chat) = call.chat_id {
-                self.offer_call_link(
-                    ChatId(chat),
-                    "",
-                    call.kind == Some(GroupCallKind::LiveStream),
-                    true,
-                    cx,
-                );
-            } else {
-                self.set_note(StatusNote::error(tr(keys::Q_OPS_END_CURRENT_CALL_FIRST)));
-            }
-            cx.notify();
+        if self.refuse_without_call_engine(cx) {
             return;
         }
-        self.note_stream_join_intent(StreamJoinIntent::Join(call.id));
-        if let Some(live) = self.live.as_mut()
-            && let Err(err) = live.driver.fetch_group_call(call.id)
-        {
-            self.group_call_screen.clear_stream_wish();
-            self.set_note(StatusNote::error(user_error_for(
-                keys::Q_NOTES_SOMETHING_WENT_WRONG,
-                &err,
-            )));
-        }
-        cx.notify();
+        let live_stream = is_live_stream(call);
+        let joining = self.group_call_screen.joining_call();
+        let Some(live) = self.live.as_mut() else {
+            self.set_note(StatusNote::info(tr(keys::Q_OPS_CALLS_NEED_A_SIGNED_IN)));
+            cx.notify();
+            return;
+        };
+        let step = live
+            .driver
+            .join_listed_call(call.chat_id, live_stream, joining);
+        self.show_call_offer(step, live_stream, OfferMode::Join, cx);
     }
 }
 
+fn is_live_stream(call: &LiveGroupCall) -> bool {
+    call.details
+        .as_ref()
+        .is_some_and(|details| details.kind == GroupCallKind::LiveStream)
+}
+
 /// What kind of call a row lists ("Live stream", "Video chat", "Voice
-/// Chat"); a call known only from `chat.video_chat` has no kind.
-pub(super) fn kind_label(kind: Option<GroupCallKind>) -> &'static str {
-    match kind {
-        Some(GroupCallKind::LiveStream) => tr(keys::VIEW_BUTTON_VOICE_CHAT_CHANNEL),
-        Some(GroupCallKind::VideoChat) => tr(keys::MENU_START_GROUP_CALL_OPTIONS),
-        Some(GroupCallKind::VoiceChat) => tr(keys::Q_AV_VOICE_CHAT_2),
-        // Only `chat.video_chat` is known: no kind to name.
-        None => "",
-    }
+/// chat"); a call known only from `chat.video_chat` has no kind.
+pub(super) fn kind_label(kind: GroupCallKind) -> &'static str {
+    tr(match kind {
+        GroupCallKind::LiveStream => keys::Q_OPS_LIVE_STREAM,
+        GroupCallKind::VideoChat => keys::Q_OPS_VIDEO_CHAT,
+        GroupCallKind::VoiceChat => keys::Q_OPS_VOICE_CHAT,
+    })
 }
 
 /// The row's second line: the kind, then " • " and who is in the call when
@@ -196,19 +161,18 @@ pub(super) fn kind_label(kind: Option<GroupCallKind>) -> &'static str {
 /// count is grouped ("1,200") like the rest of the app. Nothing at all for a
 /// call known only from `chat.video_chat`.
 pub(super) fn status_line(call: &LiveGroupCall) -> String {
-    let kind = kind_label(call.kind);
-    let people = (call.participant_count > 0).then(|| {
-        let count = i64::from(call.participant_count);
-        if call.kind == Some(GroupCallKind::LiveStream) {
-            trn_decimal(keys::GROUP_CALL_RTMP_VIEWERS, count)
-        } else {
-            trn_decimal(keys::Q_OPS_CALL_PARTICIPANTS, count)
-        }
-    });
-    match (kind, people) {
-        ("", None) => String::new(),
-        ("", Some(people)) => people,
-        (kind, None) => kind.to_string(),
-        (kind, Some(people)) => format!("{kind} • {people}"),
+    let Some(details) = call.details.as_ref() else {
+        return String::new();
+    };
+    let kind = kind_label(details.kind);
+    if details.participant_count <= 0 {
+        return kind.to_string();
     }
+    let count = i64::from(details.participant_count);
+    let people = if details.kind == GroupCallKind::LiveStream {
+        trn_decimal(keys::GROUP_CALL_RTMP_VIEWERS, count)
+    } else {
+        trn_decimal(keys::Q_OPS_CALL_PARTICIPANTS, count)
+    };
+    format!("{kind} • {people}")
 }

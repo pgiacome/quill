@@ -105,9 +105,18 @@ pub struct CallLinkConfirm {
     pub live_stream: bool,
     pub target_is_channel: bool,
     pub leave: LeaveKind,
-    /// Once the old call ends, the offer joins the call itself (the Calls
-    /// tab's Join), not only opens its screen for the Join button.
-    pub join_when_offered: bool,
+    /// What the offer does once the old call ends.
+    pub mode: OfferMode,
+}
+
+/// What an offered call does once it is tracked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OfferMode {
+    /// A call link: the call screen opens and its Join button joins (a
+    /// stream joins in its window).
+    OpenScreen,
+    /// The Calls tab's Join: the call is joined whatever its kind.
+    Join,
 }
 
 impl CallLinkConfirm {
@@ -185,9 +194,7 @@ pub enum LeavingCall {
 pub struct OfferedCallLink {
     pub group_call_id: i32,
     pub live_stream: bool,
-    /// The offer joins the call itself (the Calls tab's Join) rather than
-    /// only opening its screen for the Join button.
-    pub join_when_offered: bool,
+    pub mode: OfferMode,
 }
 
 /// Where a call link is: one stage, since each follows the last (asked,
@@ -386,7 +393,7 @@ mod tests {
             live_stream: target_is_channel,
             target_is_channel,
             leave,
-            join_when_offered: false,
+            mode: OfferMode::OpenScreen,
         };
         let private = ask(LeaveKind::PrivateCall, false);
         assert_eq!(private.button(), "End call");

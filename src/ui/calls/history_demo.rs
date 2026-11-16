@@ -104,6 +104,7 @@ mod tests {
     use gpui_kit::component::Root;
     use gpui_kit::test::TestWindowExt;
     use gpui_kit::{AppContext, TestAppContext, VisualTestContext, px, size};
+    use quill::ids::ChatId;
     use quill::state::GroupCallKind;
 
     /// The screenshot cannot be taken on every platform, so the fixture is
@@ -148,22 +149,21 @@ mod tests {
             "the stream first, then the voice chat"
         );
         assert_eq!(
-            listed.iter().map(|call| call.kind).collect::<Vec<_>>(),
+            listed
+                .iter()
+                .map(|call| call
+                    .details
+                    .as_ref()
+                    .map(|details| (details.kind, details.participant_count)))
+                .collect::<Vec<_>>(),
             vec![
-                Some(GroupCallKind::LiveStream),
-                Some(GroupCallKind::VoiceChat)
+                Some((GroupCallKind::LiveStream, 1280)),
+                Some((GroupCallKind::VoiceChat, 4))
             ]
         );
         assert_eq!(
-            listed
-                .iter()
-                .map(|call| call.participant_count)
-                .collect::<Vec<_>>(),
-            vec![1280, 4]
-        );
-        assert_eq!(
             listed.iter().map(|call| call.chat_id).collect::<Vec<_>>(),
-            vec![Some(51), Some(52)]
+            vec![ChatId(51), ChatId(52)]
         );
 
         for id in [61u64, 62u64] {

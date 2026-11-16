@@ -57,6 +57,7 @@ fn scheduled_group_call_tracks_start_date() {
         RequestPurpose::Calls(CallsPurpose::GetGroupCall { group_call_id: 555 }),
         None,
     );
+    session.want_group_call(extra);
     apply_json(
         &mut session,
         &seq,

@@ -63,11 +63,17 @@ pub struct CallsState {
     /// `joinVideoChat` response payload is stored (`join_payload`) and
     /// never consumed (real media transport is the C2 program).
     pub active_group_call: Option<ActiveGroupCall>,
-    /// Details `updateGroupCall` sent about unjoined running calls. A
-    /// joined update removes its entry (the window owns that call), and the
-    /// chat seed can re-add a bare row until the next update while the call
-    /// still runs.
-    pub group_call_details: std::collections::BTreeMap<i32, LiveGroupCall>,
+    /// What `updateGroupCall` said about running calls nobody here joined,
+    /// by call id, for the Calls tab's list (`Session::live_group_calls`).
+    /// Only updates write it: a joined, ended or live-story update removes
+    /// the entry, and so does the chat moving off the call.
+    pub group_call_details: std::collections::BTreeMap<i32, GroupCallDetails>,
+    /// The `getGroupCall` the person asked for last (a chat's video chat
+    /// button, a call link, the Calls tab's Join, a call they created): only
+    /// its answer may take the current call slot for a call nobody joined.
+    /// A later ask replaces it, and leaving the call forgets it, so a late
+    /// answer opens no window by itself.
+    pub wanted_group_call: Option<RequestId>,
     /// The live story the viewer plays: a receive-only group call of its
     /// own beside `active_call` and `active_group_call` (tdesktop
     /// `Calls::Instance::registerVideoStream`). Never the current call:
@@ -225,6 +231,7 @@ impl CallsState {
             recent_calls: RecentCalls::default(),
             active_group_call: None,
             group_call_details: Default::default(),
+            wanted_group_call: None,
             story_stream: None,
             rtmp_start: None,
             create_join_as: None,
