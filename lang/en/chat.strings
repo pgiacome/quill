@@ -654,8 +654,6 @@
 "qll_chat_bottom_join_channel" = "Join channel";
 "qll_chat_bottom_join_group" = "Join group";
 "qll_chat_bottom_apply_join_group" = "Apply to join group";
-"qll_chat_bottom_unmute" = "Unmute";
-"qll_chat_bottom_mute" = "Mute";
 "qll_chat_bottom_start" = "Start";
 "qll_chat_bottom_go_premium" = "Go Premium";
 "qll_chat_edit_image" = "Edit Image";
@@ -668,8 +666,6 @@
 "qll_chat_menu_add_stickers" = "Add Stickers";
 "qll_chat_menu_add_to_sticker_set" = "Add to Sticker Set";
 "qll_chat_menu_add_to_emoji_set" = "Add to Emoji Set";
-"qll_chat_menu_add_favorite" = "Add to Favorites";
-"qll_chat_menu_remove_favorite" = "Remove from Favorites";
 "qll_chat_menu_show_in_finder" = "Show in Finder";
 "qll_chat_menu_show_in_folder" = "Show in Folder";
 "qll_chat_menu_save_for_notifications" = "Save for Notifications";

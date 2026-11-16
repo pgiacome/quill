@@ -38,9 +38,7 @@ pub fn profile_label(kind: &ChatKind, is_saved_messages: bool) -> Option<&'stati
         return None;
     }
     match kind {
-        ChatKind::Private { .. } | ChatKind::Secret { .. } => {
-            Some(tr(keys::Q_CHATLIST_VIEW_PROFILE))
-        }
+        ChatKind::Private { .. } | ChatKind::Secret { .. } => Some(tr(keys::CONTEXT_VIEW_PROFILE)),
         ChatKind::BasicGroup { .. } => Some(tr(keys::Q_CHATLIST_GROUP_INFO)),
         ChatKind::Supergroup { is_channel, .. } => Some(if *is_channel {
             tr(keys::Q_CHATLIST_CHANNEL_INFO)

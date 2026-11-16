@@ -50,7 +50,7 @@ impl Section {
             Self::Contacts => tr(keys::Q_OPS_EXPORT_ACCOUNT_CONTACTS),
             Self::Stories => tr(keys::Q_OPS_EXPORT_ACCOUNT_STORIES),
             Self::ProfileMusic => tr(keys::Q_OPS_EXPORT_ACCOUNT_PROFILE_MUSIC),
-            Self::Sessions => tr(keys::Q_OPS_EXPORT_ACCOUNT_SESSIONS),
+            Self::Sessions => tr(keys::SETTINGS_SHOW_SESSIONS),
             Self::PersonalChats => tr(keys::Q_OPS_EXPORT_ACCOUNT_PERSONAL_CHATS),
             Self::BotChats => tr(keys::Q_OPS_EXPORT_ACCOUNT_BOT_CHATS),
             Self::PrivateGroups => tr(keys::Q_OPS_EXPORT_ACCOUNT_PRIVATE_GROUPS),

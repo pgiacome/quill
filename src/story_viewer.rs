@@ -151,7 +151,7 @@ impl StoryViewerKind {
     pub fn label(&self) -> &'static str {
         match self {
             StoryViewerKind::Live(_) => tr(keys::Q_MEDIA_STORY_VIEWER_LIVE),
-            _ => tr(keys::Q_MEDIA_STORY_VIEWER_STORY),
+            _ => tr(keys::IN_DLG_STORY),
         }
     }
 }

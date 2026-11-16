@@ -49,8 +49,8 @@ impl StoryMediaKind {
 
     pub fn label(&self) -> &'static str {
         match self {
-            StoryMediaKind::Photo => tr(keys::Q_MEDIA_STORY_MEDIA_PHOTO),
-            StoryMediaKind::Video => tr(keys::Q_MEDIA_STORY_MEDIA_VIDEO),
+            StoryMediaKind::Photo => tr(keys::IN_DLG_PHOTO),
+            StoryMediaKind::Video => tr(keys::IN_DLG_VIDEO),
             StoryMediaKind::Unknown => tr(keys::Q_MEDIA_STORY_MEDIA_UNKNOWN),
         }
     }

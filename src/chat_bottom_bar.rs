@@ -117,8 +117,8 @@ impl BottomBar {
             BottomBar::JoinChannel => tr(keys::Q_CHAT_BOTTOM_JOIN_CHANNEL),
             BottomBar::JoinGroup => tr(keys::Q_CHAT_BOTTOM_JOIN_GROUP),
             BottomBar::ApplyToJoin => tr(keys::Q_CHAT_BOTTOM_APPLY_JOIN_GROUP),
-            BottomBar::MuteUnmute { muted: true } => tr(keys::Q_CHAT_BOTTOM_UNMUTE),
-            BottomBar::MuteUnmute { muted: false } => tr(keys::Q_CHAT_BOTTOM_MUTE),
+            BottomBar::MuteUnmute { muted: true } => tr(keys::MUTE_MENU_UNMUTE),
+            BottomBar::MuteUnmute { muted: false } => tr(keys::MUTE_MENU_MUTE),
             BottomBar::Start | BottomBar::Starting { .. } => tr(keys::Q_CHAT_BOTTOM_START),
             BottomBar::PremiumRequired => tr(keys::Q_CHAT_BOTTOM_GO_PREMIUM),
         }

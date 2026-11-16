@@ -45,8 +45,8 @@ impl MediaKind {
         match self {
             Self::Photo => tr(keys::Q_OPS_EXPORT_PHOTOS),
             Self::Video => tr(keys::Q_OPS_EXPORT_VIDEOS),
-            Self::VoiceMessage => tr(keys::Q_OPS_EXPORT_VOICE_MESSAGES),
-            Self::VideoMessage => tr(keys::Q_OPS_EXPORT_VIDEO_MESSAGES),
+            Self::VoiceMessage => tr(keys::RIGHTS_CHAT_VOICE_MESSAGES),
+            Self::VideoMessage => tr(keys::RIGHTS_CHAT_VIDEO_MESSAGES),
             Self::Sticker => tr(keys::Q_OPS_EXPORT_STICKERS),
             Self::Gif => tr(keys::Q_OPS_EXPORT_GIFS),
             Self::File => tr(keys::Q_OPS_EXPORT_FILES),

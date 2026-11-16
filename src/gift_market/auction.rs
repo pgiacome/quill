@@ -602,7 +602,7 @@ impl BidAction {
     pub fn label(self, mine: i64) -> String {
         let stars = |n: i64| format!("★{}", crate::premium_hub::group_digits(n));
         match self {
-            Self::Close => tr(keys::Q_MONEY_AUCTION_OK).into(),
+            Self::Close => tr(keys::BOX_OK).into(),
             Self::Place(n) => tr_with(
                 keys::Q_MONEY_AUCTION_PLACE_STARS_BID,
                 &[("stars", &stars(n))],

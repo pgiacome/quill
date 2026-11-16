@@ -145,8 +145,8 @@ impl TonTx {
     /// The row's headline (`lng_channel_earn_history_*`).
     pub fn title(&self) -> &'static str {
         match self.kind {
-            TonTxKind::Refund { .. } => tr(keys::Q_MONEY_TON_TX_REFUND),
-            TonTxKind::Withdrawal { .. } => tr(keys::Q_MONEY_TON_TX_COLLECTION),
+            TonTxKind::Refund { .. } => tr(keys::CHANNEL_EARN_HISTORY_RETURN),
+            TonTxKind::Withdrawal { .. } => tr(keys::CHANNEL_EARN_HISTORY_OUT),
             _ => tr(keys::Q_MONEY_TON_TX_REWARDS),
         }
     }
@@ -202,7 +202,7 @@ impl TonTx {
             TonTxKind::Withdrawal {
                 state: WithdrawalState::Unsettled,
                 ..
-            } => tr(keys::Q_MONEY_EARN_PENDING).into(),
+            } => tr(keys::CHANNEL_EARN_HISTORY_PENDING).into(),
             TonTxKind::Withdrawal { date: when, .. } | TonTxKind::Refund { date: when } => {
                 date(*when)
             }

@@ -902,9 +902,9 @@ pub const MEDIA_COUNT_FILTERS: [(&str, PluralKey); 7] = [
     ("searchMessagesFilterVideo", keys::Q_MEDIA_COUNT_VIDEOS),
     ("searchMessagesFilterDocument", keys::Q_MEDIA_COUNT_FILES),
     ("searchMessagesFilterAudio", keys::Q_MEDIA_COUNT_AUDIO),
-    ("searchMessagesFilterUrl", keys::Q_MEDIA_COUNT_LINKS),
+    ("searchMessagesFilterUrl", keys::MEDIA_SELECTED_LINK),
     ("searchMessagesFilterVoiceNote", keys::Q_MEDIA_COUNT_VOICE),
-    ("searchMessagesFilterAnimation", keys::Q_MEDIA_COUNT_GIFS),
+    ("searchMessagesFilterAnimation", keys::MEDIA_SELECTED_GIF),
 ];
 
 mod edit_chat_welcome_message;

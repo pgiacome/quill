@@ -611,16 +611,12 @@
 "qll_money_premium_limit_file_size" = "Размер файла";
 "qll_money_premium_limit_favorite_stickers" = "Избранные стикеры";
 "qll_money_premium_limit_saved_pins" = "Закреплённые сохранённые чаты";
-"qll_money_premium_limit_similar_chats" = "Похожие каналы";
 "qll_money_premium_limit_owned_bots" = "Боты";
 "qll_money_premium_limit_active_stories" = "Активные истории";
 "qll_money_premium_limit_weekly_stories" = "Историй в неделю";
 "qll_money_premium_limit_monthly_stories" = "Историй в месяц";
 "qll_money_tx_all" = "Все транзакции";
-"qll_money_tx_incoming" = "Входящие";
-"qll_money_tx_outgoing" = "Исходящие";
 "qll_money_resale_sort_price" = "Цена";
-"qll_money_resale_sort_date" = "Дата";
 "qll_money_resale_sort_number" = "Номер";
 "qll_money_resale_sort_by_price" = "Сортировать по цене";
 "qll_money_resale_sort_by_date" = "Сортировать по дате";
@@ -628,10 +624,7 @@
 "qll_money_affiliate_sort_profitability" = "Доходность";
 "qll_money_affiliate_sort_revenue" = "Выручка";
 "qll_money_affiliate_sort_date" = "Дата";
-"qll_money_ton_tx_refund" = "Возврат";
-"qll_money_ton_tx_collection" = "Вывод";
 "qll_money_ton_tx_rewards" = "Награды за рекламу";
-"qll_money_earn_monetization" = "Монетизация";
 "qll_money_earn_stars_balance" = "Баланс звёзд";
 "qll_money_earn_affiliate_program" = "Партнёрская программа";
 "qll_money_earn_affiliate_programs" = "Партнёрские программы";
@@ -684,7 +677,6 @@
 "qll_money_premium_feature_message_privacy_about" = "Выберите, кто может отправлять вам сообщения.";
 "qll_money_premium_feature_last_seen_title" = "Время последнего посещения";
 "qll_money_premium_feature_last_seen_about" = "Смотрите время последнего посещения тех, кто его скрыл.";
-"qll_money_premium_feature_business_title" = "Telegram Business";
 "qll_money_premium_feature_business_about" = "Часы работы, быстрые ответы, чат-боты и другое.";
 "qll_money_premium_feature_message_effects_title" = "Эффекты сообщений";
 "qll_money_premium_feature_message_effects_about" = "Добавляйте анимированные эффекты в личные сообщения.";
@@ -704,9 +696,7 @@
 "qll_money_boost_help_upgrade_channel" = "Помогите улучшить канал";
 "qll_money_boost_enable_stories_group" = "Включите истории для группы";
 "qll_money_boost_enable_stories_channel" = "Включите истории для этого канала";
-"qll_money_boost_ok" = "ОК";
 "qll_money_boost_again" = "Забустить снова";
-"qll_money_boost_group" = "Забустить группу";
 "qll_money_boost_already_title" = "Уже забустено!";
 "qll_money_boost_more_needed_title" = "Нужно больше бустов";
 "qll_money_boost_premium_needed_title" = "Нужен Premium";
@@ -723,7 +713,6 @@
 "qll_money_boost_flood_text_group" = "Менять группу, которую вы бустите, можно раз в день. Забустить снова можно будет через {left}.";
 "qll_money_boost_flood_text_channel" = "Менять канал, который вы бустите, можно раз в день. Забустить снова можно будет через {left}.";
 "qll_money_boost_available_in" = "доступно через {time}";
-"qll_money_boost_expires_on" = "буст действует до {date}";
 "qll_money_boost_wait_or_gift" = "Дождитесь, пока буст станет доступен, или получите {receive}, подарив подписку Telegram Premium.";
 "qll_money_boost_wait" = "Дождитесь, пока буст станет доступен.";
 "qll_money_boost_reassign_gift" = "Чтобы забустить {name}, переназначьте прошлый буст или подарите другу Telegram Premium и получите {receive}.";
@@ -786,7 +775,6 @@
 "qll_money_tx_subscription_sale" = "Продажа подписки";
 "qll_money_tx_channel_subscription" = "Подписка на канал";
 "qll_money_tx_gift_auction_bid" = "Ставка на аукционе подарков";
-"qll_money_tx_gift" = "Подарок";
 "qll_money_tx_gift_offer" = "Предложение подарка";
 "qll_money_tx_gift_transfer" = "Передача подарка";
 "qll_money_tx_original_details_removed" = "Исходные данные удалены";
@@ -817,7 +805,6 @@
 "qll_money_premium_subscribe" = "Подписаться";
 "qll_money_premium_subscribe_for" = "Подписаться за {price} в месяц";
 "qll_money_earn_not_completed" = "Не завершено";
-"qll_money_earn_pending" = "В ожидании";
 "qll_money_earn_forever" = "Навсегда";
 "qll_money_earn_for_lifetime" = "навсегда";
 "qll_money_earn_for_duration" = "на {duration}";
@@ -827,9 +814,7 @@
 "qll_money_gift_send_not_available" = "Пока недоступно";
 "qll_money_gift_send_user_limit" = "Вы купили максимум";
 "qll_money_gift_send_not_for_channels" = "Не для каналов";
-"qll_money_auction_ok" = "ОК";
 "qll_money_auction_place_early_bid" = "Сделать раннюю ставку";
-"qll_money_auction_place_bid" = "Сделать ставку";
 "qll_money_auction_join" = "Участвовать";
 "qll_money_auction_view" = "Открыть";
 "qll_money_auction_view_results" = "Результаты";
@@ -843,13 +828,11 @@
 "qll_money_auction_starts" = "Начало";
 "qll_money_auction_first_sale" = "Первая продажа";
 "qll_money_auction_started" = "Начался";
-"qll_money_auction_last_sale" = "Последняя продажа";
 "qll_money_auction_ends" = "Окончание";
 "qll_money_auction_quantity" = "Количество";
 "qll_money_auction_rounds" = "Раунды";
 "qll_money_auction_current_round" = "Текущий раунд";
 "qll_money_auction_availability" = "Доступность";
-"qll_money_auction_average_price" = "Средняя цена";
 "qll_money_auction_of" = "{have} из {total}";
 "qll_money_auction_of_left" = "осталось {have} из {total}";
 "qll_money_auction_round" = "Раунд {number}";

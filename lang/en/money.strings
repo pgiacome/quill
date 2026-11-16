@@ -957,16 +957,12 @@
 "qll_money_premium_limit_file_size" = "File size";
 "qll_money_premium_limit_favorite_stickers" = "Favorite stickers";
 "qll_money_premium_limit_saved_pins" = "Pinned saved chats";
-"qll_money_premium_limit_similar_chats" = "Similar channels";
 "qll_money_premium_limit_owned_bots" = "Bots";
 "qll_money_premium_limit_active_stories" = "Active stories";
 "qll_money_premium_limit_weekly_stories" = "Stories per week";
 "qll_money_premium_limit_monthly_stories" = "Stories per month";
 "qll_money_tx_all" = "All transactions";
-"qll_money_tx_incoming" = "Incoming";
-"qll_money_tx_outgoing" = "Outgoing";
 "qll_money_resale_sort_price" = "Price";
-"qll_money_resale_sort_date" = "Date";
 "qll_money_resale_sort_number" = "Number";
 "qll_money_resale_sort_by_price" = "Sort by Price";
 "qll_money_resale_sort_by_date" = "Sort by Date";
@@ -974,10 +970,7 @@
 "qll_money_affiliate_sort_profitability" = "Profitability";
 "qll_money_affiliate_sort_revenue" = "Revenue";
 "qll_money_affiliate_sort_date" = "Date";
-"qll_money_ton_tx_refund" = "Refund";
-"qll_money_ton_tx_collection" = "Collection";
 "qll_money_ton_tx_rewards" = "Rewards from ads";
-"qll_money_earn_monetization" = "Monetization";
 "qll_money_earn_stars_balance" = "Stars Balance";
 "qll_money_earn_affiliate_program" = "Affiliate Program";
 "qll_money_earn_affiliate_programs" = "Affiliate Programs";
@@ -1030,7 +1023,6 @@
 "qll_money_premium_feature_message_privacy_about" = "Choose who can send you messages.";
 "qll_money_premium_feature_last_seen_title" = "Last seen times";
 "qll_money_premium_feature_last_seen_about" = "See the last seen time of people who hid it.";
-"qll_money_premium_feature_business_title" = "Telegram Business";
 "qll_money_premium_feature_business_about" = "Business hours, quick replies, chatbots and more.";
 "qll_money_premium_feature_message_effects_title" = "Message effects";
 "qll_money_premium_feature_message_effects_about" = "Add animated effects to private messages.";
@@ -1050,9 +1042,7 @@
 "qll_money_boost_help_upgrade_channel" = "Help upgrade channel";
 "qll_money_boost_enable_stories_group" = "Enable stories for group";
 "qll_money_boost_enable_stories_channel" = "Enable stories for this channel";
-"qll_money_boost_ok" = "OK";
 "qll_money_boost_again" = "Boost Again";
-"qll_money_boost_group" = "Boost Group";
 "qll_money_boost_already_title" = "Already Boosted!";
 "qll_money_boost_more_needed_title" = "More boosts needed";
 "qll_money_boost_premium_needed_title" = "Premium needed";
@@ -1069,7 +1059,6 @@
 "qll_money_boost_flood_text_group" = "You can only change the group you boost once a day. You will be able to boost in {left}.";
 "qll_money_boost_flood_text_channel" = "You can only change the channel you boost once a day. You will be able to boost in {left}.";
 "qll_money_boost_available_in" = "available in {time}";
-"qll_money_boost_expires_on" = "boost expires on {date}";
 "qll_money_boost_wait_or_gift" = "Wait until the boost is available or get {receive} by gifting a Telegram Premium subscription.";
 "qll_money_boost_wait" = "Wait until the boost is available.";
 "qll_money_boost_reassign_gift" = "To boost {name}, reassign a previous boost or gift Telegram Premium to a friend to get {receive}.";
@@ -1114,7 +1103,6 @@
 "qll_money_tx_subscription_sale" = "Subscription sale";
 "qll_money_tx_channel_subscription" = "Channel subscription";
 "qll_money_tx_gift_auction_bid" = "Gift auction bid";
-"qll_money_tx_gift" = "Gift";
 "qll_money_tx_gift_offer" = "Gift offer";
 "qll_money_tx_gift_transfer" = "Gift transfer";
 "qll_money_tx_original_details_removed" = "Original details removed";
@@ -1145,7 +1133,6 @@
 "qll_money_premium_subscribe" = "Subscribe";
 "qll_money_premium_subscribe_for" = "Subscribe for {price} per month";
 "qll_money_earn_not_completed" = "Not Completed";
-"qll_money_earn_pending" = "Pending";
 "qll_money_earn_forever" = "Forever";
 "qll_money_earn_for_lifetime" = "for lifetime";
 "qll_money_earn_for_duration" = "for {duration}";
@@ -1155,9 +1142,7 @@
 "qll_money_gift_send_not_available" = "Not available yet";
 "qll_money_gift_send_user_limit" = "You bought all you can";
 "qll_money_gift_send_not_for_channels" = "Not for channels";
-"qll_money_auction_ok" = "OK";
 "qll_money_auction_place_early_bid" = "Place an Early Bid";
-"qll_money_auction_place_bid" = "Place a Bid";
 "qll_money_auction_join" = "Join";
 "qll_money_auction_view" = "View";
 "qll_money_auction_view_results" = "View Results";
@@ -1171,13 +1156,11 @@
 "qll_money_auction_starts" = "Starts";
 "qll_money_auction_first_sale" = "First Sale";
 "qll_money_auction_started" = "Started";
-"qll_money_auction_last_sale" = "Last Sale";
 "qll_money_auction_ends" = "Ends";
 "qll_money_auction_quantity" = "Quantity";
 "qll_money_auction_rounds" = "Rounds";
 "qll_money_auction_current_round" = "Current Round";
 "qll_money_auction_availability" = "Availability";
-"qll_money_auction_average_price" = "Average Price";
 "qll_money_auction_of" = "{have} of {total}";
 "qll_money_auction_of_left" = "{have} of {total} left";
 "qll_money_auction_round" = "Round {number}";

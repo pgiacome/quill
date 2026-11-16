@@ -236,7 +236,7 @@ impl PremiumFeature {
             ),
             Self::Business => entry(
                 "premiumFeatureBusiness",
-                keys::Q_MONEY_PREMIUM_FEATURE_BUSINESS_TITLE,
+                keys::BUSINESS_TITLE,
                 keys::Q_MONEY_PREMIUM_FEATURE_BUSINESS_ABOUT,
                 Some("business"),
             ),

@@ -109,32 +109,32 @@ pub struct CallLinkConfirm {
 impl CallLinkConfirm {
     pub fn text(&self) -> &'static str {
         match (self.leave, self.target_is_channel) {
-            (LeaveKind::PrivateCall, false) => tr(keys::Q_OPS_CALL_LINK_LEAVE_PRIVATE_VIDEO),
-            (LeaveKind::PrivateCall, true) => tr(keys::Q_OPS_CALL_LINK_LEAVE_PRIVATE_STREAM),
+            (LeaveKind::PrivateCall, false) => tr(keys::CALL_LEAVE_TO_OTHER_SURE),
+            (LeaveKind::PrivateCall, true) => tr(keys::CALL_LEAVE_TO_OTHER_SURE_CHANNEL),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: false,
                 },
                 false,
-            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_GROUP_VIDEO),
+            ) => tr(keys::GROUP_CALL_LEAVE_TO_OTHER_SURE),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: false,
                 },
                 true,
-            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_GROUP_STREAM),
+            ) => tr(keys::GROUP_CALL_LEAVE_TO_OTHER_SURE_CHANNEL),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: true,
                 },
                 false,
-            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_STREAM_VIDEO),
+            ) => tr(keys::GROUP_CALL_LEAVE_CHANNEL_TO_OTHER_SURE),
             (
                 LeaveKind::GroupCall {
                     current_is_channel: true,
                 },
                 true,
-            ) => tr(keys::Q_OPS_CALL_LINK_LEAVE_STREAM_STREAM),
+            ) => tr(keys::GROUP_CALL_LEAVE_CHANNEL_TO_OTHER_SURE_CHANNEL),
         }
     }
 

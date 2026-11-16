@@ -114,9 +114,9 @@ impl NotificationSettingsScope {
     /// Human label for the scope-defaults settings UI.
     pub fn label(&self) -> &'static str {
         match self {
-            NotificationSettingsScope::PrivateChats => tr(keys::Q_PREFS_SCOPE_PRIVATE_CHATS),
-            NotificationSettingsScope::GroupChats => tr(keys::Q_PREFS_SCOPE_GROUPS),
-            NotificationSettingsScope::ChannelChats => tr(keys::Q_PREFS_SCOPE_CHANNELS),
+            NotificationSettingsScope::PrivateChats => tr(keys::SEARCH_FILTER_PRIVATE),
+            NotificationSettingsScope::GroupChats => tr(keys::FILTERS_TYPE_GROUPS),
+            NotificationSettingsScope::ChannelChats => tr(keys::FILTERS_TYPE_CHANNELS),
         }
     }
 

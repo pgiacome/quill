@@ -26,7 +26,7 @@ impl ResaleSort {
     pub fn label(self) -> &'static str {
         match self {
             Self::Price => tr(keys::Q_MONEY_RESALE_SORT_PRICE),
-            Self::Date => tr(keys::Q_MONEY_RESALE_SORT_DATE),
+            Self::Date => tr(keys::GIFT_RESALE_DATE),
             Self::Number => tr(keys::Q_MONEY_RESALE_SORT_NUMBER),
         }
     }

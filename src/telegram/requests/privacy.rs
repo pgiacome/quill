@@ -49,7 +49,7 @@ impl PrivacyWho {
 
     pub fn label(self) -> &'static str {
         match self {
-            PrivacyWho::Everybody => tr(keys::Q_PREFS_PRIVACY_EVERYBODY),
+            PrivacyWho::Everybody => tr(keys::EDIT_PRIVACY_EVERYONE),
             PrivacyWho::Contacts => tr(keys::Q_PREFS_PRIVACY_CONTACTS),
             PrivacyWho::Nobody => tr(keys::Q_PREFS_PRIVACY_NOBODY),
         }

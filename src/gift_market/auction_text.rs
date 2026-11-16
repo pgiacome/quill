@@ -52,7 +52,7 @@ pub fn join_button(state: &AuctionState, now: i64, place: bool) -> (String, Stri
         minutes_left(state.end_date(), now)
     };
     if state.finished(now) || (!preview && left <= 0) {
-        return (tr(keys::Q_MONEY_AUCTION_OK).into(), String::new());
+        return (tr(keys::BOX_OK).into(), String::new());
     }
     if preview {
         return (
@@ -64,7 +64,7 @@ pub fn join_button(state: &AuctionState, now: i64, place: bool) -> (String, Stri
         );
     }
     let title = if place {
-        tr(keys::Q_MONEY_AUCTION_PLACE_BID)
+        tr(keys::AUCTION_JOIN_BID)
     } else {
         tr(keys::Q_MONEY_AUCTION_JOIN_AUCTION)
     };
@@ -92,7 +92,7 @@ pub fn join_button(state: &AuctionState, now: i64, place: bool) -> (String, Stri
 /// The bid box title (`lng_auction_bid_title` / `_early`).
 pub fn bid_title(started: bool) -> &'static str {
     if started {
-        tr(keys::Q_MONEY_AUCTION_PLACE_BID)
+        tr(keys::AUCTION_JOIN_BID)
     } else {
         tr(keys::Q_MONEY_AUCTION_PLACE_EARLY_BID)
     }
@@ -140,7 +140,7 @@ pub fn info_rows(
         ),
         (
             if finished {
-                tr(keys::Q_MONEY_AUCTION_LAST_SALE)
+                tr(keys::GIFT_VALUE_LAST_SALE)
             } else {
                 tr(keys::Q_MONEY_AUCTION_ENDS)
             }
@@ -191,7 +191,7 @@ pub fn info_rows(
         AuctionPhase::Finished(finished) => {
             if finished.average_price > 0 {
                 rows.push((
-                    tr(keys::Q_MONEY_AUCTION_AVERAGE_PRICE).into(),
+                    tr(keys::GIFT_VLAUE_AVERAGE_PRICE).into(),
                     format!("★{}", group_digits(finished.average_price)),
                 ));
             }

@@ -93,8 +93,8 @@ impl MediaAction {
             Self::AddToSet { emoji } => {
                 crate::sticker_set_box::SetKind::of(emoji).add_to_set_label()
             }
-            Self::ToggleFavorite { remove: false } => tr(keys::Q_CHAT_MENU_ADD_FAVORITE),
-            Self::ToggleFavorite { remove: true } => tr(keys::Q_CHAT_MENU_REMOVE_FAVORITE),
+            Self::ToggleFavorite { remove: false } => tr(keys::FAVED_STICKERS_ADD),
+            Self::ToggleFavorite { remove: true } => tr(keys::FAVED_STICKERS_REMOVE),
             Self::ShowInFolder if finder => tr(keys::Q_CHAT_MENU_SHOW_IN_FINDER),
             Self::ShowInFolder => tr(keys::Q_CHAT_MENU_SHOW_IN_FOLDER),
             Self::SaveForNotifications => tr(keys::Q_CHAT_MENU_SAVE_FOR_NOTIFICATIONS),

@@ -64,12 +64,12 @@ impl ProfileTab {
         match self {
             ProfileTab::Posts => tr(keys::Q_PEOPLE_PROFILE_TAB_POSTS),
             ProfileTab::Gifts => tr(keys::Q_PEOPLE_PROFILE_TAB_GIFTS),
-            ProfileTab::Media => tr(keys::Q_PEOPLE_PROFILE_TAB_MEDIA),
-            ProfileTab::Files => tr(keys::Q_PEOPLE_PROFILE_TAB_FILES),
+            ProfileTab::Media => tr(keys::MEDIA_TYPE_MEDIA),
+            ProfileTab::Files => tr(keys::MEDIA_TYPE_FILES),
             ProfileTab::Links => tr(keys::Q_PEOPLE_PROFILE_TAB_LINKS),
             ProfileTab::Music => tr(keys::Q_PEOPLE_PROFILE_TAB_MUSIC),
             ProfileTab::Voice => tr(keys::Q_PEOPLE_PROFILE_TAB_VOICE),
-            ProfileTab::Gifs => tr(keys::Q_PEOPLE_PROFILE_TAB_GIFS),
+            ProfileTab::Gifs => tr(keys::MEDIA_ANIMATION_TITLE),
         }
     }
 

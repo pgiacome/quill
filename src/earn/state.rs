@@ -306,7 +306,7 @@ impl EarnPanel {
             Self::Revenue {
                 screen: EarnScreen::Monetization,
                 ..
-            } => tr(keys::Q_MONEY_EARN_MONETIZATION),
+            } => tr(keys::CHANNEL_EARN_TITLE),
             Self::Revenue { .. } => tr(keys::Q_MONEY_EARN_STARS_BALANCE),
             Self::Setup { .. } => tr(keys::Q_MONEY_EARN_AFFILIATE_PROGRAM),
             Self::Join { .. } => tr(keys::Q_MONEY_EARN_AFFILIATE_PROGRAMS),

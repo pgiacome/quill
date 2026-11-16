@@ -293,7 +293,7 @@ pub(in crate::ui) fn app_menus_with(
     ]));
     menus.extend([
         Menu::new(tr(keys::Q_MISC_MENU_FILE)).items(file_items),
-        Menu::new(tr(keys::Q_MISC_MENU_EDIT)).items([
+        Menu::new(tr(keys::MAC_MENU_EDIT)).items([
             MenuItem::action(tr(keys::Q_PREFS_UNDO), UndoAction),
             MenuItem::action(tr(keys::Q_PREFS_REDO), RedoAction),
             MenuItem::separator(),

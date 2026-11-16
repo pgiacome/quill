@@ -132,8 +132,8 @@ impl TxFilter {
     pub fn label(self) -> &'static str {
         match self {
             Self::All => tr(keys::Q_MONEY_TX_ALL),
-            Self::Incoming => tr(keys::Q_MONEY_TX_INCOMING),
-            Self::Outgoing => tr(keys::Q_MONEY_TX_OUTGOING),
+            Self::Incoming => tr(keys::CREDITS_SUMMARY_HISTORY_TAB_IN),
+            Self::Outgoing => tr(keys::CREDITS_SUMMARY_HISTORY_TAB_OUT),
         }
     }
 
@@ -421,7 +421,7 @@ fn limit_title(constructor: &str) -> Option<Key> {
         }
         "premiumLimitTypeShareableChatFolderCount" => keys::Q_MONEY_PREMIUM_LIMIT_SHAREABLE_FOLDERS,
         "premiumLimitTypeActiveStoryCount" => keys::Q_MONEY_PREMIUM_LIMIT_ACTIVE_STORIES,
-        "premiumLimitTypeSimilarChatCount" => keys::Q_MONEY_PREMIUM_LIMIT_SIMILAR_CHATS,
+        "premiumLimitTypeSimilarChatCount" => keys::SIMILAR_CHANNELS_TITLE,
         _ => return None,
     })
 }

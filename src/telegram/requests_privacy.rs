@@ -88,15 +88,15 @@ impl PrivacySettingKey {
                 tr(keys::Q_PREFS_PRIVACY_FORWARDED_MESSAGES)
             }
             PrivacySettingKey::AllowChatInvites => tr(keys::Q_PREFS_PRIVACY_GROUPS_CHANNELS),
-            PrivacySettingKey::ShowBio => tr(keys::Q_PREFS_PRIVACY_BIO),
-            PrivacySettingKey::ShowBirthdate => tr(keys::Q_PREFS_PRIVACY_BIRTHDATE),
+            PrivacySettingKey::ShowBio => tr(keys::INFO_BIO_LABEL),
+            PrivacySettingKey::ShowBirthdate => tr(keys::SETTINGS_BIRTHDAY_LABEL),
             PrivacySettingKey::ShowProfileAudio => tr(keys::Q_PREFS_PRIVACY_SAVED_MUSIC),
             PrivacySettingKey::AllowFindingByPhoneNumber => {
                 tr(keys::Q_PREFS_PRIVACY_FIND_BY_NUMBER)
             }
             PrivacySettingKey::AllowVoiceMessages => tr(keys::Q_PREFS_PRIVACY_VOICE_MESSAGES),
             PrivacySettingKey::AutosaveGifts => tr(keys::Q_PREFS_PRIVACY_GIFTS),
-            PrivacySettingKey::AllowCalls => tr(keys::Q_PREFS_PRIVACY_CALLS),
+            PrivacySettingKey::AllowCalls => tr(keys::EDIT_PRIVACY_CALLS_HEADER),
             PrivacySettingKey::PeerToPeer => tr(keys::Q_PREFS_PRIVACY_P2P_CALLS),
             PrivacySettingKey::AllowUnpaidMessages => tr(keys::Q_PREFS_PRIVACY_REMOVE_FEE),
         }

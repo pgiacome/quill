@@ -136,7 +136,7 @@ const FIXED: &[(&str, Key, Detail, Party)] = &[
     ),
     (
         "starTransactionTypeGiftPurchase",
-        keys::Q_MONEY_TX_GIFT,
+        keys::GIFT_LINK_LABEL_GIFT,
         Detail::Gift,
         Party::Owner,
     ),

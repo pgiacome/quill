@@ -78,8 +78,8 @@ impl ChatType {
         match self {
             Self::NewChats => tr(keys::Q_OPS_BUSINESS_NEW_CHATS),
             Self::ExistingChats => tr(keys::Q_OPS_BUSINESS_EXISTING_CHATS),
-            Self::Contacts => tr(keys::Q_OPS_BUSINESS_CONTACTS),
-            Self::NonContacts => tr(keys::Q_OPS_BUSINESS_NON_CONTACTS),
+            Self::Contacts => tr(keys::FILTERS_TYPE_CONTACTS),
+            Self::NonContacts => tr(keys::FILTERS_TYPE_NON_CONTACTS),
         }
     }
 }

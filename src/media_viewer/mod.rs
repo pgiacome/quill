@@ -102,10 +102,10 @@ pub enum MediaViewerKind {
 impl MediaViewerKind {
     pub fn label(&self) -> &'static str {
         match self {
-            MediaViewerKind::Photo => tr(keys::Q_MEDIA_KIND_PHOTO),
-            MediaViewerKind::Video => tr(keys::Q_MEDIA_KIND_VIDEO),
+            MediaViewerKind::Photo => tr(keys::IN_DLG_PHOTO),
+            MediaViewerKind::Video => tr(keys::IN_DLG_VIDEO),
             MediaViewerKind::Animation => tr(keys::Q_MEDIA_KIND_GIF),
-            MediaViewerKind::ImageFile | MediaViewerKind::File => tr(keys::Q_MEDIA_KIND_FILE),
+            MediaViewerKind::ImageFile | MediaViewerKind::File => tr(keys::IN_DLG_FILE),
         }
     }
 

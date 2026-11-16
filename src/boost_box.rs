@@ -136,7 +136,7 @@ impl BoostCounters {
     pub fn button(&self, group: bool, allow_multi: bool) -> BoostButton {
         if self.next_level_boosts == 0 || (self.mine > 0 && !allow_multi) {
             BoostButton {
-                label: tr(keys::Q_MONEY_BOOST_OK),
+                label: tr(keys::BOX_OK),
                 closes: true,
             }
         } else if self.mine > 0 {
@@ -147,7 +147,7 @@ impl BoostCounters {
         } else {
             BoostButton {
                 label: if group {
-                    tr(keys::Q_MONEY_BOOST_GROUP)
+                    tr(keys::BOOST_GROUP_BUTTON)
                 } else {
                     tr(keys::Q_MONEY_BOOST_CHANNEL)
                 },
@@ -365,7 +365,7 @@ pub fn available_in(slot: &ParsedBoostSlot, now: i64) -> String {
 pub fn expires_on(slot: &ParsedBoostSlot, now: i64) -> String {
     let at = civil_local(i64::from(slot.expiration_date));
     tr_with(
-        keys::Q_MONEY_BOOST_EXPIRES_ON,
+        keys::BOOSTS_LIST_STATUS,
         &[("date", &day_label(&at, &civil_local(now)))],
     )
 }

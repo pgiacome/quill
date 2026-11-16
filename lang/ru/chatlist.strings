@@ -135,6 +135,5 @@
 "qll_chatlist_you_are_all_caught_up" = "Вы прочитали всё.";
 "qll_chatlist_topics_could_not_load" = "Не удалось загрузить темы.";
 "qll_chatlist_could_not_remove_from_folder" = "Не удалось убрать чат из папки";
-"qll_chatlist_view_profile" = "Открыть профиль";
 "qll_chatlist_group_info" = "Информация о группе";
 "qll_chatlist_channel_info" = "Информация о канале";

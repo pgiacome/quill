@@ -50,15 +50,15 @@ impl SharedMediaTab {
     /// Tab label in the gallery tab bar (tdesktop `lng_media_type_*`).
     pub fn label(self) -> &'static str {
         match self {
-            SharedMediaTab::Media => tr(keys::Q_MEDIA_SHARED_TAB_MEDIA),
-            SharedMediaTab::Photos => tr(keys::Q_MEDIA_SHARED_TAB_PHOTOS),
-            SharedMediaTab::Videos => tr(keys::Q_MEDIA_SHARED_TAB_VIDEOS),
-            SharedMediaTab::Files => tr(keys::Q_MEDIA_SHARED_TAB_FILES),
+            SharedMediaTab::Media => tr(keys::MEDIA_TYPE_MEDIA),
+            SharedMediaTab::Photos => tr(keys::MEDIA_TYPE_PHOTOS),
+            SharedMediaTab::Videos => tr(keys::MEDIA_TYPE_VIDEOS),
+            SharedMediaTab::Files => tr(keys::MEDIA_TYPE_FILES),
             SharedMediaTab::Music => tr(keys::Q_MEDIA_SHARED_TAB_MUSIC),
             SharedMediaTab::Links => tr(keys::Q_MEDIA_SHARED_TAB_LINKS),
             SharedMediaTab::Polls => tr(keys::Q_MEDIA_SHARED_TAB_POLLS),
             SharedMediaTab::Voice => tr(keys::Q_MEDIA_SHARED_TAB_VOICE),
-            SharedMediaTab::Gifs => tr(keys::Q_MEDIA_SHARED_TAB_GIFS),
+            SharedMediaTab::Gifs => tr(keys::MEDIA_ANIMATION_TITLE),
             SharedMediaTab::Stories => tr(keys::Q_MEDIA_SHARED_TAB_STORIES),
             SharedMediaTab::Gifts => tr(keys::Q_MEDIA_SHARED_TAB_GIFTS),
         }

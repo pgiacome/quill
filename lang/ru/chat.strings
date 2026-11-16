@@ -536,8 +536,6 @@
 "qll_chat_bottom_join_channel" = "Вступить в канал";
 "qll_chat_bottom_join_group" = "Вступить в группу";
 "qll_chat_bottom_apply_join_group" = "Подать заявку на вступление";
-"qll_chat_bottom_unmute" = "Включить звук";
-"qll_chat_bottom_mute" = "Выключить звук";
 "qll_chat_bottom_start" = "Начать";
 "qll_chat_bottom_go_premium" = "Оформить Premium";
 "qll_chat_edit_image" = "Изменить изображение";
@@ -550,8 +548,6 @@
 "qll_chat_menu_add_stickers" = "Добавить стикеры";
 "qll_chat_menu_add_to_sticker_set" = "Добавить в набор стикеров";
 "qll_chat_menu_add_to_emoji_set" = "Добавить в набор эмодзи";
-"qll_chat_menu_add_favorite" = "Добавить в избранное";
-"qll_chat_menu_remove_favorite" = "Убрать из избранного";
 "qll_chat_menu_show_in_finder" = "Показать в Finder";
 "qll_chat_menu_show_in_folder" = "Показать в папке";
 "qll_chat_menu_save_for_notifications" = "Сохранить для уведомлений";

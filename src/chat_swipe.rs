@@ -71,11 +71,11 @@ impl SwipeAction {
     /// "disabled" string reads "Change folder" there).
     pub fn settings_label(self) -> &'static str {
         match self {
-            SwipeAction::Mute => tr(keys::Q_PREFS_SWIPE_MUTE),
+            SwipeAction::Mute => tr(keys::MUTE_MENU_MUTE),
             SwipeAction::Pin => tr(keys::Q_PREFS_SWIPE_PIN),
             SwipeAction::Read => tr(keys::Q_PREFS_SWIPE_READ),
             SwipeAction::Archive => tr(keys::Q_PREFS_SWIPE_ARCHIVE),
-            SwipeAction::Delete => tr(keys::Q_PREFS_SWIPE_DELETE),
+            SwipeAction::Delete => tr(keys::SETTINGS_QUICK_DIALOG_ACTION_DELETE),
             SwipeAction::Disabled => tr(keys::Q_PREFS_SWIPE_DISABLED),
         }
     }
@@ -101,15 +101,15 @@ impl SwipeLabel {
     /// `lng_settings_quick_dialog_action_*` strings.
     pub fn text(self) -> &'static str {
         match self {
-            SwipeLabel::Mute => tr(keys::Q_PREFS_SWIPE_MUTE),
-            SwipeLabel::Unmute => tr(keys::Q_PREFS_SWIPE_UNMUTE),
+            SwipeLabel::Mute => tr(keys::MUTE_MENU_MUTE),
+            SwipeLabel::Unmute => tr(keys::SETTINGS_QUICK_DIALOG_ACTION_UNMUTE),
             SwipeLabel::Pin => tr(keys::Q_PREFS_SWIPE_PIN),
             SwipeLabel::Unpin => tr(keys::Q_PREFS_SWIPE_UNPIN),
             SwipeLabel::Read => tr(keys::Q_PREFS_SWIPE_READ),
             SwipeLabel::Unread => tr(keys::Q_PREFS_SWIPE_UNREAD),
             SwipeLabel::Archive => tr(keys::Q_PREFS_SWIPE_ARCHIVE),
             SwipeLabel::Unarchive => tr(keys::Q_PREFS_SWIPE_UNARCHIVE),
-            SwipeLabel::Delete => tr(keys::Q_PREFS_SWIPE_DELETE),
+            SwipeLabel::Delete => tr(keys::SETTINGS_QUICK_DIALOG_ACTION_DELETE),
             SwipeLabel::Disabled => tr(keys::Q_PREFS_SWIPE_DISABLED),
         }
     }

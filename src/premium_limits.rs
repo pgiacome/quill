@@ -198,7 +198,7 @@ impl PremiumLimitKind {
             Self::FileSize => tr(keys::Q_MONEY_PREMIUM_LIMIT_FILE_SIZE),
             Self::FavoriteStickers => tr(keys::Q_MONEY_PREMIUM_LIMIT_FAVORITE_STICKERS),
             Self::SavedPins => tr(keys::Q_MONEY_PREMIUM_LIMIT_SAVED_PINS),
-            Self::SimilarChats => tr(keys::Q_MONEY_PREMIUM_LIMIT_SIMILAR_CHATS),
+            Self::SimilarChats => tr(keys::SIMILAR_CHANNELS_TITLE),
             Self::OwnedBots => tr(keys::Q_MONEY_PREMIUM_LIMIT_OWNED_BOTS),
             Self::ActiveStories => tr(keys::Q_MONEY_PREMIUM_LIMIT_ACTIVE_STORIES),
             Self::WeeklyStories => tr(keys::Q_MONEY_PREMIUM_LIMIT_WEEKLY_STORIES),

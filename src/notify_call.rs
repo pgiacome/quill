@@ -44,8 +44,8 @@ impl CallNotificationAction {
     pub fn label(self) -> &'static str {
         match self {
             CallNotificationAction::Open => tr(keys::Q_PREFS_CALL_NOTIFICATION_OPEN),
-            CallNotificationAction::Accept => tr(keys::Q_PREFS_CALL_NOTIFICATION_ACCEPT),
-            CallNotificationAction::Decline => tr(keys::Q_PREFS_CALL_NOTIFICATION_DECLINE),
+            CallNotificationAction::Accept => tr(keys::CALL_ACCEPT),
+            CallNotificationAction::Decline => tr(keys::CALL_DECLINE),
         }
     }
 

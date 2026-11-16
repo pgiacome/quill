@@ -525,7 +525,7 @@ impl NotificationAction {
         match self {
             NotificationAction::Open => tr(keys::Q_PREFS_NOTIFICATION_OPEN),
             NotificationAction::Reply => tr(keys::Q_PREFS_NOTIFICATION_REPLY),
-            NotificationAction::MarkRead => tr(keys::Q_PREFS_NOTIFICATION_MARK_READ),
+            NotificationAction::MarkRead => tr(keys::CONTEXT_MARK_READ),
         }
     }
 
