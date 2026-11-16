@@ -810,37 +810,22 @@ fn count_pill(count: i32, muted: bool, cx: &App) -> impl IntoElement {
         .child(super::chat_row::compact_count(count))
 }
 
-/// The topic's icon in a `size` box: its custom emoji on its own once
-/// `emoji` has the picture (tdesktop `ForumTopic::paintUserpic` draws no
-/// circle under it), else [`topic_icon`].
+/// The topic's icon in a `size` box: its custom emoji (`icon`, decoded at
+/// that size) on its own once loaded, as tdesktop's
+/// `ForumTopic::paintUserpic` draws it with no circle under it; else
+/// [`topic_icon`].
 pub(super) fn topic_icon_or_emoji(
     topic: &ForumTopic,
     size: f32,
-    emoji: &super::sticker_player::PreviewEmoji,
+    icon: Option<ImageSource>,
     cx: &App,
 ) -> AnyElement {
-    let id = topic.icon_custom_emoji_id;
-    let picture = (!topic.is_general && id > 0)
-        .then(|| match emoji.layered.get(&id) {
-            Some(clip) => Some(
-                super::anim_layer::frames(clip.clone())
-                    .size(px(size))
-                    .into_any_element(),
-            ),
-            None => emoji.still.get(&id).map(|still| {
-                img(still.clone())
-                    .id(("topic-row-icon", topic.forum_topic_id as u64))
-                    .size(px(size))
-                    .object_fit(ObjectFit::Contain)
-                    .into_any_element()
-            }),
-        })
-        .flatten();
-    match picture {
-        Some(picture) => div()
+    match icon {
+        Some(icon) => img(icon)
+            .id(("topic-row-icon", topic.forum_topic_id as u64))
             .size(px(size))
             .flex_none()
-            .child(picture)
+            .object_fit(ObjectFit::Contain)
             .into_any_element(),
         None => topic_icon(topic, size, cx),
     }

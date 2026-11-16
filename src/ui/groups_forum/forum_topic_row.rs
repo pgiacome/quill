@@ -56,7 +56,7 @@ impl QuillApp {
         };
         let sender = last.and_then(|last| session?.topic_preview_sender(last));
         let style = last.map(|last| &last.style);
-        let emoji = self.topic_row_emoji(topic, cx);
+        let (emoji, icon) = self.topic_row_emoji(topic, m.avatar, cx);
         let stamp = topic
             .last_message
             .as_ref()
@@ -118,7 +118,7 @@ impl QuillApp {
                     .items_center()
                     .gap(px(m.row_gap))
                     .child(super::super::subsection_tabs::topic_icon_or_emoji(
-                        topic, m.avatar, &emoji, cx,
+                        topic, m.avatar, icon, cx,
                     ))
                     .child(
                         row_text_lines(m)

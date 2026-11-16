@@ -30,7 +30,7 @@ impl QuillApp {
         cx.notify();
     }
 
-    pub(in crate::ui) fn ai_emoji_still(&self, id: i64) -> Option<PathBuf> {
+    pub(super) fn ai_emoji_still(&self, id: i64) -> Option<PathBuf> {
         if id <= 0 {
             return None;
         }
