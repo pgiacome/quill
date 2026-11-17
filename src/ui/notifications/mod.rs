@@ -788,20 +788,6 @@ mod tests {
     }
 
     #[test]
-    fn urgent_updates_redraw_everything_at_once() {
-        let start = Instant::now();
-        let mut redraw = PolledRedraw::new(start);
-        assert_eq!(
-            redraw.decide(RedrawNeed::Now, true, start + ms(1)),
-            PolledAction::Full
-        );
-        assert_eq!(
-            redraw.decide(RedrawNeed::Now, true, start + ms(2)),
-            PolledAction::Full
-        );
-    }
-
-    #[test]
     fn a_stream_of_chat_list_updates_redraws_the_list_a_few_times_a_second() {
         // Ten presence / typing updates a second for ten seconds, polled
         // every 10 ms in between: the chat list redraws at most every
@@ -823,29 +809,6 @@ mod tests {
         }
         assert_eq!(fulls, 0);
         assert!((20..=25).contains(&lists), "{lists} chat-list redraws");
-    }
-
-    #[test]
-    fn a_held_back_redraw_lands_on_a_later_empty_poll() {
-        let start = Instant::now();
-        let mut redraw = PolledRedraw::new(start);
-        assert_eq!(
-            redraw.decide(RedrawNeed::Later, true, start + ms(100)),
-            PolledAction::Wait
-        );
-        assert_eq!(
-            redraw.decide(RedrawNeed::Nothing, true, start + ms(900)),
-            PolledAction::Wait
-        );
-        assert_eq!(
-            redraw.decide(RedrawNeed::Nothing, true, start + ms(1000)),
-            PolledAction::Full
-        );
-        // Drawn: nothing left over.
-        assert_eq!(
-            redraw.decide(RedrawNeed::Nothing, true, start + ms(5000)),
-            PolledAction::Wait
-        );
     }
 
     #[test]

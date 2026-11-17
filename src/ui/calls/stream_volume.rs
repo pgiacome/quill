@@ -329,17 +329,19 @@ mod tests {
         let mut pill = VolumePill::default();
         pill.hover(VolumePart::Toggle, true, now, timer);
         pill.hover(VolumePart::Toggle, false, now, timer);
-        assert!(matches!(pill, VolumePill::Closing { .. }));
-        // Coming back ends the closing and its timer.
+        // Coming back ends the closing: its deadline no longer applies.
         pill.hover(VolumePart::Pill, true, now, timer);
-        assert!(matches!(pill, VolumePill::Held(_)));
+        assert!(pill.open(now + LEAVE_PILL * 5));
         pill.hover(VolumePart::Pill, false, now, timer);
-        assert!(matches!(pill, VolumePill::Closing { .. }));
-        // A blur while it closes leaves it closing; a release ends it.
+        // A blur while it closes neither holds it nor cuts the wait short.
         pill.focus(false);
-        assert!(matches!(pill, VolumePill::Closing { .. }));
+        assert!(pill.open(now));
+        assert!(!pill.open(now + LEAVE_PILL));
+        // A release ends it at once.
+        pill.hover(VolumePart::Pill, true, now, timer);
+        pill.hover(VolumePart::Pill, false, now, timer);
         pill.release();
-        assert!(matches!(pill, VolumePill::Closed));
+        assert!(!pill.open(now));
     }
 
     #[test]

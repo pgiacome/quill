@@ -212,6 +212,9 @@ fn half_floats_round_trip() {
     assert_eq!(f32_to_half(65520.0), 0x7c00);
     assert_eq!(f32_to_half(f32::INFINITY), 0x7c00);
     assert!(half_to_f32(f32_to_half(f32::NAN)).is_nan());
+    assert_eq!(half_to_f32(0xc000), -2.0);
+    assert!(half_to_f32(0x7c00).is_infinite());
+    assert!(half_to_f32(0x7e00).is_nan());
     assert_eq!(f32_to_half(2.0_f32.powi(-24)), 0x0001);
     assert_eq!(f32_to_half(2.0_f32.powi(-26)), 0x0000);
     // 1 + 2^-11 is halfway between 1.0 and the next half: ties to even.

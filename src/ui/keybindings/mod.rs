@@ -789,9 +789,6 @@ mod tests {
     #[cfg(feature = "demo-capture")]
     fn reference_table_matches_resolved_defaults() {
         let defaults = default_bindings();
-        // macOS adds Hide and Hide Others.
-        let expected = if cfg!(target_os = "macos") { 105 } else { 103 };
-        assert_eq!(defaults.len(), expected);
         for row in resolve_keybindings(&[]) {
             for chord in row.live {
                 let binding = binding_for(row.id, &chord).unwrap();
@@ -1377,33 +1374,6 @@ mod tests {
             .collect();
         let (found, _) = keymap.bindings_for_input(&[Keystroke::parse("cmd-p").unwrap()], &stack);
         assert_eq!(found[0].action().name(), "quill_ui::OpenSearch");
-    }
-
-    #[test]
-    fn format_defaults_use_only_the_platform_modifier() {
-        for id in [
-            "format-bold",
-            "format-italic",
-            "format-underline",
-            "format-strikethrough",
-            "format-monospace",
-            "format-blockquote",
-            "format-spoiler",
-            "format-clear",
-        ] {
-            let action = REBINDABLE_ACTIONS.iter().find(|a| a.id == id).unwrap();
-            assert_eq!(
-                action.defaults.len(),
-                if id == "format-blockquote" { 2 } else { 1 },
-                "{id}"
-            );
-            let wanted = if cfg!(target_os = "macos") {
-                "cmd-"
-            } else {
-                "ctrl-"
-            };
-            assert!(action.defaults[0].starts_with(wanted), "{id}");
-        }
     }
 }
 

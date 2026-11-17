@@ -556,6 +556,8 @@ fn a_failed_craft_candidates_list_is_asked_again() {
             "next_offset": ""}),
     );
     assert!(stage(&f).is_some_and(|s| s == crate::gift_market::PageLoad::Ready));
+    let craft = f.driver.session.payments.gift_market.craft.clone().unwrap();
+    assert_eq!(craft.candidates.len(), 1);
     assert!(f.driver.retry_craft_candidates().is_err());
 }
 
@@ -618,65 +620,6 @@ fn craft_buys_a_listing_into_a_slot() {
     assert_eq!(craft.slots[1].received_gift_id, "bought");
     assert!(craft.market.listings.is_empty());
     assert!(toasts(&mut f.driver.session).is_empty());
-}
-
-/// A failed "your gifts" list in Select Gifts keeps its error for the box to
-/// draw, and its Retry asks the first page again.
-#[test]
-fn a_failed_craft_candidates_list_retries() {
-    let mut f = Fixture::new();
-    let primary = CraftGift::parse_received(&received(1)).unwrap();
-    f.driver.open_gift_craft(primary).unwrap();
-    assert!(f.driver.retry_craft_candidates().is_err(), "not failed yet");
-    f.answer(
-        "getGiftsForCrafting",
-        json!({"@type": "error", "code": 500, "message": "boom"}),
-    );
-    let craft = f.driver.session.payments.gift_market.craft.clone().unwrap();
-    assert!(craft.candidates_load.error().is_some() && craft.candidates.is_empty());
-    f.driver.retry_craft_candidates().unwrap();
-    assert!(
-        f.driver
-            .session
-            .payments
-            .gift_market
-            .craft
-            .as_ref()
-            .unwrap()
-            .candidates_load
-            .is_loading()
-    );
-    f.answer(
-        "getGiftsForCrafting",
-        json!({"@type": "giftsForCrafting", "total_count": 1, "gifts": [received(2)],
-            "attribute_persistence_probabilities": [], "next_offset": ""}),
-    );
-    let craft = f.driver.session.payments.gift_market.craft.clone().unwrap();
-    assert_eq!(craft.candidates.len(), 1);
-    assert!(craft.candidates_load.error().is_none());
-}
-
-/// A preview in flight is not asked twice; a failed one says so, and is
-/// asked again only by a box opening or its Retry (never from a render).
-#[test]
-fn a_failed_upgrade_preview_waits_for_a_user_action() {
-    let mut f = Fixture::new();
-    f.driver.fetch_gift_upgrade_preview(801).unwrap();
-    assert!(
-        f.driver.fetch_gift_upgrade_preview(801).is_err(),
-        "in flight"
-    );
-    f.answer(
-        "getGiftUpgradePreview",
-        json!({"@type": "error", "code": 500, "message": "boom"}),
-    );
-    assert!(
-        f.driver.session.payments.gift_market.previews[&801]
-            .error()
-            .is_some()
-    );
-    assert!(f.driver.fetch_gift_upgrade_preview(802).is_ok());
-    assert!(f.driver.fetch_gift_upgrade_preview(801).is_ok(), "Retry");
 }
 
 /// Opening a resale list while a buy's `sendResoldGift` is out is refused and

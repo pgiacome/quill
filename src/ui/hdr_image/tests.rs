@@ -1,4 +1,4 @@
-use super::macos::{capped_long_edge, half_to_f32, peak_channel};
+use super::macos::{capped_long_edge, peak_channel};
 use super::{HDR_MAX_PIXELS, decode, probe, probe_file};
 use std::path::PathBuf;
 
@@ -75,17 +75,6 @@ fn long_edge_stays_within_the_picture_and_the_pixel_cap() {
     let other = u64::from(edge) * 6000 / 8000;
     assert!(u64::from(edge) * other <= HDR_MAX_PIXELS, "edge {edge}");
     assert!(edge > 5500, "edge {edge}");
-}
-
-#[test]
-fn half_floats_convert() {
-    assert_eq!(half_to_f32(0x3c00), 1.0);
-    assert_eq!(half_to_f32(0x4400), 4.0);
-    assert_eq!(half_to_f32(0xc000), -2.0);
-    assert_eq!(half_to_f32(0x0000), 0.0);
-    assert_eq!(half_to_f32(0x0001), 2.0_f32.powi(-24));
-    assert!(half_to_f32(0x7c00).is_infinite());
-    assert!(half_to_f32(0x7e00).is_nan());
 }
 
 #[test]

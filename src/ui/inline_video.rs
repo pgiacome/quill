@@ -658,10 +658,8 @@ mod tests {
     fn small_clips_are_never_upscaled() {
         let tiny = InlineTile::media(crate::ui::message_media::MediaFrameKind::Video, 100, 80, 0);
         assert_eq!(tiny.decoded_size(tiny.decode_edge(2.)), (100, 80));
-        assert_eq!(
-            tiny.decode_bytes(720, 3),
-            100 * 80 * 4 * (3 + 1 + crate::ui::video_player::surface::idle_bgra_buffers())
-        );
+        let idle = if cfg!(target_os = "macos") { 3 } else { 0 };
+        assert_eq!(tiny.decode_bytes(720, 3), 100 * 80 * 4 * (3 + 1 + idle));
         assert_eq!(
             InlineTile::media(crate::ui::message_media::MediaFrameKind::Video, 0, 0, 0)
                 .decoded_size(300),

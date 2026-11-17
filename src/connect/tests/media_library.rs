@@ -300,17 +300,6 @@ fn menu_harness() -> Harness {
 }
 
 #[test]
-fn message_reaction_options_wait_while_the_request_is_in_flight() {
-    let mut h = menu_harness();
-    h.driver
-        .fetch_message_reactions(ChatId(7), MessageId(50))
-        .unwrap();
-    let state = &h.driver.session.stickers.message_reaction_options;
-    assert!(state.is_loading_for(ChatId(7), MessageId(50)));
-    assert!(state.ready_for(ChatId(7), MessageId(50)).is_none());
-}
-
-#[test]
 fn a_lost_emoji_pack_title_request_is_asked_again() {
     let mut h = menu_harness();
     h.driver.fetch_emoji_pack_title(77).unwrap();

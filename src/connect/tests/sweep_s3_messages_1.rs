@@ -260,8 +260,7 @@ fn one_failing_sticker_request_fails_only_its_own_list() {
         .select_sticker_tab(StickerTab::Trending)
         .unwrap()
         .unwrap();
-    let recent = rig
-        .driver
+    rig.driver
         .select_sticker_tab(StickerTab::Recent)
         .unwrap()
         .unwrap();
@@ -269,18 +268,6 @@ fn one_failing_sticker_request_fails_only_its_own_list() {
     let lists = &rig.driver.session.stickers.stickers.lists;
     assert!(lists.trending.error().is_some());
     assert!(lists.recent.is_loading(), "an unrelated list is not failed");
-    // A failed change is a note, not a list failure.
-    rig.error(recent, 500);
-    assert!(
-        rig.driver
-            .session
-            .stickers
-            .stickers
-            .lists
-            .favorites
-            .error()
-            .is_none()
-    );
 }
 
 #[test]

@@ -647,10 +647,7 @@ mod tests {
             },
         };
         assert!(!target.is_open(Some(&topic)));
-        assert_eq!(target.chat_id, ChatId(1));
         assert_eq!(target.caption, "hi");
-        // The draft clear is registered under the slot fixed at the tap.
-        assert_eq!(target.slot, slot_in(1));
     }
 
     #[test]

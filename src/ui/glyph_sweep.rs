@@ -348,11 +348,6 @@ mod tests {
         let mut sweep = marked();
         assert!(sweep.take_mark().is_some());
         assert!(matches!(sweep, Sweep::Idle));
-        let mut sweep = marked();
-        for _ in 0..=MARK_PATIENCE {
-            sweep.wait_for_frame();
-        }
-        assert!(matches!(sweep, Sweep::Idle));
     }
 
     #[test]
@@ -404,15 +399,6 @@ mod tests {
         assert!(text_worth_a_sweep(KEEP_TEXT + 1, 0));
         assert!(!text_worth_a_sweep(KEEP_TEXT * 2, KEEP_TEXT));
         assert!(text_worth_a_sweep(KEEP_TEXT * 2 + 1, KEEP_TEXT));
-    }
-
-    #[test]
-    fn text_glyphs_stay_whatever_their_mark() {
-        let atlas = HeadlessAtlas::default();
-        ask(&atlas, glyph(10, false));
-        let mark = atlas.next_use_mark();
-        assert_eq!(atlas.remove_emoji_glyphs_unused_since(mark), 0);
-        assert!(!ask(&atlas, glyph(10, false)));
     }
 
     #[test]

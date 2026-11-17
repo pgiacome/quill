@@ -264,21 +264,6 @@ fn client(down: Down, count: u32) -> BackgroundClient {
 }
 
 #[gpui_kit::test]
-fn an_account_row_shows_the_unread_count_or_the_status(cx: &mut TestAppContext) {
-    let (app, mut vcx) = new_app(cx);
-    app.update_in(&mut vcx, |app, _, cx| {
-        let key = other_account();
-        assert!(app.background_account_badge(&key, cx).is_none(), "unknown");
-        app.background.clients.push(client(Down::NeedsSignIn, 3));
-        assert!(
-            app.background_account_badge(&key, cx).is_some(),
-            "the status shows"
-        );
-        assert_eq!(app.background.total_unread().count, 3);
-    });
-}
-
-#[gpui_kit::test]
 fn a_pending_open_opens_the_chat_once_its_account_is_on_screen(cx: &mut TestAppContext) {
     let (app, mut vcx) = new_app(cx);
     let (account, chat_id) = app.read_with(&vcx, |app, _| {

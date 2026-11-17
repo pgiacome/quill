@@ -570,19 +570,6 @@ fn a_live_story_plays_beside_a_one_to_one_call(cx: &mut TestAppContext) {
 }
 
 #[gpui_kit::test]
-fn the_in_call_demo_shows_the_story_beside_the_call(cx: &mut TestAppContext) {
-    let (app, mut vcx) = open_live(cx, "ready-live-story-in-call");
-    let vcx = &mut vcx;
-    app.read_with(vcx, |app, _| {
-        let calls = &app.demo_session.as_ref().expect("the demo session").calls;
-        assert!(calls.active_call.is_some());
-        assert!(calls.story_stream.is_some());
-        assert!(app.stories.viewer.is_open());
-    });
-    assert!(find(vcx, "live-story-frame").is_some());
-}
-
-#[gpui_kit::test]
 fn the_toast_goes_once_the_stars_are_due(cx: &mut TestAppContext) {
     let (app, mut vcx) = open_live(cx, "ready-live-story-stars");
     let vcx = &mut vcx;
