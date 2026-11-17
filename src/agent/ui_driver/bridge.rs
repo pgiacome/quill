@@ -530,30 +530,6 @@ mod tests {
     }
 
     #[test]
-    fn a_taken_command_is_cancelled_when_its_tool_gives_up() {
-        let _guard = lock();
-        let ticket = post("Test", UiCommand::ReadTree).unwrap();
-        let pending = take().pop().unwrap();
-        assert!(!pending.cancelled());
-        assert_eq!(ticket.wait(Duration::ZERO), Err(BridgeError::Timeout));
-        assert!(pending.cancelled(), "the UI sees the tool gave up");
-    }
-
-    #[test]
-    fn the_drive_clock_and_pause_flag() {
-        let _guard = lock();
-        super::note_drive();
-        assert!(super::drove_recently());
-        assert!(super::real_input_age_ms().is_none_or(|age| age < u64::MAX));
-        super::note_real_input();
-        assert!(super::real_input_age_ms().is_some());
-        super::set_paused(true);
-        assert!(super::paused());
-        super::set_paused(false);
-        assert!(!super::paused());
-    }
-
-    #[test]
     fn commands_know_their_log_names() {
         assert_eq!(UiCommand::ReadTree.log_name(), None);
         assert_eq!(

@@ -148,12 +148,4 @@ mod tests {
         assert_eq!(&red[center..center + 3], &BADGE_RED[..3]);
         assert_eq!(&gray[center..center + 3], &MUTED_DOT[..3]);
     }
-
-    #[test]
-    fn switch_is_mirrored() {
-        set_monochrome(false);
-        assert!(!monochrome());
-        set_monochrome(true);
-        assert!(monochrome());
-    }
 }

@@ -784,14 +784,6 @@ mod tests {
     }
 
     #[test]
-    fn account_paths_are_scoped() {
-        let root = PathBuf::from("/tmp/quill-test");
-        let paths = AccountPaths::for_root(&root, &AccountKey::primary());
-        assert!(paths.tdlib_database.ends_with("accounts/primary/tdlib"));
-        assert!(paths.tdlib_files.ends_with("accounts/primary/files"));
-    }
-
-    #[test]
     fn empty_dir_is_not_an_existing_database() {
         let dir = std::env::temp_dir().join(format!("quill-empty-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
@@ -1176,6 +1168,7 @@ mod account_registry_tests {
         let p1 = AccountPaths::for_root(&root, &AccountKey::primary());
         let p2 = AccountPaths::for_root(&root, &AccountKey::new("account-1").unwrap());
         assert!(p1.tdlib_database.ends_with("accounts/primary/tdlib"));
+        assert!(p1.tdlib_files.ends_with("accounts/primary/files"));
         assert!(p2.tdlib_database.ends_with("accounts/account-1/tdlib"));
         assert_ne!(p1.tdlib_database, p2.tdlib_database);
         assert_ne!(p1.tdlib_files, p2.tdlib_files);

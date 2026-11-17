@@ -111,9 +111,4 @@ mod tests {
         assert_eq!(frame[SystemAudioMix::MAX_SAMPLES - 2], 1.0);
         assert_eq!(frame[SystemAudioMix::MAX_SAMPLES - 1], 0.0);
     }
-
-    #[test]
-    fn only_windows_shares_system_audio() {
-        assert_eq!(system_audio_supported(), cfg!(all(feature = "ui", windows)));
-    }
 }

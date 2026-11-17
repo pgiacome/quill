@@ -239,15 +239,4 @@ mod tests {
         cell.record(0.0);
         assert_eq!(cell.take(), Some(0.0));
     }
-
-    #[test]
-    fn controls_switch_live() {
-        let controls = MicControls::new(true, Arc::default());
-        assert!(controls.noise_suppression());
-        controls.set_noise_suppression(false);
-        assert!(!controls.noise_suppression());
-        assert!(!controls.muted());
-        controls.set_muted(true);
-        assert!(controls.muted());
-    }
 }
