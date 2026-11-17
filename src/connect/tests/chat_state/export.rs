@@ -133,10 +133,11 @@ fn chat_export_worker_requests_flow_through_the_driver() {
     // A second export while one is on screen is refused.
     assert!(driver.start_chat_export(export_settings(&dir)).is_err());
 
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    // The worker pokes `wake::UPDATES` after each request and progress
+    // change, so each pass waits for the next one instead of a clock.
     let mut answered = false;
     loop {
-        assert!(std::time::Instant::now() < deadline, "export never settled");
+        let seen = crate::wake::UPDATES.epoch();
         driver.pump_chat_export();
         let export = driver
             .session
@@ -166,7 +167,7 @@ fn chat_export_worker_requests_flow_through_the_driver() {
                 .unwrap();
             answered = true;
         }
-        std::thread::sleep(std::time::Duration::from_millis(5));
+        crate::wake::UPDATES.block_since(seen);
     }
     let export = driver.session.settings.chat_export.as_ref().unwrap();
     let crate::export::Stage::Finished(summary) = export.progress().stage else {
@@ -198,10 +199,11 @@ fn account_export_worker_requests_flow_through_the_driver() {
     driver.start_account_export(settings.clone()).unwrap();
     assert!(driver.start_account_export(settings).is_err());
 
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    // The worker pokes `wake::UPDATES` after each request and progress
+    // change, so each pass waits for the next one instead of a clock.
     let mut answered = 0;
     loop {
-        assert!(std::time::Instant::now() < deadline, "export never settled");
+        let seen = crate::wake::UPDATES.epoch();
         driver.pump_account_export();
         let export = driver.session.settings.account_export.as_ref().unwrap();
         if export.progress().is_settled() {
@@ -230,7 +232,7 @@ fn account_export_worker_requests_flow_through_the_driver() {
                 .unwrap();
             answered += 1;
         }
-        std::thread::sleep(std::time::Duration::from_millis(5));
+        crate::wake::UPDATES.block_since(seen);
     }
     assert_eq!(answered, 3);
     let export = driver.session.settings.account_export.as_ref().unwrap();

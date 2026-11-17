@@ -11,7 +11,7 @@ use crate::proxy_carrier::{
 use crate::telegram::client::copy_and_parse;
 use serde_json::{Value, json};
 use std::sync::atomic::AtomicU64;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 
 type Driver = ConnectDriver<Arc<RecordingSender>>;
 
@@ -42,14 +42,19 @@ impl Default for Log {
     }
 }
 
-struct FakeHost(Arc<Mutex<Log>>);
+/// The log, and a sender whose drop (with the host, after its shutdown
+/// ran on the teardown thread) tells the rig the host is gone.
+struct FakeHost {
+    log: Arc<Mutex<Log>>,
+    _alive: mpsc::Sender<()>,
+}
 
 impl CarrierHost for FakeHost {
     fn available(&self) -> bool {
-        self.0.lock().unwrap().available
+        self.log.lock().unwrap().available
     }
     fn open(&mut self, request: &CarrierRequest) -> Result<(), CarrierError> {
-        let mut log = self.0.lock().unwrap();
+        let mut log = self.log.lock().unwrap();
         log.calls.push(Call::Open(request.id));
         match log.refuse_open.clone() {
             Some(error) => Err(error),
@@ -57,24 +62,24 @@ impl CarrierHost for FakeHost {
         }
     }
     fn deliver(&mut self, carrier_id: i32, data: String) {
-        self.0
+        self.log
             .lock()
             .unwrap()
             .calls
             .push(Call::Deliver(carrier_id, data));
     }
     fn close(&mut self, carrier_id: i32, notify_page: bool) {
-        self.0
+        self.log
             .lock()
             .unwrap()
             .calls
             .push(Call::Close(carrier_id, notify_page));
     }
     fn poll(&mut self) -> Vec<(i32, CarrierError)> {
-        std::mem::take(&mut self.0.lock().unwrap().failures)
+        std::mem::take(&mut self.log.lock().unwrap().failures)
     }
     fn shutdown(&mut self) {
-        self.0.lock().unwrap().calls.push(Call::Shutdown);
+        self.log.lock().unwrap().calls.push(Call::Shutdown);
     }
 }
 
@@ -82,6 +87,8 @@ struct Rig {
     driver: Driver,
     recorder: Arc<RecordingSender>,
     log: Arc<Mutex<Log>>,
+    /// Disconnects once the host is dropped.
+    host_gone: mpsc::Receiver<()>,
     seq: AtomicU64,
     sink: Arc<dyn DiagnosticSink>,
 }
@@ -95,11 +102,16 @@ impl Rig {
         let mut driver =
             ConnectDriver::new(session, recorder.clone(), test_credentials(), prepared);
         let log = Arc::new(Mutex::new(Log::default()));
-        driver.set_carrier_host(Box::new(FakeHost(log.clone())));
+        let (alive, host_gone) = mpsc::channel();
+        driver.set_carrier_host(Box::new(FakeHost {
+            log: log.clone(),
+            _alive: alive,
+        }));
         Self {
             driver,
             recorder,
             log,
+            host_gone,
             seq: AtomicU64::new(0),
             sink,
         }
@@ -132,14 +144,10 @@ impl Rig {
         std::mem::take(&mut self.log.lock().unwrap().calls)
     }
 
-    /// The calls once the host's shutdown has run (on the teardown thread).
+    /// The calls once the host's shutdown has run (on the teardown thread)
+    /// and the host was dropped after it, so no call can follow.
     fn calls_after_shutdown(&self) -> Vec<Call> {
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
-        while !self.log.lock().unwrap().calls.contains(&Call::Shutdown)
-            && std::time::Instant::now() < deadline
-        {
-            std::thread::sleep(std::time::Duration::from_millis(10));
-        }
+        assert!(self.host_gone.recv().is_err(), "nothing is sent on it");
         self.calls()
     }
 
@@ -366,7 +374,7 @@ fn the_host_shuts_down_once() {
     }
     crate::connect::closing::begin_close(&mut rig.driver);
     assert_eq!(rig.calls_after_shutdown(), vec![Call::Shutdown]);
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    // The host is gone, so nothing can call it again.
     assert_eq!(rig.calls(), Vec::new());
     assert!(!rig.driver.session.settings.proxy.carriers.hosting);
 }

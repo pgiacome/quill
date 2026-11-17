@@ -1,14 +1,12 @@
 use super::*;
 use crate::diagnostics::MemorySink;
 use crate::telegram::envelope::{AuthPayload, AuthorizationState, EnvelopePayload};
-use std::sync::atomic::AtomicUsize;
-use std::time::Instant;
 
 /// A hub reading from a channel, so tests decide what `td_receive` returns.
+/// A stop's wake sends an empty string, which ends a blocked receive.
 fn channel_hub() -> (Arc<TdHub>, Sender<String>, Arc<MemorySink>) {
     let (tx, rx) = mpsc::channel::<String>();
-    let source: ReceiveSource =
-        Box::new(move |timeout| rx.recv_timeout(Duration::from_secs_f64(timeout)).ok());
+    let source: ReceiveSource = Box::new(move |_| rx.recv().ok());
     let sink = Arc::new(MemorySink::new());
     let hub = TdHub::with_source(source, wake_on(&tx), sink.clone()).expect("hub thread");
     (Arc::new(hub), tx, sink)
@@ -34,17 +32,6 @@ fn option_update(client: Option<i32>, value: i64) -> String {
     )
 }
 
-fn wait_until(mut done: impl FnMut() -> bool) -> bool {
-    let deadline = Instant::now() + Duration::from_secs(2);
-    while Instant::now() < deadline {
-        if done() {
-            return true;
-        }
-        std::thread::sleep(Duration::from_millis(5));
-    }
-    done()
-}
-
 #[test]
 fn envelopes_go_to_the_client_they_name_in_order() {
     let (hub, tx, sink) = channel_hub();
@@ -59,24 +46,21 @@ fn envelopes_go_to_the_client_they_name_in_order() {
     ] {
         tx.send(json).unwrap();
     }
-    let a = first.next_timeout(Duration::from_secs(2)).unwrap();
-    let b = first.next_timeout(Duration::from_secs(2)).unwrap();
-    let c = second.next_timeout(Duration::from_secs(2)).unwrap();
+    let a = first.rx.recv().unwrap();
+    let b = first.rx.recv().unwrap();
+    let c = second.rx.recv().unwrap();
     assert_eq!(
         (a.client_id, b.client_id, c.client_id),
         (Some(1), Some(1), Some(2))
     );
     assert!(a.seq < b.seq, "one client's envelopes keep their order");
     assert!(matches!(a.envelope.payload, EnvelopePayload::Common(_)));
-    // Client 3 is not registered and the last update names no client:
-    // both are dropped, never handed to another account.
-    assert!(first.next_timeout(Duration::from_millis(100)).is_none());
-    assert!(second.next_timeout(Duration::from_millis(100)).is_none());
-    assert!(wait_until(|| sink
-        .rendered()
-        .matches("unrouted-client")
-        .count()
-        == 2));
+    // Client 3 is not registered and the update before `b` names no
+    // client: both were dropped before `b` was read, never handed to
+    // another account.
+    assert!(first.rx.try_recv().is_err());
+    assert!(second.rx.try_recv().is_err());
+    assert_eq!(sink.rendered().matches("unrouted-client").count(), 2);
 }
 
 #[test]
@@ -92,12 +76,11 @@ fn a_shut_down_bridge_stops_receiving_and_frees_its_route() {
     tx.send(option_update(Some(5), 1)).unwrap();
     tx.send(option_update(Some(6), 2)).unwrap();
     assert_eq!(
-        staying
-            .next_timeout(Duration::from_secs(2))
-            .and_then(|owned| owned.client_id),
+        staying.rx.recv().ok().and_then(|owned| owned.client_id),
         Some(6)
     );
-    assert!(wait_until(|| sink.rendered().contains("unrouted-client")));
+    // Client 5's envelope came first, so it was dropped by now.
+    assert!(sink.rendered().contains("unrouted-client"));
     // Shutting down twice is harmless.
     closing.shutdown();
 }
@@ -107,9 +90,13 @@ fn a_dropped_reader_loses_its_route() {
     let (hub, tx, sink) = channel_hub();
     let routes = hub.routes();
     let rx = routes.register(9);
+    let after = hub.bridge(10);
     drop(rx);
     tx.send(option_update(Some(9), 1)).unwrap();
-    assert!(wait_until(|| !routes.is_registered(9)));
+    tx.send(option_update(Some(10), 1)).unwrap();
+    // The loop handles envelopes in order: client 9's is done by now.
+    after.rx.recv().unwrap();
+    assert!(!routes.is_registered(9));
     assert!(sink.rendered().contains("client-reader-gone"));
 }
 
@@ -143,19 +130,38 @@ fn deliver_reports_each_outcome() {
 
 #[test]
 fn the_receive_thread_sleeps_while_no_client_is_registered() {
-    let calls = Arc::new(AtomicUsize::new(0));
-    let counted = calls.clone();
+    // Each call reports whether a client was registered when it came.
+    let registered = Arc::new(AtomicBool::new(false));
+    let (entered_tx, entered) = mpsc::channel::<bool>();
+    let (wake_tx, wake_rx) = mpsc::channel::<()>();
+    let seen = registered.clone();
     let source: ReceiveSource = Box::new(move |_| {
-        counted.fetch_add(1, Ordering::SeqCst);
-        std::thread::sleep(Duration::from_millis(5));
+        let _ = entered_tx.send(seen.load(Ordering::SeqCst));
+        let _ = wake_rx.recv();
         None
     });
-    let hub = Arc::new(TdHub::with_source(source, no_wake(), Arc::new(MemorySink::new())).unwrap());
-    std::thread::sleep(Duration::from_millis(150));
-    assert_eq!(calls.load(Ordering::SeqCst), 0, "no client, no td_receive");
+    let wake: ReceiveWake = Box::new(move || {
+        let _ = wake_tx.send(());
+    });
+    let hub = Arc::new(TdHub::with_source(source, wake, Arc::new(MemorySink::new())).unwrap());
+    registered.store(true, Ordering::SeqCst);
     let mut bridge = hub.bridge(1);
-    assert!(wait_until(|| calls.load(Ordering::SeqCst) > 0));
+    assert!(entered.recv().unwrap(), "no client, no td_receive");
     bridge.shutdown();
+    assert!(hub.stop_within(Duration::MAX));
+    // A hub stopped with no client never called td_receive at all.
+    let (wake_tx, _wake_rx) = mpsc::channel::<()>();
+    let (called_tx, called) = mpsc::channel::<()>();
+    let source: ReceiveSource = Box::new(move |_| {
+        let _ = called_tx.send(());
+        None
+    });
+    let wake: ReceiveWake = Box::new(move || {
+        let _ = wake_tx.send(());
+    });
+    let idle = TdHub::with_source(source, wake, Arc::new(MemorySink::new())).unwrap();
+    assert!(idle.stop_within(Duration::MAX));
+    assert!(called.try_recv().is_err());
 }
 
 #[test]
@@ -173,7 +179,8 @@ fn a_dead_receive_thread_marks_every_bridge_stopped() {
     // closed channel panics at once from now on) ends it.
     tx.send(()).unwrap();
     drop(tx);
-    assert!(wait_until(|| first.stopped_unexpectedly()));
+    hub.join_ended_loop();
+    assert!(first.stopped_unexpectedly());
     assert!(second.stopped_unexpectedly());
     assert!(hub.stopped_unexpectedly());
 }
@@ -182,8 +189,8 @@ fn a_dead_receive_thread_marks_every_bridge_stopped() {
 fn one_panicking_envelope_does_not_end_the_receive_thread() {
     let (tx, rx) = mpsc::channel::<String>();
     let mut panicked = false;
-    let source: ReceiveSource = Box::new(move |timeout| {
-        let json = rx.recv_timeout(Duration::from_secs_f64(timeout)).ok()?;
+    let source: ReceiveSource = Box::new(move |_| {
+        let json = rx.recv().ok()?;
         if !panicked {
             panicked = true;
             panic!("one envelope failed to parse");
@@ -196,7 +203,7 @@ fn one_panicking_envelope_does_not_end_the_receive_thread() {
     tx.send(option_update(Some(1), 1)).unwrap();
     tx.send(option_update(Some(1), 2)).unwrap();
     // The first envelope is lost with its panic; the second one arrives.
-    let owned = bridge.next_timeout(Duration::from_secs(2)).unwrap();
+    let owned = bridge.rx.recv().unwrap();
     assert_eq!(owned.client_id, Some(1));
     assert!(!bridge.stopped_unexpectedly());
     assert!(!hub.stopped_unexpectedly());
@@ -219,7 +226,8 @@ fn a_stopped_shared_hub_is_replaced_but_a_running_one_is_kept() {
     let _bridge = dead.bridge(1);
     dying_tx.send(()).unwrap();
     drop(dying_tx);
-    assert!(wait_until(|| dead.stopped_unexpectedly()));
+    dead.join_ended_loop();
+    assert!(dead.stopped_unexpectedly());
     assert!(matches!(reusable(Some(&dead)), Reuse::Stopped(..)));
 }
 
@@ -241,19 +249,17 @@ fn a_replacement_hub_keeps_the_open_clients_routed() {
     let mut session = crate::state::Session::new(crate::ids::AccountKey::primary(), sink);
     for n in 0..3 {
         old_tx.send(option_update(Some(1), n)).unwrap();
-        let owned = bridge
-            .next_timeout(Duration::from_secs(2))
-            .expect("the old hub delivers");
+        let owned = bridge.rx.recv().expect("the old hub delivers");
         session.apply(owned);
     }
     let seen = session.last_seq;
     assert!(seen > 0);
     drop(old_tx);
-    assert!(wait_until(|| bridge.stopped_unexpectedly()));
+    dead.join_ended_loop();
+    assert!(bridge.stopped_unexpectedly());
 
     let (tx, rx) = mpsc::channel::<String>();
-    let source: ReceiveSource =
-        Box::new(move |timeout| rx.recv_timeout(Duration::from_secs_f64(timeout)).ok());
+    let source: ReceiveSource = Box::new(move |_| rx.recv().ok());
     let replacement = Arc::new(
         TdHub::with_source_replacing(source, wake_on(&tx), Arc::new(MemorySink::new()), &dead)
             .unwrap(),
@@ -261,7 +267,8 @@ fn a_replacement_hub_keeps_the_open_clients_routed() {
     assert!(!bridge.stopped_unexpectedly(), "running again");
     tx.send(option_update(Some(1), 5)).unwrap();
     let owned = bridge
-        .next_timeout(Duration::from_secs(2))
+        .rx
+        .recv()
         .expect("the old client's envelope is routed on the new hub");
     assert_eq!(owned.client_id, Some(1));
     assert!(!replacement.stopped_unexpectedly());
@@ -308,16 +315,17 @@ fn live_clients_get_only_their_own_envelopes() {
     }
     for (n, (bridge, &id)) in bridges.iter().zip(&ids).enumerate() {
         let wanted = crate::ids::RequestId(100 + n as u64);
-        let deadline = Instant::now() + Duration::from_secs(10);
-        let mut answered = false;
-        while !answered && Instant::now() < deadline {
-            let Some(owned) = bridge.next_timeout(Duration::from_millis(200)) else {
-                continue;
-            };
+        // TDLib answers every request, so the blocking receive ends.
+        loop {
+            let owned = bridge
+                .rx
+                .recv()
+                .unwrap_or_else(|_| panic!("client {id} got its answer"));
             assert_eq!(owned.client_id, Some(id), "another client's envelope");
-            answered = owned.envelope.extra == Some(wanted);
+            if owned.envelope.extra == Some(wanted) {
+                break;
+            }
         }
-        assert!(answered, "client {id} got its answer");
     }
     // Close every client before the process exits: TDLib's static
     // destructors racing live clients crash at exit now and then (3 in 60
@@ -325,30 +333,32 @@ fn live_clients_get_only_their_own_envelopes() {
     // closes its client.
     for (bridge, &id) in bridges.iter().zip(&ids) {
         api.send(id, r#"{"@type":"close"}"#).unwrap();
-        let deadline = Instant::now() + Duration::from_secs(10);
-        let mut closed = false;
-        while !closed && Instant::now() < deadline {
-            if let Some(owned) = bridge.next_timeout(Duration::from_millis(200)) {
-                closed = matches!(
-                    owned.envelope.payload,
-                    EnvelopePayload::Auth(AuthPayload::UpdateAuthorizationState(
-                        AuthorizationState::Closed
-                    ))
-                );
+        // A closed client always reports Closed last.
+        loop {
+            let owned = bridge
+                .rx
+                .recv()
+                .unwrap_or_else(|_| panic!("client {id} closed"));
+            if matches!(
+                owned.envelope.payload,
+                EnvelopePayload::Auth(AuthPayload::UpdateAuthorizationState(
+                    AuthorizationState::Closed
+                ))
+            ) {
+                break;
             }
         }
-        assert!(closed, "client {id} closed");
     }
 }
 
 #[test]
 fn a_stop_ends_the_receive_thread_with_or_without_clients() {
     let (idle, _tx, _sink) = channel_hub();
-    assert!(idle.stop_within(Duration::from_secs(30)));
+    assert!(idle.stop_within(Duration::MAX));
 
     let (busy, _tx, _sink) = channel_hub();
     let bridge = busy.bridge(1);
-    assert!(busy.stop_within(Duration::from_secs(30)));
+    assert!(busy.stop_within(Duration::MAX));
     assert!(!bridge.stopped_unexpectedly());
 }
 
@@ -368,7 +378,7 @@ fn a_stop_wakes_a_receive_that_is_blocked() {
     let hub = Arc::new(hub);
     let _client = hub.bridge(1);
     entered_rx.recv().unwrap();
-    assert!(hub.stop_within(Duration::from_secs(30)));
+    assert!(hub.stop_within(Duration::MAX));
 }
 
 #[test]
@@ -388,7 +398,7 @@ fn what_ends_the_receive_of_a_stopped_hub_is_not_delivered() {
     let hub = Arc::new(TdHub::with_source(source, wake, sink.clone()).unwrap());
     let _client = hub.bridge(1);
     entered.recv().unwrap();
-    assert!(hub.stop_within(Duration::from_secs(30)));
+    assert!(hub.stop_within(Duration::MAX));
     assert!(sink.snapshot().is_empty());
 }
 
@@ -408,7 +418,7 @@ fn a_stop_gives_up_on_a_receive_that_does_not_return() {
     // The timed-out stop kept the handle: the receive returning lets a
     // later stop join the thread.
     drop(release);
-    assert!(hub.stop_within(Duration::from_secs(30)));
+    assert!(hub.stop_within(Duration::MAX));
     assert!(hub.run.stop_requested());
 }
 
@@ -546,14 +556,11 @@ fn a_replacement_loop_reports_running_without_the_old_hub_touching_it() {
     let bridge = dead.bridge(1);
     tx.send(()).unwrap();
     drop(tx);
-    // The loop gives up after its run of panics. Joining its thread is the
-    // wait: it returns once the loop has ended and reported itself.
-    let ended = lock(&dead.thread).take().expect("the loop's thread");
-    let _ = ended.join();
+    // The loop gives up after its run of panics.
+    dead.join_ended_loop();
     assert!(bridge.stopped_unexpectedly());
     let (live_tx, live_rx) = mpsc::channel::<String>();
-    let source: ReceiveSource =
-        Box::new(move |timeout| live_rx.recv_timeout(Duration::from_secs_f64(timeout)).ok());
+    let source: ReceiveSource = Box::new(move |_| live_rx.recv().ok());
     let replacement = TdHub::with_source_replacing(
         source,
         wake_on(&live_tx),

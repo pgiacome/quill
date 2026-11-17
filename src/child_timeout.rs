@@ -59,27 +59,14 @@ pub fn output_within(cmd: &mut Command, limit: Duration) -> io::Result<Output> {
             let stderr = child.stderr.take().map(read_all_in_thread).transpose()?;
             Ok((stdout, stderr))
         });
-    let (stdout, stderr) = match readers {
-        Ok(readers) => readers,
-        Err(err) => {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(err);
-        }
-    };
-    let status = match wait_within(&mut child, limit) {
-        Ok(status) => status,
-        Err(err) => {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(err);
-        }
-    };
+    let (stdout, stderr) = reap_on_error(&mut child, readers)?;
+    let waited = wait_within(&mut child, limit);
+    let status = reap_on_error(&mut child, waited)?;
     let ok = status.success();
     Ok(Output {
         status,
-        stdout: collect(stdout, ok)?,
-        stderr: collect(stderr, ok)?,
+        stdout: collect(stdout, ok, READER_GRACE)?,
+        stderr: collect(stderr, ok, READER_GRACE)?,
     })
 }
 
@@ -102,28 +89,81 @@ pub fn stdout_within(program: &str, args: &[&str], limit: Duration) -> Option<St
 /// to read what the child prints.
 pub fn status_within(cmd: &mut Command, limit: Duration) -> io::Result<ExitStatus> {
     let mut child = cmd.no_console().stdin(Stdio::null()).spawn()?;
-    wait_within(&mut child, limit).inspect_err(|_| {
-        let _ = child.kill();
-        let _ = child.wait();
-    })
+    let waited = wait_within(&mut child, limit);
+    reap_on_error(&mut child, waited)
 }
 
 /// Wait for an already started `child` for at most `limit`. The child is
 /// left running on a timeout: the caller kills and reaps it.
 pub fn wait_within(child: &mut std::process::Child, limit: Duration) -> io::Result<ExitStatus> {
-    let deadline = Instant::now().checked_add(limit);
+    wait_on(child, limit, &mut SystemClock)
+}
+
+/// A started child as [`wait_on`] and [`reap_on_error`] see it, so a test
+/// can stand in a fake that never exits.
+trait Running {
+    fn try_wait(&mut self) -> io::Result<Option<ExitStatus>>;
+    fn kill(&mut self) -> io::Result<()>;
+    fn wait(&mut self) -> io::Result<ExitStatus>;
+}
+
+impl Running for std::process::Child {
+    fn try_wait(&mut self) -> io::Result<Option<ExitStatus>> {
+        std::process::Child::try_wait(self)
+    }
+    fn kill(&mut self) -> io::Result<()> {
+        std::process::Child::kill(self)
+    }
+    fn wait(&mut self) -> io::Result<ExitStatus> {
+        std::process::Child::wait(self)
+    }
+}
+
+/// Where [`wait_on`] reads the time and sleeps between checks, so a test
+/// can run the limit on a manual clock.
+trait Clock {
+    fn now(&self) -> Instant;
+    fn sleep(&mut self, step: Duration);
+}
+
+struct SystemClock;
+
+impl Clock for SystemClock {
+    fn now(&self) -> Instant {
+        Instant::now()
+    }
+    fn sleep(&mut self, step: Duration) {
+        std::thread::sleep(step);
+    }
+}
+
+fn wait_on(
+    child: &mut impl Running,
+    limit: Duration,
+    clock: &mut impl Clock,
+) -> io::Result<ExitStatus> {
+    let deadline = clock.now().checked_add(limit);
     loop {
         if let Some(status) = child.try_wait()? {
             return Ok(status);
         }
-        if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+        if deadline.is_some_and(|deadline| clock.now() >= deadline) {
             return Err(io::Error::new(
                 io::ErrorKind::TimedOut,
                 "the helper program did not finish in time",
             ));
         }
-        std::thread::sleep(POLL);
+        clock.sleep(POLL);
     }
+}
+
+/// After a failed wait the child is killed and reaped, so no zombie or
+/// runaway helper is left behind.
+fn reap_on_error<T>(child: &mut impl Running, result: io::Result<T>) -> io::Result<T> {
+    result.inspect_err(|_| {
+        let _ = child.kill();
+        let _ = child.wait();
+    })
 }
 
 /// Whether `err` is a [`wait_within`] timeout.
@@ -167,15 +207,15 @@ fn read_all_in_thread<R: Read + Send + 'static>(mut pipe: R) -> io::Result<Reade
     Ok(Reader { done, bytes })
 }
 
-/// What a reader read. A reader still open [`READER_GRACE`] after the child
-/// exited means a grandchild kept the pipe (a daemon the helper started).
+/// What a reader read. A reader still open `grace` ([`READER_GRACE`]) after
+/// the child exited means a grandchild kept the pipe (a daemon the helper started).
 /// When the child itself succeeded the bytes read so far are its answer; after
 /// a failed exit the cut output cannot be trusted and that is a timeout.
-fn collect(reader: Option<Reader>, child_succeeded: bool) -> io::Result<Vec<u8>> {
+fn collect(reader: Option<Reader>, child_succeeded: bool, grace: Duration) -> io::Result<Vec<u8>> {
     let Some(reader) = reader else {
         return Ok(Vec::new());
     };
-    let ended = reader.done.recv_timeout(READER_GRACE).is_ok();
+    let ended = reader.done.recv_timeout(grace).is_ok();
     if !ended && !child_succeeded {
         return Err(io::Error::new(
             io::ErrorKind::TimedOut,
@@ -196,9 +236,13 @@ mod tests {
         cmd
     }
 
+    /// No limit: these children finish on their own, so passing never
+    /// depends on the clock.
+    const NO_LIMIT: Duration = Duration::MAX;
+
     #[test]
     fn output_is_captured() {
-        let out = output_within(&mut sh("echo hi; echo oops >&2"), Duration::from_secs(5)).unwrap();
+        let out = output_within(&mut sh("echo hi; echo oops >&2"), NO_LIMIT).unwrap();
         assert!(out.status.success());
         assert_eq!(out.stdout, b"hi\n");
         assert_eq!(out.stderr, b"oops\n");
@@ -206,70 +250,162 @@ mod tests {
 
     #[test]
     fn large_output_does_not_stall_the_child() {
-        let out = output_within(
-            &mut sh("head -c 1000000 /dev/zero"),
-            Duration::from_secs(10),
-        )
-        .unwrap();
+        let out = output_within(&mut sh("head -c 1000000 /dev/zero"), NO_LIMIT).unwrap();
         assert_eq!(out.stdout.len(), 1_000_000);
     }
 
     #[test]
-    fn a_hung_child_is_killed_and_reaped_after_the_limit() {
-        let marker = std::env::temp_dir().join(format!("quill-hung-{}", std::process::id()));
-        let _ = std::fs::remove_file(&marker);
-        let started = Instant::now();
-        let script = format!("sleep 30; touch {}", marker.display());
-        let err = output_within(&mut sh(&script), Duration::from_millis(200)).unwrap_err();
-        assert!(is_timeout(&err));
-        assert!(started.elapsed() < Duration::from_secs(5));
-        std::thread::sleep(Duration::from_millis(100));
-        assert!(!marker.exists(), "the killed child never got to run on");
-    }
-
-    #[test]
-    fn a_hung_child_is_killed_by_status_within_too() {
-        let started = Instant::now();
-        let err = status_within(&mut sh("sleep 30"), Duration::from_millis(200)).unwrap_err();
-        assert!(is_timeout(&err));
-        assert!(started.elapsed() < Duration::from_secs(5));
-    }
-
-    #[test]
     fn a_chatty_child_with_its_output_sent_away_does_not_stall_status_within() {
-        let started = Instant::now();
         let mut cmd = sh("head -c 1000000 /dev/zero; head -c 1000000 /dev/zero >&2");
         cmd.stdout(Stdio::null()).stderr(Stdio::null());
-        let status = status_within(&mut cmd, Duration::from_secs(10)).unwrap();
+        let status = status_within(&mut cmd, NO_LIMIT).unwrap();
         assert!(status.success());
-        assert!(started.elapsed() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn a_child_past_a_zero_limit_is_a_timeout_for_both_waits() {
+        // `sleep 30` cannot have exited by the first check, and a zero
+        // limit has passed by then, so this is decided without waiting.
+        let err = output_within(&mut sh("sleep 30"), Duration::ZERO).unwrap_err();
+        assert!(is_timeout(&err));
+        let err = status_within(&mut sh("sleep 30"), Duration::ZERO).unwrap_err();
+        assert!(is_timeout(&err));
+    }
+
+    use std::os::unix::process::ExitStatusExt;
+
+    /// A child that exits after `exits_after` checks (never when `None`)
+    /// and records what was done to it.
+    #[derive(Default)]
+    struct FakeChild {
+        exits_after: Option<u32>,
+        checks: u32,
+        killed: bool,
+        reaped: bool,
+    }
+
+    impl Running for FakeChild {
+        fn try_wait(&mut self) -> io::Result<Option<ExitStatus>> {
+            self.checks += 1;
+            let exited = self.killed || self.exits_after.is_some_and(|n| self.checks > n);
+            Ok(exited.then(|| ExitStatus::from_raw(0)))
+        }
+        fn kill(&mut self) -> io::Result<()> {
+            self.killed = true;
+            Ok(())
+        }
+        fn wait(&mut self) -> io::Result<ExitStatus> {
+            self.reaped = true;
+            Ok(ExitStatus::from_raw(9))
+        }
+    }
+
+    /// Time moves only when the wait sleeps.
+    struct ManualClock {
+        now: Instant,
+        slept: Duration,
+    }
+
+    impl ManualClock {
+        fn new() -> Self {
+            Self {
+                now: Instant::now(),
+                slept: Duration::ZERO,
+            }
+        }
+    }
+
+    impl Clock for ManualClock {
+        fn now(&self) -> Instant {
+            self.now
+        }
+        fn sleep(&mut self, step: Duration) {
+            self.now += step;
+            self.slept += step;
+        }
+    }
+
+    #[test]
+    fn a_hung_child_times_out_once_the_limit_has_passed_and_is_killed_and_reaped() {
+        let mut child = FakeChild::default();
+        let mut clock = ManualClock::new();
+        let waited = wait_on(&mut child, Duration::from_millis(200), &mut clock);
+        assert!(waited.as_ref().is_err_and(is_timeout));
+        assert_eq!(clock.slept, Duration::from_millis(200));
+        assert!(!child.killed, "wait_within leaves the kill to its caller");
+        let err = reap_on_error(&mut child, waited).unwrap_err();
+        assert!(is_timeout(&err));
+        assert!(child.killed && child.reaped);
+    }
+
+    #[test]
+    fn a_child_that_exits_before_the_limit_is_not_killed() {
+        let mut child = FakeChild {
+            exits_after: Some(3),
+            ..FakeChild::default()
+        };
+        let mut clock = ManualClock::new();
+        let waited = wait_on(&mut child, Duration::from_secs(1), &mut clock);
+        let status = reap_on_error(&mut child, waited).unwrap();
+        assert!(status.success());
+        assert_eq!(clock.slept, POLL * 3);
+        assert!(!child.killed && !child.reaped);
+    }
+
+    #[test]
+    fn an_unbounded_limit_never_times_out() {
+        let mut child = FakeChild {
+            exits_after: Some(1000),
+            ..FakeChild::default()
+        };
+        let waited = wait_on(&mut child, Duration::MAX, &mut ManualClock::new());
+        assert!(waited.unwrap().success());
+    }
+
+    /// A reader holding `bytes` whose pipe has ended (`ended`) or is still
+    /// held open by a grandchild. The sender is returned so a held pipe
+    /// stays open (not disconnected) for the whole test.
+    fn reader(bytes: &[u8], ended: bool) -> (Reader, mpsc::Sender<()>) {
+        let (tx, done) = mpsc::channel();
+        if ended {
+            tx.send(()).unwrap();
+        }
+        let reader = Reader {
+            done,
+            bytes: Arc::new(Mutex::new(bytes.to_vec())),
+        };
+        (reader, tx)
     }
 
     #[test]
     fn a_successful_child_whose_grandchild_holds_the_pipe_still_returns_its_output() {
-        // The background sleep inherits stdout and keeps it open after the
-        // shell exits 0, like a daemon a desktop helper autolaunched.
-        let started = Instant::now();
-        let out = output_within(&mut sh("echo hi; sleep 5 &"), Duration::from_secs(5)).unwrap();
-        assert!(out.status.success());
-        assert_eq!(out.stdout, b"hi\n");
-        assert!(started.elapsed() < Duration::from_secs(4));
+        // A daemon the helper autolaunched inherited stdout and keeps it
+        // open after the helper exited 0.
+        let (held, _open) = reader(b"hi\n", false);
+        assert_eq!(collect(Some(held), true, Duration::ZERO).unwrap(), b"hi\n");
     }
 
     #[test]
     fn output_cut_off_after_a_failed_exit_is_a_timeout() {
-        let err = output_within(&mut sh("echo hi; sleep 5 & exit 3"), Duration::from_secs(5))
-            .unwrap_err();
+        let (held, _open) = reader(b"hi\n", false);
+        let err = collect(Some(held), false, Duration::ZERO).unwrap_err();
         assert!(is_timeout(&err));
     }
 
     #[test]
+    fn output_that_ended_is_kept_whatever_the_exit() {
+        let (ended, _tx) = reader(b"partial", true);
+        assert_eq!(
+            collect(Some(ended), false, Duration::ZERO).unwrap(),
+            b"partial"
+        );
+        assert!(collect(None, false, Duration::ZERO).unwrap().is_empty());
+    }
+
+    #[test]
     fn a_missing_program_is_a_spawn_error_not_a_timeout() {
-        let err = output_within(
-            &mut Command::new("/definitely/not/a/program"),
-            Duration::from_secs(1),
-        )
-        .unwrap_err();
+        let err =
+            output_within(&mut Command::new("/definitely/not/a/program"), NO_LIMIT).unwrap_err();
         assert!(!is_timeout(&err));
     }
 
