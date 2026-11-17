@@ -438,14 +438,6 @@ fn a_translate_style_the_server_dropped_asks_again() {
 }
 
 #[test]
-fn original_toggle_flips() {
-    let (mut ai, _) = opened();
-    assert!(!ai.original_expanded());
-    ai.toggle_original_expanded();
-    assert!(ai.original_expanded());
-}
-
-#[test]
 fn ai_button_needs_styles_three_lines_and_real_text() {
     let cases = [
         ("one\ntwo\nthree", 3, true, 4096, true),

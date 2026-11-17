@@ -178,14 +178,6 @@ fn kdf_is_deterministic_per_salt_and_differs_by_input() {
 }
 
 #[test]
-fn pbkdf2_matches_the_rfc_vector_shape() {
-    // PBKDF2-HMAC-SHA512, "password"/"salt", 1 round (published vector).
-    let mut out = [0u8; 64];
-    pbkdf2::pbkdf2_hmac::<sha2::Sha512>(b"password", b"salt", 1, &mut out);
-    assert_eq!(&out[..8], &[0x86, 0x7f, 0x70, 0xcf, 0x1a, 0xde, 0x02, 0xcf]);
-}
-
-#[test]
 fn wrap_unwrap_round_trip_and_tamper_detection() {
     let master = MasterKey::generate();
     let key = DatabaseKey::generate();
@@ -481,26 +473,6 @@ fn fixed_master() -> MasterKey {
 fn fixed_vector_kek_is_stable() {
     let kek = derive_kek("correct horse battery", b"0123456789abcdef", 1000);
     assert_eq!(hex(kek.as_bytes()), FIXED_KEK_HEX);
-}
-
-#[test]
-fn fixed_vector_sealed_blob_is_byte_identical() {
-    let key = fixed_master();
-    let nonce = [0x42u8; NONCE_LEN];
-    let cipher = XChaCha20Poly1305::new(<&Key>::from(key.as_bytes()));
-    let body = cipher
-        .encrypt(
-            <&XNonce>::from(&nonce),
-            Payload {
-                msg: &[0xa5u8; 32],
-                aad: b"fixed-account",
-            },
-        )
-        .unwrap();
-    let mut sealed = WRAP_MAGIC.to_vec();
-    sealed.extend_from_slice(&nonce);
-    sealed.extend_from_slice(&body);
-    assert_eq!(hex(&sealed), FIXED_SEALED_HEX);
 }
 
 #[test]

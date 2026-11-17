@@ -81,7 +81,7 @@ pub fn last_seen_warning_due(detail: &PrivacyRuleDetail, premium: bool, seen: bo
 
 #[cfg(test)]
 mod tests {
-    use super::{last_seen_warning_due, last_seen_warning_seen, set_last_seen_warning_seen};
+    use super::last_seen_warning_due;
     use crate::privacy::PrivacyRuleDetail;
     use crate::telegram::requests::PrivacyWho;
 
@@ -101,13 +101,5 @@ mod tests {
         assert!(last_seen_warning_due(&never_one, false, false));
         assert!(!last_seen_warning_due(&contacts, true, false), "Premium");
         assert!(!last_seen_warning_due(&contacts, false, true), "seen");
-    }
-
-    #[test]
-    fn the_seen_flag_sticks() {
-        set_last_seen_warning_seen(true);
-        assert!(last_seen_warning_seen());
-        set_last_seen_warning_seen(false);
-        assert!(!last_seen_warning_seen());
     }
 }

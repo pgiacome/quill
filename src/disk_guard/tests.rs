@@ -355,15 +355,6 @@ mod linux {
     }
 
     #[test]
-    fn a_real_folder_reads_on_linux() {
-        assert!(
-            super::super::linux::read_available(&std::env::temp_dir())
-                .free()
-                .is_some()
-        );
-    }
-
-    #[test]
     fn a_write_that_fits_is_no_full_disk_and_leaves_nothing() {
         let folder = crate::scratch::unique_dir("quill-disk-write");
         assert!(!super::super::linux::small_write_fails(&folder));

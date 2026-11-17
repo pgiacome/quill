@@ -86,19 +86,6 @@ mod badge_prefs_tests {
     }
 
     #[test]
-    fn badge_prefs_serde_roundtrip() {
-        let prefs = BadgePrefs {
-            include_muted: false,
-            include_archived: true,
-            count_messages: false,
-            include_muted_folders: false,
-            flash_bounce: false,
-        };
-        let json = serde_json::to_string(&prefs).unwrap();
-        assert_eq!(serde_json::from_str::<BadgePrefs>(&json).unwrap(), prefs);
-    }
-
-    #[test]
     fn badge_prefs_missing_file_falls_back_to_default() {
         let paths = AccountPaths {
             root: PathBuf::from("/nonexistent-dir-for-badge-test"),

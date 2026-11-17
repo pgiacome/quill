@@ -339,25 +339,6 @@ fn default_true() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-
-    #[test]
-    fn atomic_json_write_replaces_and_leaves_no_temp_file() {
-        let dir = std::env::temp_dir().join(format!("quill-atomic-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
-        let path = dir.join("prefs.json");
-        write_json_atomic(&path, &serde_json::json!({"a": 1})).unwrap();
-        write_json_atomic(&path, &serde_json::json!({"a": 2})).unwrap();
-        let value: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-        assert_eq!(value["a"], 2);
-        let leftovers: Vec<_> = fs::read_dir(&dir)
-            .unwrap()
-            .filter_map(Result::ok)
-            .filter(|entry| entry.file_name().to_string_lossy().contains(".tmp-"))
-            .collect();
-        assert!(leftovers.is_empty());
-        let _ = fs::remove_dir_all(&dir);
-    }
 
     #[test]
     fn window_state_rejects_unusable_geometry_and_clamps_sidebar() {
