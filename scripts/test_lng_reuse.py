@@ -56,9 +56,13 @@ class LngReuse(unittest.TestCase):
         self.assertEqual(kinds(found), [['LNG-HOMONYM-STALE', 'qll_old']])
 
     def test_homonym_needs_a_reason(self):
-        homonyms, found = cl.parse_homonyms(['qll_copy', 'qll_open adjective, lng_* is the verb'])
+        homonyms, found = cl.parse_homonyms(['qll_copy', 'qll_open\tadjective, lng_* is the verb'])
         self.assertEqual(kinds(found), [['LNG-HOMONYM', 'qll_copy']])
         self.assertEqual(homonyms['qll_open'], 'adjective, lng_* is the verb')
+
+    def test_homonym_listed_twice_fails(self):
+        _, found = cl.parse_homonyms(['qll_open adjective', 'qll_open state'])
+        self.assertEqual(kinds(found), [['LNG-HOMONYM', 'qll_open']])
 
     def test_plural_matches_only_when_every_form_matches(self):
         same, _ = problems({'qll_chats': {'one': '{count} chat', 'other': '{count} chats'}})
@@ -66,10 +70,11 @@ class LngReuse(unittest.TestCase):
         self.assertEqual(kinds(same), [['LNG-REUSE', 'qll_chats']])
         self.assertEqual(partial, [])
 
-    def test_lng_key_added_later_blames_nothing_new(self):
+    def test_lng_key_added_later_flags_the_older_qll_key(self):
         found, _ = problems({'lng_quill': {'': 'Quill only'}})
         self.assertEqual(kinds(found), [['LNG-REUSE', 'qll_unique']])
-        self.assertNotIn('new qll_', found[0])
+        self.assertIn('repeats lng_quill', found[0])
+        self.assertIn('remove qll_unique', found[0])
 
 
 if __name__ == '__main__':

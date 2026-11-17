@@ -147,20 +147,19 @@ def lng_duplicates(values):
 def read_list(path):
     if not os.path.exists(path):
         return []
-    return [
-        line.strip()
-        for line in open(path, encoding='utf-8')
-        if line.strip() and not line.startswith('#')
-    ]
+    lines = (line.strip() for line in open(path, encoding='utf-8'))
+    return [line for line in lines if line and not line.startswith('#')]
 
 
 def parse_homonyms(lines):
     """`qll_key reason...` lines -> ({key: reason}, problems)."""
     out, problems = {}, []
     for line in lines:
-        key, _, reason = line.partition(' ')
+        key, reason = (line.split(None, 1) + [''])[:2]
         if not reason.strip():
             problems.append('LNG-HOMONYM %s: give the reason its meaning differs from the lng_* text (%s).' % (key, LNG_HOMONYMS))
+        if key in out:
+            problems.append('LNG-HOMONYM %s: listed twice in %s; keep one line.' % (key, LNG_HOMONYMS))
         out[key] = reason.strip()
     return out, problems
 
