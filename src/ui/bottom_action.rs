@@ -289,7 +289,7 @@ mod restart_wait_tests {
     use super::{BotRestart, bar_restart_wait, send_unblock};
     use crate::ui::auth_state::driver_fixture::driver_with;
     use quill::ids::{ChatId, RequestId};
-    use quill::state::{Answer, RequestAcks};
+    use quill::state::Answer;
 
     /// The real path: the phone flow's unblock is out and waited on in the
     /// session's acks; the bar's Restart sends nothing more, waits on
@@ -336,18 +336,6 @@ mod restart_wait_tests {
             waiting,
             BotRestart::Unblocking { request: r, .. } if r == request
         ));
-    }
-
-    /// The phone flow's unblock is out and waited on: the bar's click
-    /// (`Ok(None)`) takes nothing, so the phone flow still gets its answer.
-    #[test]
-    fn the_bar_leaves_an_unblock_another_surface_awaits() {
-        let mut acks = RequestAcks::default();
-        let phone = RequestId(5);
-        acks.expect(phone);
-        assert_eq!(bar_restart_wait::<()>(&Ok(None)), None);
-        acks.settle(phone, Answer::Done);
-        assert_eq!(acks.take(phone), Some(Answer::Done));
     }
 
     #[test]

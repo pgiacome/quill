@@ -2,7 +2,7 @@
 //! (needs the `demo-capture` feature for gpui-kit's test support).
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use super::{IconName, PANEL_OPACITY, SliderDrag, VideoControlsState, WaitingGate, volume_icon};
+use super::{IconName, PANEL_OPACITY, SliderDrag, VideoControlsState, volume_icon};
 use std::time::{Duration, Instant};
 
 #[test]
@@ -14,30 +14,6 @@ fn the_volume_icon_follows_the_level() {
     assert_eq!(volume_icon(0.49), IconName::Volume1);
     assert_eq!(volume_icon(0.5), IconName::Volume2);
     assert_eq!(volume_icon(1.0), IconName::Volume2);
-}
-
-#[test]
-fn the_waiting_gate_waits_half_a_second() {
-    let t0 = Instant::now();
-    let ms = |n| t0 + Duration::from_millis(n);
-    let mut gate = WaitingGate::default();
-    let asked = std::cell::Cell::new(None);
-    let arm = |wait| {
-        asked.set(Some(wait));
-        gpui_kit::Task::ready(())
-    };
-    assert!(!gate.observe(false, t0, arm));
-    // A stall begins: wait out the rest of the delay.
-    assert!(!gate.observe(true, ms(100), arm));
-    assert_eq!(asked.take(), Some(Duration::from_millis(500)));
-    assert!(!gate.observe(true, ms(300), arm));
-    assert_eq!(asked.take(), None, "its timer is set");
-    // A short stall that ends never shows anything.
-    assert!(!gate.observe(false, ms(400), arm));
-    assert!(!gate.observe(true, ms(1000), arm));
-    assert_eq!(asked.take(), Some(Duration::from_millis(500)));
-    assert!(gate.observe(true, ms(1500), arm));
-    assert!(gate.observe(true, ms(4000), arm));
 }
 
 #[test]

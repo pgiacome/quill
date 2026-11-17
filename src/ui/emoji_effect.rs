@@ -924,10 +924,9 @@ mod tests {
         let anchor = (100.0, 300.0, 148.0, 348.0);
         let side = 240.0;
         let (x, y) = effect_origin(anchor, side, false, (0.0, 0.0));
-        assert_eq!(x, 100.0 - side / 40.0);
-        assert_eq!(y, 324.0 - side / 2.0);
+        assert_eq!((x, y), (94.0, 204.0));
         let (x, _) = effect_origin(anchor, side, true, (0.0, 0.0));
-        assert_eq!(x + side, 148.0 + side / 40.0);
+        assert_eq!(x, -86.0);
     }
 
     #[test]

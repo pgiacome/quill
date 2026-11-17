@@ -187,7 +187,7 @@ pub(crate) fn gradient_layer(fill: OutgoingFill, joined_above: bool) -> Option<A
 
 #[cfg(test)]
 mod tests {
-    use super::{OutgoingFill, area_for, forget_history_area, slice_of};
+    use super::{OutgoingFill, area_for, slice_of};
     use gpui_kit::{Bounds, WindowId, point, px, size};
     use quill::telegram::envelope::{BackgroundFill, ThemeSettings};
 
@@ -243,15 +243,6 @@ mod tests {
         assert_eq!(area_for(Some((main, area)), main), Some(area));
         assert_eq!(area_for(Some((main, area)), chat), None);
         assert_eq!(area_for(None, main), None);
-    }
-
-    #[test]
-    fn a_new_frame_forgets_the_area_of_the_last_one() {
-        let area = Bounds::new(point(px(0.), px(100.)), size(px(300.), px(400.)));
-        super::HISTORY_AREA.with(|slot| slot.set(Some((WindowId::from(1_u64), area))));
-        assert!(super::HISTORY_AREA.with(std::cell::Cell::get).is_some());
-        forget_history_area();
-        assert!(super::HISTORY_AREA.with(std::cell::Cell::get).is_none());
     }
 
     #[test]

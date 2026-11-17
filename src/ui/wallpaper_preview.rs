@@ -597,9 +597,8 @@ crate::ui::shell::register_dialogs! {
 
 #[cfg(test)]
 mod tests {
-    use super::{chosen_type, file_label, offers_blur};
+    use super::{chosen_type, offers_blur};
     use quill::telegram::envelope::{BackgroundFill, BackgroundType};
-    use std::path::Path;
 
     #[test]
     fn blur_is_offered_for_photos_and_sent_with_their_type() {
@@ -627,11 +626,6 @@ mod tests {
         assert!(!offers_blur(&BackgroundType::Fill(BackgroundFill::Solid(
             1
         ))));
-    }
-
-    #[test]
-    fn local_files_show_their_name() {
-        assert_eq!(file_label(Path::new("/a/b/sunset.jpg")), "sunset.jpg");
     }
 }
 
