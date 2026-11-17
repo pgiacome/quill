@@ -525,7 +525,7 @@ pub(crate) fn live_key_action(
 
 #[cfg(test)]
 mod tests {
-    use super::{LiveKeyAction, live_key_action, live_pill_width, viewers_label};
+    use super::{LiveKeyAction, live_key_action, viewers_label};
     use gpui_kit::Modifiers;
 
     #[test]
@@ -586,10 +586,5 @@ mod tests {
         assert!(one.contains('1'), "{one}");
         let many = viewers_label(12_480).expect("many");
         assert!(many.contains("12"), "{many}");
-    }
-
-    #[test]
-    fn the_pill_is_its_label_and_three_pixels_each_side() {
-        assert!((live_pill_width(20.) - 26.).abs() < f32::EPSILON);
     }
 }

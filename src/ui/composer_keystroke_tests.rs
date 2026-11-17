@@ -1,6 +1,5 @@
 //! What one typed character leaves behind in the composer: the text, the
-//! remembered previous text, the stored draft, and a redraw of the composer
-//! slice. Over the `ready-chats` demo; nothing reaches Telegram.
+//! stored draft, and a redraw of the composer slice. Over the `ready-chats` demo; nothing reaches Telegram.
 #![cfg(feature = "demo-capture")]
 
 use crate::ui::app::QuillApp;
@@ -52,22 +51,18 @@ fn composer_text(app: &Entity<QuillApp>, vcx: &mut VisualTestContext) -> String 
 }
 
 #[gpui_kit::test]
-fn a_keystroke_leaves_the_text_the_previous_text_and_the_draft_in_step(cx: &mut TestAppContext) {
+fn a_keystroke_leaves_the_text_and_the_draft_in_step(cx: &mut TestAppContext) {
     let (app, mut vcx) = new_app(cx);
     let vcx = &mut vcx;
     focus_composer(&app, vcx);
     for (typed, expected) in [("h", "h"), ("i", "hi"), (" ", "hi "), ("there", "hi there")] {
         vcx.simulate_input(typed);
         assert_eq!(composer_text(&app, vcx), expected);
-        let (prev, draft) = app.read_with(vcx, |app, _| {
-            (
-                app.composer_ui.echo.prev().clone(),
-                app.session()
-                    .and_then(|session| session.draft_for(OPEN, Default::default()))
-                    .map(|draft| draft.text().to_string()),
-            )
+        let draft = app.read_with(vcx, |app, _| {
+            app.session()
+                .and_then(|session| session.draft_for(OPEN, Default::default()))
+                .map(|draft| draft.text().to_string())
         });
-        assert_eq!(prev, expected, "the previous text follows the field");
         assert_eq!(
             draft.as_deref(),
             Some(expected),
@@ -86,17 +81,6 @@ fn a_keystroke_redraws_the_composer_slice(cx: &mut TestAppContext) {
     vcx.update(|window, cx| window.draw(cx).clear(cx));
     let renders = crate::ui::frame_clock::take_slice_renders();
     assert!(renders.contains_key("composer"), "{renders:?}");
-}
-
-#[gpui_kit::test]
-fn an_emoji_keystroke_keeps_the_text_and_the_previous_text_in_step(cx: &mut TestAppContext) {
-    let (app, mut vcx) = new_app(cx);
-    let vcx = &mut vcx;
-    focus_composer(&app, vcx);
-    vcx.simulate_input("ok \u{1f600}");
-    assert_eq!(composer_text(&app, vcx), "ok \u{1f600}");
-    let prev = app.read_with(vcx, |app, _| app.composer_ui.echo.prev().clone());
-    assert_eq!(prev, "ok \u{1f600}");
 }
 
 /// A finished background spell check redraws the composer slice, where

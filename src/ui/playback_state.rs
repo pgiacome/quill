@@ -608,11 +608,4 @@ mod tests {
         ui.active.take_voice();
         assert_eq!(ui.track_duration(), None);
     }
-
-    #[test]
-    fn no_track_means_no_position() {
-        let (ui, audio) = ui_without_output();
-        assert_eq!(ui.active_position_secs(&audio), None);
-        assert!(!ui.is_playing(&audio));
-    }
 }

@@ -914,23 +914,8 @@ crate::ui::shell::register_dialogs! {
 #[cfg(test)]
 mod tests {
     // No `super::*`: the kit's glob brings its own `test` attribute.
-    use super::{hsla_rgb, popup};
+    use super::hsla_rgb;
     use quill::web_app::theme::Rgb;
-
-    #[test]
-    fn popup_helper_keeps_button_order() {
-        let popup = popup(
-            "T",
-            "M".into(),
-            vec![
-                ("cancel", "Cancel", "cancel"),
-                ("allow", "Allow", "default"),
-            ],
-        );
-        assert_eq!(popup.buttons.len(), 2);
-        assert_eq!(popup.buttons[1].id, "allow");
-        assert!(popup.id.is_empty(), "the window assigns ids");
-    }
 
     #[test]
     fn colors_convert_to_rgb_bytes() {

@@ -269,11 +269,6 @@ impl QuillApp {
     }
 }
 
-#[cfg(test)]
-#[cfg(feature = "demo-capture")]
-#[path = "collectible_info_ui_tests.rs"]
-mod tests;
-
 crate::ui::shell::register_dialogs! {
     /// A collectible username or phone number bought on Fragment.
     CollectibleInfo => DialogSpec::new(

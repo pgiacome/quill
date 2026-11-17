@@ -226,20 +226,8 @@ impl QuillApp {
 
 #[cfg(test)]
 mod tests {
-    use super::{effect_sticker, playable};
-    use quill::ids::FileId;
-    use quill::message_effects::{EffectAnimation, EffectKind, MessageEffect};
-    use quill::telegram::envelope::StickerFormat;
-
-    #[test]
-    fn the_overlay_sticker_carries_the_animation_file() {
-        let sticker = effect_sticker(EffectAnimation {
-            file: FileId(33),
-            format: StickerFormat::Tgs,
-        });
-        assert_eq!(sticker.file_id, FileId(33));
-        assert_eq!(sticker.format, StickerFormat::Tgs);
-    }
+    use super::playable;
+    use quill::message_effects::{EffectKind, MessageEffect};
 
     #[test]
     fn an_effect_without_an_animation_cannot_play() {

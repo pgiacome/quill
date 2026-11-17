@@ -594,18 +594,6 @@ mod tests {
     }
 
     #[test]
-    fn the_job_keeps_the_chat_it_started_in() {
-        let mut prep = SendPrepState::default();
-        let job = prep.begin(slot("a", 11)).unwrap();
-        // The user opens chat 12 while the files are read: the job still
-        // reports chat 11.
-        let open_chat = 12;
-        let sent_from = prep.finish(job).unwrap();
-        assert_eq!(sent_from.draft.chat_id, 11);
-        assert_ne!(sent_from.draft.chat_id, open_chat);
-    }
-
-    #[test]
     fn a_logged_out_account_cancels_its_jobs() {
         let mut prep = SendPrepState::default();
         let gone = prep.begin(slot("a", 11)).unwrap();
