@@ -34,6 +34,8 @@ ignore = [
   { id = "RUSTSEC-2026-0371", reason = "zbus_names: zbus 5, held" },
   { id = "RUSTSEC-2026-0370", reason = "zvariant: zbus 5, held" },
   { id = "RUSTSEC-2026-0372", reason = "zvariant_derive: zbus 5, held" },
+  # Through GPUI and GPUI Kit (gpui-pre, gpui-pre-scheduler, gpui-base, gpui-component); Quill does not use chrono itself.
+  { id = "RUSTSEC-2026-0543", reason = "chrono: only via GPUI and GPUI Kit" },
 ]
 
 [licenses]

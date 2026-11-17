@@ -30,6 +30,8 @@ jobs:
       # docs/decisions/language-packs.md: no new hard-coded English.
       - name: interface strings
         run: python3 scripts/check-lang.py
+      - name: interface strings check tests
+        run: python3 -m unittest discover -s scripts -p 'test_lng_reuse.py'
       # docs/decisions/sweep-window-slot-scope.md: async work names its window.
       - name: window scope
         run: python3 scripts/check-window-scope.py
