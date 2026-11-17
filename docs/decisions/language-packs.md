@@ -80,12 +80,16 @@ the same tooling and the translation platform's exports work):
   English unless a `lang/<code>.strings` file in the repo provides it
   (community translations, loaded at startup into the same store as a
   local overlay; the Language box shows "{percent}% translated" for
-  Quill-only strings as a secondary line when below 100 %). A new
-  `qll_*` whose English and plural forms equal an `lng_*` value is
-  rejected by `scripts/check-lang.py`: reuse the `lng_*` key, so every
-  language gets Telegram's translation. The duplicates that predate the
-  check are listed in `scripts/lng-reuse-baseline.txt`; the list may
-  only shrink (`--update` drops entries that were migrated).
+  Quill-only strings as a secondary line when below 100 %). A
+  `qll_*` whose English and plural forms equal an `lng_*` value
+  (ignoring case and a trailing period) is rejected by
+  `scripts/check-lang.py`: reuse the `lng_*` key with the same meaning,
+  so every language gets Telegram's translation. The duplicates that
+  predate the check are listed in `scripts/lng-reuse-baseline.txt`; that
+  list may only shrink (`--update` drops entries that were migrated). A
+  real homonym (same English, different meaning, so other languages
+  translate it differently) goes in `scripts/lng-reuse-homonyms.txt` with
+  the reason, which a reviewer checks.
 - Legal note for Idan: keys are identifiers; the English text in
   `en.strings` is Quill's own (already in Quill's sources). Translated
   strings arrive at runtime from Telegram's servers, the same way every

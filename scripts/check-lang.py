@@ -6,11 +6,13 @@ Fails when:
   baseline (scripts/lang-baseline.txt, "<count> <path>"); files not listed
   must have none;
 - a key in lang/en/*.strings is not used anywhere in src/;
-- a qll_* key copies the English of an existing lng_* key (same text and
-  plural forms) and is not in scripts/lng-reuse-baseline.txt. Telegram
-  already translates lng_* in every language; a qll_* gets a translation
-  only from a hand-written overlay. Reuse the lng_* key instead. The
-  baseline lists the duplicates that predate the check and may only shrink;
+- a qll_* key repeats the English of an lng_* key (same text and plural
+  forms, ignoring case and a trailing period). Telegram already translates
+  lng_* in every language; a qll_* gets a translation only from a
+  hand-written overlay. Reuse the lng_* key instead. Exempt are the
+  duplicates that predate the check (scripts/lng-reuse-baseline.txt, may
+  only shrink) and homonyms listed with a reason in
+  scripts/lng-reuse-homonyms.txt; a stale entry in either fails;
 - a status note (set_note / set_status_note / StatusNote::*) is built from a
   Rust Debug dump (`{err:?}`): map the error with user_error() instead.
 
@@ -18,8 +20,9 @@ Text is a string literal of at least two words that starts with a capital
 letter, outside test files and the lines of logs, panics and attributes.
 Test, demo and fixture files are skipped.
 
---update lowers baseline entries to the current counts and drops the ones
-now at zero; it never adds or raises an entry.
+--update lowers the English baseline entries to the current counts, drops
+the ones now at zero and drops lng-reuse baseline keys that no longer
+repeat an lng_* text; it never adds or raises an entry.
 
 Usage: python3 scripts/check-lang.py [--update]   (from the repository root)
 """
@@ -29,6 +32,7 @@ import sys
 
 BASELINE = 'scripts/lang-baseline.txt'
 LNG_BASELINE = 'scripts/lng-reuse-baseline.txt'
+LNG_HOMONYMS = 'scripts/lng-reuse-homonyms.txt'
 ENGLISH_PAIR = re.compile(
     r'^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"\s*;'
 )
@@ -115,37 +119,81 @@ def english_values():
     return out
 
 
-def lng_duplicates(values=None):
-    """qll_* keys whose English text and forms equal an lng_* key's."""
-    values = values or english_values()
+def same_text(value):
+    """Comparison form: case and one trailing period don't make new text."""
+    text = value.strip().casefold()
+    return text[:-1] if text.endswith('.') else text
+
+
+def text_shape(forms):
+    return tuple(sorted((form, same_text(value)) for form, value in forms.items()))
+
+
+def lng_duplicates(values):
+    """qll_* key -> the lng_* keys whose English and forms it repeats."""
     by_text = {}
     for key, forms in values.items():
         if key.startswith('lng_'):
-            by_text.setdefault(tuple(sorted(forms.items())), []).append(key)
+            by_text.setdefault(text_shape(forms), []).append(key)
     out = {}
     for key, forms in values.items():
         if key.startswith('qll_'):
-            match = by_text.get(tuple(sorted(forms.items())))
+            match = by_text.get(text_shape(forms))
             if match:
                 out[key] = sorted(match)
     return out
 
 
-def load_lng_baseline():
-    if not os.path.exists(LNG_BASELINE):
-        return set()
-    return {
+def read_list(path):
+    if not os.path.exists(path):
+        return []
+    return [
         line.strip()
-        for line in open(LNG_BASELINE, encoding='utf-8')
+        for line in open(path, encoding='utf-8')
         if line.strip() and not line.startswith('#')
-    }
+    ]
+
+
+def parse_homonyms(lines):
+    """`qll_key reason...` lines -> ({key: reason}, problems)."""
+    out, problems = {}, []
+    for line in lines:
+        key, _, reason = line.partition(' ')
+        if not reason.strip():
+            problems.append('LNG-HOMONYM %s: give the reason its meaning differs from the lng_* text (%s).' % (key, LNG_HOMONYMS))
+        out[key] = reason.strip()
+    return out, problems
+
+
+def lng_reuse_problems(values, baseline, homonyms):
+    """Messages for qll_* keys that repeat an lng_* text, plus the baseline
+    entries that are still duplicates (what --update keeps)."""
+    duplicates = lng_duplicates(values)
+    problems = []
+    for key, lngs in sorted(duplicates.items()):
+        if key in baseline or key in homonyms:
+            continue
+        forms = values[key]
+        text = forms.get('') or forms.get('other') or next(iter(forms.values()))
+        problems.append(
+            'LNG-REUSE %s = "%s" repeats %s: use the lng_* key with the same meaning '
+            '(Telegram translates it into every language) and remove %s. '
+            'If no meaning matches, list %s with the reason in %s.'
+            % (key, text, ', '.join(lngs), key, key, LNG_HOMONYMS))
+    for key in sorted(set(baseline) - set(duplicates)):
+        problems.append('LNG-REUSE-STALE %s: no longer repeats an lng_* text; run --update to shrink %s.' % (key, LNG_BASELINE))
+    for key in sorted(set(homonyms) - set(duplicates)):
+        problems.append('LNG-HOMONYM-STALE %s: no longer repeats an lng_* text; remove it from %s.' % (key, LNG_HOMONYMS))
+    return problems, set(baseline) & set(duplicates)
 
 
 def write_lng_baseline(keys):
     lines = [
-        '# qll_* keys whose English already equals an lng_* key.',
-        '# Telegram translates lng_*; a qll_* only gets a hand-written overlay.',
-        '# Reuse the lng_* key. This baseline may only shrink (run --update).',
+        '# qll_* keys whose English already equals an lng_* key (case and a',
+        '# trailing period ignored). Telegram translates lng_*; a qll_* only gets',
+        '# a hand-written overlay. Reuse the lng_* key. This baseline predates the',
+        '# check and may only shrink (run --update). A real homonym goes in',
+        '# scripts/lng-reuse-homonyms.txt with its reason instead.',
     ]
     lines.extend(sorted(keys))
     open(LNG_BASELINE, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
@@ -205,23 +253,14 @@ def main():
             if count:
                 lines.append('%d %s' % (count, path))
         open(BASELINE, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
-    values = english_values()
-    duplicates = lng_duplicates(values)
-    known_duplicates = load_lng_baseline()
-    for key, lngs in sorted(duplicates.items()):
-        if key in known_duplicates:
-            continue
-        failed = True
-        forms = values[key]
-        text = forms.get('') or forms.get('other') or next(iter(forms.values()))
-        print('LNG-REUSE %s = "%s": reuse %s instead of a new qll_* key.' % (key, text, ', '.join(lngs)))
-    stale = known_duplicates - set(duplicates)
+    homonyms, problems = parse_homonyms(read_list(LNG_HOMONYMS))
+    reuse, kept = lng_reuse_problems(english_values(), set(read_list(LNG_BASELINE)), homonyms)
     if update:
-        write_lng_baseline(known_duplicates & set(duplicates))
-    else:
-        for key in sorted(stale):
-            failed = True
-            print('LNG-REUSE-STALE %s: no longer copies an lng_* value; run --update to shrink the baseline.' % key)
+        write_lng_baseline(kept)
+        reuse = [line for line in reuse if not line.startswith('LNG-REUSE-STALE')]
+    for line in problems + reuse:
+        failed = True
+        print(line)
     for path in ui_files():
         for line in debug_dump_notes(path):
             failed = True
