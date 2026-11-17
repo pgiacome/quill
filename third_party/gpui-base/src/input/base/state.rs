@@ -4623,8 +4623,7 @@ impl<M: InputModeKind> InputBaseState<M> {
             let old_text = self.text.clone();
             self.mode.adjust_auto_closed_pair(range, new_text.len());
             self.value_memo.take();
-            self.value_memo.take();
-        self.text.replace(range.clone(), new_text);
+            self.text.replace(range.clone(), new_text);
 
             M::adjust_annotations(self, range, new_text.len());
             recorded |= self.push_history(

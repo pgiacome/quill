@@ -847,7 +847,13 @@ mod tests {
         cx.update(|cx| {
             state.update(cx, |state, cx| {
                 state.reset(6, cx);
-                assert!(state.scroll_to_item_offset(2, 12., cx));
+                assert!(state.scroll_to_offset(
+                    ListOffset {
+                        item_ix: 2,
+                        offset_in_item: px(12.),
+                    },
+                    cx
+                ));
                 // No layout ran: `is_scrolled_up` still reads the old extent,
                 // the restored position must not look like the tail.
                 assert!(!state.is_scrolled_up());
