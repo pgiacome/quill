@@ -853,15 +853,25 @@ mod tests {
     }
 
     #[test]
-    fn settings_value_roundtrips_lowercase() {
-        for action in SwipeAction::ALL {
-            let json = serde_json::to_string(&action).unwrap();
-            assert_eq!(json, format!("\"{}\"", json.trim_matches('"')));
-            assert_eq!(serde_json::from_str::<SwipeAction>(&json).unwrap(), action);
-        }
+    fn settings_store_each_action_by_its_lowercase_name() {
+        let names: Vec<String> = SwipeAction::ALL
+            .iter()
+            .map(|action| serde_json::to_string(action).unwrap())
+            .collect();
         assert_eq!(
-            serde_json::to_string(&SwipeAction::Mute).unwrap(),
-            "\"mute\""
+            names,
+            [
+                "\"mute\"",
+                "\"pin\"",
+                "\"read\"",
+                "\"archive\"",
+                "\"delete\"",
+                "\"disabled\""
+            ]
+        );
+        assert_eq!(
+            serde_json::from_str::<SwipeAction>("\"archive\"").unwrap(),
+            SwipeAction::Archive
         );
     }
 }

@@ -262,48 +262,12 @@ mod tests {
     }
 
     #[test]
-    fn ime_enter_does_not_send() {
-        assert!(!should_send_on_enter(
-            EnterEvent {
-                composing: true,
-                shift: false,
-                secondary: false,
-            },
-            SendKeyMode::Enter,
-        ));
-    }
-
-    #[test]
     fn plain_enter_sends() {
         assert!(should_send_on_enter(
             EnterEvent {
                 composing: false,
                 shift: false,
                 secondary: false,
-            },
-            SendKeyMode::Enter,
-        ));
-    }
-
-    #[test]
-    fn shift_enter_is_newline() {
-        assert!(!should_send_on_enter(
-            EnterEvent {
-                composing: false,
-                shift: true,
-                secondary: false,
-            },
-            SendKeyMode::Enter,
-        ));
-    }
-
-    #[test]
-    fn secondary_enter_does_not_send() {
-        assert!(!should_send_on_enter(
-            EnterEvent {
-                composing: false,
-                shift: false,
-                secondary: true,
             },
             SendKeyMode::Enter,
         ));

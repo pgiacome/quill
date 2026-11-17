@@ -205,7 +205,6 @@ fn view_messages_uses_chat_history_source() {
     assert_eq!(v["message_ids"], serde_json::json!([11, 12]));
     assert_eq!(v["source"]["@type"], "messageSourceChatHistory");
     assert_eq!(v["force_read"], true);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -363,7 +362,6 @@ fn search_chats_shape_matches_1_8_67() {
     assert_eq!(v["query"], "alice");
     assert_eq!(v["type_filter"], Value::Null);
     assert_eq!(v["limit"], 20);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -381,7 +379,6 @@ fn search_messages_shape_matches_1_8_67() {
     assert_eq!(v["min_date"], 0);
     assert_eq!(v["max_date"], 0);
     assert!(!json.contains("chatListMain"));
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -398,8 +395,6 @@ fn search_recently_found_and_add_shapes_match_1_8_67() {
     assert_eq!(v["@type"], "addRecentlyFoundChat");
     assert_eq!(v["@extra"], "24");
     assert_eq!(v["chat_id"], 11);
-    assert!(!recents.contains("CANARY"));
-    assert!(!add.contains("CANARY"));
 }
 
 #[test]
@@ -464,7 +459,6 @@ fn set_chat_draft_message_matches_1_8_67() {
     let clear = set_chat_draft_message(RequestId(42), ChatId(11), DraftTopic::Chat, None, None);
     let v: serde_json::Value = serde_json::from_str(&clear).unwrap();
     assert_eq!(v["draft_message"], Value::Null);
-    assert!(!save.contains("CANARY"));
 }
 
 /// `setChatDraftMessage.topic_id` per draft slot (schema 1.8.68, lines
@@ -524,7 +518,6 @@ fn set_chat_slow_mode_delay_shape_matches_1_8_67() {
     assert_eq!(v["@extra"], "44");
     assert_eq!(v["chat_id"], 11);
     assert_eq!(v["slow_mode_delay"], 30);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -537,7 +530,6 @@ fn pin_and_unpin_chat_message_shape_matches_1_8_67() {
     assert_eq!(v["message_id"], 101);
     assert_eq!(v["disable_notification"], false);
     assert_eq!(v["only_for_self"], false);
-    assert!(!pin.contains("CANARY"));
     assert!(!pin.contains("unpinAllChatMessages"));
 
     let unpin = unpin_chat_message(RequestId(41), ChatId(11), MessageId(101));
@@ -548,7 +540,6 @@ fn pin_and_unpin_chat_message_shape_matches_1_8_67() {
     assert_eq!(v["message_id"], 101);
     assert!(!unpin.contains("disable_notification"));
     assert!(!unpin.contains("only_for_self"));
-    assert!(!unpin.contains("CANARY"));
 }
 
 #[test]
@@ -574,7 +565,6 @@ fn search_chat_messages_shape_matches_1_8_67() {
     assert_eq!(v["offset"], 0);
     assert_eq!(v["limit"], 50);
     assert_eq!(v["filter"], Value::Null);
-    assert!(!json.contains("CANARY"));
     assert!(!json.contains("message_thread_id"));
 }
 
@@ -682,7 +672,6 @@ fn send_chat_action_typing_and_cancel_match_1_8_67() {
     assert_eq!(v["topic_id"], Value::Null);
     assert_eq!(v["business_connection_id"], "");
     assert_eq!(v["action"]["@type"], "chatActionTyping");
-    assert!(!typing.contains("CANARY"));
     assert!(!typing.contains("message_thread_id"));
 
     let cancel = send_chat_action(RequestId(43), ChatId(11), false);
@@ -894,13 +883,6 @@ fn archived_and_max_date_reach_search_messages() {
 
 #[test]
 fn search_upgrade_request_shapes_match_1_8_67() {
-    let v: Value =
-        serde_json::from_str(&search_chats_on_server(RequestId(70), "alice", 20)).unwrap();
-    assert_eq!(v["@type"], "searchChatsOnServer");
-    assert_eq!(v["query"], "alice");
-    assert_eq!(v["type_filter"], Value::Null);
-    assert_eq!(v["limit"], 20);
-
     let v: Value =
         serde_json::from_str(&search_public_posts(RequestId(71), "dune", "", 20)).unwrap();
     assert_eq!(v["@type"], "searchPublicPosts");

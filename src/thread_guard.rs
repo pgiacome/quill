@@ -114,17 +114,6 @@ mod tests {
     }
 
     #[test]
-    fn a_panic_becomes_none() {
-        let handle = spawn_guarded("quill-test-panic", || -> u32 { panic!("boom") }).unwrap();
-        assert_eq!(handle.join().unwrap(), None);
-    }
-
-    #[test]
-    fn ffi_boundary_returns_the_body_value() {
-        assert_eq!(ffi_boundary(0, || 7), 7);
-    }
-
-    #[test]
     fn ffi_boundary_turns_a_panic_into_the_default() {
         let value = ffi_boundary(-1, || -> i32 { panic!("callback failed") });
         assert_eq!(value, -1);

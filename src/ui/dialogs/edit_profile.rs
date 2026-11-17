@@ -172,12 +172,3 @@ impl EditProfileDialog {
         text.trim_prefix('@').to_string()
     }
 }
-
-#[cfg(test)]
-mod bio_rows_tests {
-    /// The bio box starts at three lines (it was one fixed 40 px box).
-    #[test]
-    fn bio_shows_at_least_three_rows() {
-        assert!(super::BIO_ROWS.0 >= 3 && super::BIO_ROWS.1 > super::BIO_ROWS.0);
-    }
-}

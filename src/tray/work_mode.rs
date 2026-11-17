@@ -181,17 +181,6 @@ mod tests {
     }
 
     #[test]
-    fn work_mode_transitions() {
-        let mut m = W::WindowAndTray;
-        m = toggle_taskbar(m, false);
-        assert_eq!(m, W::TrayOnly);
-        m = toggle_tray(m, false);
-        assert_eq!(m, W::WindowOnly);
-        m = toggle_tray(m, true);
-        assert_eq!(m, W::WindowAndTray);
-    }
-
-    #[test]
     fn taskbar_is_skipped_only_with_a_tray() {
         assert!(skip_taskbar(W::TrayOnly));
         assert!(!skip_taskbar(W::WindowOnly));

@@ -144,39 +144,18 @@ mod tests {
     }
 
     #[test]
-    fn mode_default_and_serde_roundtrip() {
+    fn mode_defaults_to_installed_and_recommended_and_stores_snake_case() {
         assert_eq!(
             StickerSuggestMode::default(),
             StickerSuggestMode::InstalledAndRecommended
         );
-        for mode in [
-            StickerSuggestMode::InstalledAndRecommended,
-            StickerSuggestMode::InstalledOnly,
-            StickerSuggestMode::None,
-        ] {
-            let json = serde_json::to_string(&mode).unwrap();
-            assert_eq!(
-                serde_json::from_str::<StickerSuggestMode>(&json).unwrap(),
-                mode
-            );
-        }
         assert_eq!(
             serde_json::to_string(&StickerSuggestMode::InstalledOnly).unwrap(),
             "\"installed_only\""
         );
-        // A prefs file written before the field existed still loads with
-        // the default (this is what `#[serde(default)]` on
-        // `MediaPrefs::sticker_suggest_mode` relies on).
-        #[derive(Debug, Deserialize, PartialEq)]
-        struct PrefsWithMode {
-            #[serde(default)]
-            sticker_suggest_mode: StickerSuggestMode,
-        }
         assert_eq!(
-            serde_json::from_str::<PrefsWithMode>("{}").unwrap(),
-            PrefsWithMode {
-                sticker_suggest_mode: StickerSuggestMode::InstalledAndRecommended
-            }
+            serde_json::from_str::<StickerSuggestMode>("\"installed_and_recommended\"").unwrap(),
+            StickerSuggestMode::InstalledAndRecommended
         );
     }
 

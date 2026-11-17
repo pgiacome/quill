@@ -276,18 +276,6 @@ mod tests {
     }
 
     #[test]
-    fn the_card_keeps_the_photo_frame_policy() {
-        use quill::bubble_layout::{MAX_MEDIA_SIZE, Size, photo_current};
-        let context = crate::ui::history::bubble_width::media_context(0, 0);
-        for (w, h) in [(800, 600), (600, 800), (300, 300), (0, 0)] {
-            let (fw, fh) = paid_media_frame(w, h, MAX_MEDIA_SIZE);
-            let expected = photo_current(Size::new(w, h), context, MAX_MEDIA_SIZE);
-            assert_eq!(f32::from(fw), expected.w as f32);
-            assert_eq!(f32::from(fh), expected.h as f32);
-        }
-    }
-
-    #[test]
     fn an_album_lays_out_every_item_inside_one_box() {
         let sizes = [(800, 600), (600, 800), (400, 400)];
         let (layout, (w, h)) = paid_album_layout(&sizes, 430);

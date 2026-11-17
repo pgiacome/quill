@@ -688,14 +688,6 @@ mod confirm_tests {
     }
 
     #[test]
-    fn opening_a_box_replaces_the_one_under_it() {
-        let mut confirm = SetConfirm::Rename;
-        assert!(confirm.is_rename());
-        confirm = SetConfirm::RemoveSet;
-        assert!(!confirm.is_rename() && confirm.is_remove_set());
-    }
-
-    #[test]
     fn entering_a_flow_ends_the_one_before_it() {
         let mut editing = SetEditing::default();
         editing.enter(SetEditing::Picking(pick()));

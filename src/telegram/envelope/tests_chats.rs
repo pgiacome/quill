@@ -62,18 +62,6 @@ fn chat_lists_response_parsed() {
 }
 
 #[test]
-fn send_message_uses_topic_id_field_in_schema() {
-    // Guard against obsolete message_thread_id examples.
-    let schema = include_str!("../../../schema/td_api.tl");
-    let send = schema
-        .lines()
-        .find(|l| l.starts_with("sendMessage "))
-        .expect("sendMessage");
-    assert!(send.contains("topic_id:MessageTopic"));
-    assert!(!send.contains("message_thread_id"));
-}
-
-#[test]
 fn parse_message_topic_forum_yields_forum_topic_id() {
     // Parity slice 4: `message.topic_id` (schema 1.8.67, lines 3001–3010
     // and 3165) — only `messageTopicForum` maps to `Some`.

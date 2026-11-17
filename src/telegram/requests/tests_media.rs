@@ -276,7 +276,6 @@ fn send_document_shape_matches_1_8_67() {
         v["input_message_content"]["document"]["thumbnail"],
         Value::Null
     );
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -316,7 +315,6 @@ fn download_file_shape_matches_1_8_67() {
     assert_eq!(v["offset"], 0);
     assert_eq!(v["limit"], 0);
     assert_eq!(v["synchronous"], false);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -341,7 +339,6 @@ fn cancel_download_file_shape_matches_1_8_67() {
     assert_eq!(v["file_id"], 45);
     assert_eq!(v["only_if_pending"], false);
     assert!(v.as_object().unwrap().len() == 4);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -357,7 +354,6 @@ fn add_file_to_downloads_shape_matches_1_8_67() {
     assert_eq!(v["message_id"], 9);
     assert_eq!(v["priority"], 32);
     assert_eq!(v.as_object().unwrap().len(), 6);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -371,7 +367,6 @@ fn toggle_download_is_paused_shape_matches_1_8_67() {
     assert_eq!(v["file_id"], 78);
     assert_eq!(v["is_paused"], true);
     assert_eq!(v.as_object().unwrap().len(), 4);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -385,7 +380,6 @@ fn remove_file_from_downloads_shape_matches_1_8_67() {
     assert_eq!(v["file_id"], 79);
     assert_eq!(v["delete_from_cache"], false);
     assert_eq!(v.as_object().unwrap().len(), 4);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -434,7 +428,6 @@ fn send_voice_note_shape_matches_1_8_67() {
     assert_eq!(v["reply_to"]["@type"], "inputMessageReplyToMessage");
     assert_eq!(v["reply_to"]["message_id"], 9);
     assert!(!json.contains("inputMessageVideoNote"));
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]

@@ -161,7 +161,7 @@ mod platform {
 
 #[cfg(test)]
 mod tests {
-    use super::{LINK_NAME, is_enabled_in, link_path, remove_in, supported};
+    use super::{is_enabled_in, link_path, remove_in, supported};
 
     fn scratch(tag: &str) -> std::path::PathBuf {
         crate::scratch::process_dir(&format!("quill-sendto-{tag}"))
@@ -170,8 +170,7 @@ mod tests {
     #[test]
     fn the_shortcut_is_named_after_the_app_inside_the_send_to_folder() {
         let dir = scratch("name");
-        assert_eq!(link_path(&dir), dir.join(LINK_NAME));
-        assert_eq!(LINK_NAME, "Quill.lnk");
+        assert_eq!(link_path(&dir), dir.join("Quill.lnk"));
     }
 
     #[test]

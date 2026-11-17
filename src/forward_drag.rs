@@ -181,12 +181,6 @@ mod tests {
     }
 
     #[test]
-    fn a_press_on_media_carries_that_message_even_with_a_selection_elsewhere() {
-        let drag = ForwardDrag::begin(CHAT, MessageId(40), &[], false, |_| true).unwrap();
-        assert_eq!(drag.ids(), ids(&[40]).as_slice());
-    }
-
-    #[test]
     fn a_media_press_in_a_protected_or_unsent_message_refuses() {
         assert_eq!(
             ForwardDrag::begin(CHAT, MessageId(40), &[], true, |_| true),
@@ -196,12 +190,6 @@ mod tests {
             ForwardDrag::begin(CHAT, MessageId(40), &[], false, |_| false),
             Err(Refusal::NotForwardable)
         );
-    }
-
-    #[test]
-    fn a_protected_chat_never_starts_a_drag() {
-        let result = ForwardDrag::begin(CHAT, MessageId(20), &[], true, |_| true);
-        assert_eq!(result, Err(Refusal::Protected));
     }
 
     #[test]

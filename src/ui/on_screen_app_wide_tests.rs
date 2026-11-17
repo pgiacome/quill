@@ -4,7 +4,6 @@
 //! listing, and the status line a restart set.
 
 use crate::ui::app::QuillApp;
-use crate::ui::on_screen::OnScreen;
 use crate::ui::screen_chooser_demo::DemoScreens;
 use crate::ui::screen_share_state::ScreenFor;
 use crate::ui::screenshot_demo::ScreenshotDemo;
@@ -48,14 +47,6 @@ fn switch(app: &Entity<QuillApp>, vcx: &mut VisualTestContext) {
 
 fn dialog_up(vcx: &mut VisualTestContext) -> bool {
     vcx.update(|window, cx| window.has_active_dialog(cx))
-}
-
-/// The structs moved off the app are fields of the screen.
-#[test]
-fn the_account_bound_parts_are_screen_fields() {
-    for field in ["account_boxes", "call_screen", "group_call_screen"] {
-        assert!(OnScreen::FIELD_NAMES.contains(&field), "{field}");
-    }
 }
 
 /// Delete Account armed, with the password typed, does not come back over

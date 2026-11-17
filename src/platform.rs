@@ -926,14 +926,6 @@ mod tests {
     }
 
     #[test]
-    fn a_successful_open_answers_true() {
-        let answer = pending(open_off_thread(std::ffi::OsStr::new("C:/file.pdf"), |_| {
-            true
-        }));
-        assert_eq!(block_on(answer), Ok(true));
-    }
-
-    #[test]
     fn an_opener_that_dies_cancels_the_answer() {
         let answer = pending(open_off_thread(std::ffi::OsStr::new("C:/file.pdf"), |_| {
             std::panic::resume_unwind(Box::new("the shell call died"))

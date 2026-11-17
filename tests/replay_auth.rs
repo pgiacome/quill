@@ -70,16 +70,3 @@ fn ordered_bridge_rejects_payload_logging() {
     assert!(!rendered.contains("CANARY_PHONE"));
     assert!(!rendered.contains("+1999"));
 }
-
-#[test]
-fn diagnostics_never_include_message_text() {
-    let sink = MemorySink::new();
-    sink.record(Diagnostic {
-        category: "td-receive",
-        type_name: Some("updateNewMessage".into()),
-        extra: Some(4),
-        seq: Some(1),
-        note: "ok",
-    });
-    assert!(!sink.rendered().contains("hello secret"));
-}

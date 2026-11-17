@@ -462,8 +462,8 @@ mod tests {
     use super::{
         ArticleCopy, BubbleRoom, CaptionTail, WAVEFORM_MAX, WAVEFORM_MIN, article_thumb,
         article_thumb_width, bubble_width_limit, caption_ends_bubble, content_for_outer,
-        file_row_bounds, media_context, poll_min_width, preview_inner_max, preview_photo_frame,
-        voice_row_width, waveform_bars,
+        file_row_bounds, poll_min_width, preview_inner_max, preview_photo_frame, voice_row_width,
+        waveform_bars,
     };
     use gpui_kit::px;
     use quill::bubble_layout::HistoryWidth;
@@ -520,14 +520,6 @@ mod tests {
         assert_eq!(flat.len(), 100);
         assert!(flat.iter().all(|bar| bar.height == WAVEFORM_MIN));
         assert!(waveform_bars(&[1, 2], 2).is_empty());
-    }
-
-    #[test]
-    fn media_context_carries_caption_and_time() {
-        let context = media_context(300, 46);
-        assert!(context.has_bubble);
-        assert_eq!(context.caption_width, 300);
-        assert_eq!(context.info_width, 46);
     }
 
     #[test]

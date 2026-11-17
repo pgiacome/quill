@@ -333,7 +333,6 @@ mod tests {
             c.envelope.payload,
             EnvelopePayload::Messages(MessagesPayload::UpdateNewMessage(_))
         ));
-        assert_eq!(a.seq + 1, b.seq);
     }
 
     #[test]

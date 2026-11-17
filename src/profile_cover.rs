@@ -202,7 +202,7 @@ mod tests {
         let mut person = user(31);
         person.status = UserStatusKind::Recently;
         assert_eq!(SpecialStatus::of(&person), None);
-        assert_eq!(status_line(&person), person.status.display());
+        assert_eq!(status_line(&person), "last seen recently");
     }
 
     #[test]

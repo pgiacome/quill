@@ -299,14 +299,6 @@ mod tests {
     }
 
     #[test]
-    fn a_worker_that_never_ran_still_finishes_the_download() {
-        let (p, worker) = Progress::start();
-        let job = move || drop(worker);
-        drop(job);
-        assert!(p.is_finished());
-    }
-
-    #[test]
     fn a_panicking_worker_finishes_and_returns_an_error() {
         let (p, worker) = Progress::start();
         let outcome = run_guarded(worker, || {

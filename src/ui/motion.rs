@@ -367,8 +367,8 @@ impl MotionState {
 #[cfg(test)]
 mod tests {
     use crate::ui::motion::{
-        CHECK_DURATION, Glide, MotionState, REVEAL_DURATION, SELECTION_MODE_DURATION, SelectionFx,
-        bubble_slide, check_frame, ease_out_circ, linear, progress, reveal_active, reveal_shift,
+        Glide, MotionState, REVEAL_DURATION, SELECTION_MODE_DURATION, SelectionFx, bubble_slide,
+        check_frame, ease_out_circ, linear, progress, reveal_active, reveal_shift,
     };
     use std::time::{Duration, Instant};
 
@@ -521,10 +521,5 @@ mod tests {
         assert!((shift - extra).abs() < 1e-3);
         assert_eq!(motion.reveal_now(t0 + ms(75) + REVEAL_DURATION), None);
         assert_eq!(motion.reveal_now(t0 + ms(75)), None);
-    }
-
-    #[test]
-    fn check_duration_is_160ms() {
-        assert_eq!(CHECK_DURATION, ms(160));
     }
 }

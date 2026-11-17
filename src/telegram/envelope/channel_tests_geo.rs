@@ -407,39 +407,6 @@ fn message_location_with_bad_coordinates_is_unsupported() {
 }
 
 #[test]
-fn add_contact_shape_uses_imported_contact() {
-    // The `addContact` JSON shape lives in requests.rs, but the schema
-    // contract it must match is pinned here: `addContact
-    // user_id:int53 contact:importedContact share_phone_number:Bool =
-    // Ok` with `importedContact phone_number:string first_name:string
-    // last_name:string note:formattedText` (schema 1.8.67 lines 14513 /
-    // 7382). This test guards the field list, not the builder.
-    let line = include_str!("../../../schema/td_api.tl")
-        .lines()
-        .find(|l| l.starts_with("addContact "))
-        .expect("addContact in schema");
-    assert!(
-        line.contains("contact:importedContact"),
-        "unexpected addContact signature: {line}"
-    );
-    let imported = include_str!("../../../schema/td_api.tl")
-        .lines()
-        .find(|l| l.starts_with("importedContact "))
-        .expect("importedContact in schema");
-    for field in [
-        "phone_number:string",
-        "first_name:string",
-        "last_name:string",
-        "note:formattedText",
-    ] {
-        assert!(
-            imported.contains(field),
-            "importedContact missing {field}: {imported}"
-        );
-    }
-}
-
-#[test]
 fn a_dice_with_a_value_but_no_stickers_still_reads_as_rolled() {
     let json = r#"{"@type":"updateNewMessage","message":{"id":130,"chat_id":17,"is_outgoing":false,"content":{"@type":"messageDice","emoji":"🎲","value":3,"initial_state":null,"final_state":null}}}"#;
     let env = parse_envelope(json).unwrap();

@@ -518,12 +518,12 @@ crate::ui::shell::register_dialogs! {
 
 #[cfg(test)]
 mod tests {
-    use super::{MIN_ROWS, ROW_HEIGHT, VISIBLE_ROWS, list_height};
+    use super::list_height;
     use gpui_kit::px;
 
     #[test]
     fn the_list_shows_seven_rows_and_keeps_three_in_a_short_window() {
-        assert_eq!(list_height(px(1000.)), px(VISIBLE_ROWS * ROW_HEIGHT));
-        assert_eq!(list_height(px(300.)), px(MIN_ROWS * ROW_HEIGHT));
+        assert_eq!(list_height(px(1000.)), px(364.));
+        assert_eq!(list_height(px(300.)), px(156.));
     }
 }

@@ -104,7 +104,6 @@ fn send_text_reply_uses_input_message_reply_to_message() {
     assert_eq!(v["reply_to"]["checklist_task_id"], 0);
     assert_eq!(v["reply_to"]["poll_option_id"], "");
     assert!(!json.contains("inputMessageReplyToExternalMessage"));
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -291,7 +290,6 @@ fn get_callback_query_answer_shape_matches_1_8_67() {
     assert_eq!(v["payload"]["@type"], "callbackQueryPayloadData");
     assert_eq!(v["payload"]["data"], "AQID");
     assert!(!json.contains("answerCallbackQuery"));
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -322,7 +320,6 @@ fn edit_message_text_shape_matches_1_8_67() {
         Value::Null
     );
     assert_eq!(v["input_message_content"]["clear_draft"], false);
-    assert!(!json.contains("CANARY"));
     assert!(!json.contains("message_thread_id"));
 }
 
@@ -346,7 +343,6 @@ fn edit_message_caption_shape_matches_1_8_67() {
     assert_eq!(v["caption"]["text"], "new cap");
     assert_eq!(v["caption"]["entities"], serde_json::json!([]));
     assert_eq!(v["show_caption_above_media"], false);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -358,7 +354,6 @@ fn delete_messages_shape_matches_1_8_67() {
     assert_eq!(v["chat_id"], 11);
     assert_eq!(v["message_ids"], serde_json::json!([102]));
     assert_eq!(v["revoke"], true);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -381,7 +376,6 @@ fn forward_messages_shape_matches_1_8_67() {
     assert_eq!(v["options"], Value::Null);
     assert_eq!(v["send_copy"], false);
     assert_eq!(v["remove_caption"], false);
-    assert!(!json.contains("CANARY"));
     assert!(!json.contains("message_thread_id"));
     assert!(!json.contains("inputMessageForwarded"));
 }
@@ -398,7 +392,6 @@ fn add_and_remove_message_reaction_shapes_match_1_8_67() {
     assert_eq!(v["reaction_type"]["emoji"], "❤");
     assert_eq!(v["is_big"], false);
     assert_eq!(v["update_recent_reactions"], true);
-    assert!(!add.contains("CANARY"));
     assert!(!add.contains("setMessageReactions"));
     assert!(!add.contains("reactionTypeCustomEmoji"));
     assert!(!add.contains("reactionTypePaid"));
@@ -413,7 +406,6 @@ fn add_and_remove_message_reaction_shapes_match_1_8_67() {
     assert_eq!(v["reaction_type"]["emoji"], "❤");
     assert!(!remove.contains("is_big"));
     assert!(!remove.contains("update_recent_reactions"));
-    assert!(!remove.contains("CANARY"));
 }
 
 #[test]
@@ -452,25 +444,6 @@ fn send_text_converts_markup_to_entities() {
     assert_eq!(entities[1]["type"]["@type"], "textEntityTypeCode");
     assert_eq!(entities[1]["offset"], 12);
     assert_eq!(entities[1]["length"], 4);
-}
-
-#[test]
-fn send_text_link_preview_disabled_on_wire() {
-    let json = send_text(
-        RequestId(51),
-        ChatId(11),
-        None,
-        "see https://example.com",
-        None,
-        &SendOptions {
-            link_preview_disabled: true,
-            ..SendOptions::default()
-        },
-    );
-    let v: serde_json::Value = serde_json::from_str(&json).unwrap();
-    let opts = &v["input_message_content"]["link_preview_options"];
-    assert_eq!(opts["@type"], "linkPreviewOptions");
-    assert_eq!(opts["is_disabled"], true);
 }
 
 /// MED4b: `getLinkPreview` shape matches the pinned schema

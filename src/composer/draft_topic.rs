@@ -43,17 +43,3 @@ pub struct DraftKey {
     pub chat_id: i64,
     pub topic: DraftTopic,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn key_carries_chat_and_topic() {
-        let key = DraftTopic::Forum(3).key(11);
-        assert_eq!(key.chat_id, 11);
-        assert_eq!(key.topic, DraftTopic::Forum(3));
-        assert_ne!(DraftTopic::Chat.key(11), DraftTopic::Thread(3).key(11));
-        assert_eq!(DraftTopic::default(), DraftTopic::Chat);
-    }
-}

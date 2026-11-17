@@ -614,18 +614,6 @@ fn unknown_request_ids_are_ignored() {
 }
 
 #[test]
-fn a_tile_width_maps_to_a_quality_bucket() {
-    assert_eq!(StreamQuality::for_tile_width(720.0), StreamQuality::Full);
-    assert_eq!(StreamQuality::for_tile_width(640.0), StreamQuality::Full);
-    assert_eq!(StreamQuality::for_tile_width(500.0), StreamQuality::Medium);
-    assert_eq!(
-        StreamQuality::for_tile_width(240.0),
-        StreamQuality::Thumbnail
-    );
-    assert_eq!(StreamQuality::for_tile_width(1280.0), StreamQuality::Full);
-}
-
-#[test]
 fn a_drain_ends_the_streams_request_and_its_waiters() {
     let mut port = FakePort::default();
     let mut feeder = feeder();

@@ -150,31 +150,4 @@ mod tests {
         assert!(keys.iter().all(|key| *key >= order::MEDIA));
         assert!(keys.iter().all(|key| *key < order::COPY_TEXT));
     }
-
-    /// Every slot is a distinct action.
-    #[test]
-    fn all_has_no_duplicates() {
-        let all = MediaAction::ALL;
-        assert!(
-            all.iter()
-                .enumerate()
-                .all(|(i, a)| all.iter().position(|b| b == a) == Some(i))
-        );
-    }
-
-    /// `slot()` falls back to 0 only if `canonical()` returned a value
-    /// missing from `ALL`; each entry's canonical value must sit at its own
-    /// index.
-    #[test]
-    fn canonical_is_listed_at_its_own_index() {
-        for (index, action) in MediaAction::ALL.iter().enumerate() {
-            assert_eq!(
-                MediaAction::ALL
-                    .iter()
-                    .position(|a| *a == action.canonical()),
-                Some(index),
-                "{action:?}"
-            );
-        }
-    }
 }

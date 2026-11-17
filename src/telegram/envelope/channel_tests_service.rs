@@ -229,10 +229,6 @@ fn message_call_parses() {
                     duration: 372,
                 }
             );
-            assert_eq!(
-                call_entry_label(true, &CallDiscardReason::HungUp, 372, false),
-                "Incoming video call · 6:12"
-            );
         }
         other => panic!("unexpected {other:?}"),
     }

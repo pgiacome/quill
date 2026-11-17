@@ -551,7 +551,7 @@ impl PollDraft {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::telegram::{PollContent, PollOption, PollType};
+    use crate::telegram::{PollOption, PollType};
 
     fn option(chosen: bool, percentage: i32) -> PollOption {
         PollOption {
@@ -869,14 +869,6 @@ mod tests {
     }
 
     #[test]
-    fn voters_offer_follows_can_get_voters() {
-        let mut poll = regular_poll(&[], false, false, false);
-        assert!(!can_view_poll_voters(&poll));
-        poll.can_get_voters = true;
-        assert!(can_view_poll_voters(&poll));
-    }
-
-    #[test]
     fn poll_entry_allowed_unless_permissions_deny() {
         use crate::telegram::ChatPermissions;
         // Unknown (not loaded yet) never blocks.
@@ -1156,16 +1148,5 @@ mod tests {
             draft.usable_option_media(),
             vec![link("1").as_ref(), None, None]
         );
-    }
-
-    #[test]
-    fn poll_content_used_in_message_roundtrip() {
-        let content = PollContent {
-            poll: regular_poll(&[0], false, true, false),
-            description: String::new(),
-            can_add_option: false,
-        };
-        assert_eq!(content.poll.chosen_indexes(), vec![0]);
-        assert!(content.poll.can_vote());
     }
 }

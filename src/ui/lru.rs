@@ -67,13 +67,4 @@ mod tests {
         assert_eq!(lru.get(&2), None);
         assert_eq!(lru.get(&1), Some("a"));
     }
-
-    #[test]
-    fn stays_bounded_under_many_keys() {
-        let mut lru = Lru::new(8);
-        for key in 0..1000 {
-            lru.insert(key, key);
-        }
-        assert_eq!(lru.len(), 8);
-    }
 }

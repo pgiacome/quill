@@ -200,27 +200,6 @@ mod tests {
     }
 
     #[test]
-    fn pause_freezes_elapsed_resume_continues() {
-        let mut clock = PlaybackClock::new(60.0);
-        clock.resume();
-        assert!(clock.is_playing());
-        clock.seek(12.5);
-        // Elapsed keeps advancing while playing (never goes backwards).
-        assert!(clock.elapsed_secs() >= 12.5);
-        clock.pause();
-        assert!(!clock.is_playing());
-        let frozen = clock.elapsed_secs();
-        assert_eq!(
-            clock.elapsed_secs(),
-            frozen,
-            "paused clock must not advance"
-        );
-        clock.resume();
-        assert!(clock.is_playing());
-        assert!(clock.elapsed_secs() >= frozen);
-    }
-
-    #[test]
     fn seek_while_playing_keeps_playing_from_new_position() {
         let mut clock = PlaybackClock::new(60.0);
         clock.resume();

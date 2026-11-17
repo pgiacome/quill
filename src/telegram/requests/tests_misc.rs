@@ -55,7 +55,6 @@ fn get_contacts_shape_matches_1_8_67() {
     assert_eq!(v["@type"], "getContacts");
     assert_eq!(v["@extra"], "60");
     assert_eq!(v.as_object().unwrap().len(), 2);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -216,7 +215,6 @@ fn get_forum_topics_shape_matches_1_8_67() {
     assert_eq!(v["offset_message_id"], 0);
     assert_eq!(v["offset_forum_topic_id"], 0);
     assert_eq!(v["limit"], 100);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]

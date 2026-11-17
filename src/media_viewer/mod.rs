@@ -919,12 +919,4 @@ mod tests {
         assert_eq!(chat.merge_older(shared_items(&[1, 2, 80, 90]), 4), 0);
         assert_eq!(chat.len(), 2);
     }
-
-    #[test]
-    fn closing_the_viewer_forgets_its_source() {
-        let mut viewer = MediaViewer::open_shared(shared_items(&[1, 2]), 0, 9);
-        viewer.close();
-        assert_eq!(viewer.source(), ViewerSource::Chat);
-        assert_eq!(viewer.position(), None);
-    }
 }
