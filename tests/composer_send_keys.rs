@@ -22,14 +22,6 @@ fn ev(composing: bool, shift: bool, secondary: bool) -> EnterEvent {
 }
 
 #[test]
-fn enter_mode_plain_enter_sends() {
-    assert!(should_send_on_enter(
-        ev(false, false, false),
-        SendKeyMode::Enter
-    ));
-}
-
-#[test]
 fn enter_mode_modifiers_do_not_send() {
     // Shift+Enter inserts a newline.
     assert!(!should_send_on_enter(

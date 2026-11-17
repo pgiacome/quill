@@ -520,7 +520,6 @@ fn replay_group_call_signaling() {
     );
     let call = session.calls.active_group_call.as_ref().expect("rejoining");
     assert!(call.reconnecting());
-    assert!(call.reconnecting());
     session.clear_group_call_reconnecting();
     assert!(
         !session

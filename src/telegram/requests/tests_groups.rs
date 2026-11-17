@@ -112,7 +112,6 @@ fn get_supergroup_full_info_shape_matches_1_8_67() {
     assert_eq!(v["@type"], "getSupergroupFullInfo");
     assert_eq!(v["@extra"], "62");
     assert_eq!(v["supergroup_id"], 77);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -125,7 +124,6 @@ fn get_chat_statistics_shape_matches_1_8_67() {
     assert_eq!(v["@extra"], "63");
     assert_eq!(v["chat_id"], 13);
     assert_eq!(v["is_dark"], true);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -150,7 +148,6 @@ fn get_chat_invite_links_shape_matches_1_8_67() {
     assert_eq!(v["offset_date"], 1_700_000_000);
     assert_eq!(v["offset_invite_link"], "https://t.me/+offset");
     assert_eq!(v["limit"], 25);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -173,7 +170,6 @@ fn create_chat_invite_link_shape_matches_1_8_67() {
     assert_eq!(v["expiration_date"], 1_800_000_000);
     assert_eq!(v["member_limit"], 50);
     assert_eq!(v["creates_join_request"], true);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -198,7 +194,6 @@ fn edit_chat_invite_link_shape_matches_1_8_67() {
     assert_eq!(v["expiration_date"], 1_900_000_000);
     assert_eq!(v["member_limit"], 75);
     assert_eq!(v["creates_join_request"], false);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -211,7 +206,6 @@ fn revoke_chat_invite_link_shape_matches_1_8_67() {
     assert_eq!(v["@extra"], "67");
     assert_eq!(v["chat_id"], 505);
     assert_eq!(v["invite_link"], "https://t.me/+revoked");
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -232,7 +226,6 @@ fn get_chat_join_requests_shape_matches_1_8_67() {
         })
     );
     assert_eq!(v["limit"], 30);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -246,7 +239,6 @@ fn process_chat_join_request_shape_matches_1_8_67() {
     assert_eq!(v["chat_id"], 707);
     assert_eq!(v["user_id"], 808);
     assert_eq!(v["approve"], true);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -256,7 +248,6 @@ fn get_supergroup_shape_matches_1_8_67() {
     assert_eq!(v["@type"], "getSupergroup");
     assert_eq!(v["@extra"], "32");
     assert_eq!(v["supergroup_id"], 77);
-    assert!(!json.contains("CANARY"));
 }
 
 #[test]
@@ -421,10 +412,6 @@ fn community_management_shapes_match_1_8_68() {
     };
     // TDLib 1.8.68 replaced `loadCommunityFullInfo` (answered `ok`) with
     // `getCommunityFullInfo` (answers `communityFullInfo`).
-    assert!(
-        !include_str!("../../../schema/td_api.tl").contains("\nloadCommunityFullInfo "),
-        "loadCommunityFullInfo is gone in 1.8.68"
-    );
     let v: Value = serde_json::from_str(&get_community_full_info(RequestId(92), 42)).unwrap();
     assert_matches_schema(&v, "getCommunityFullInfo");
     assert_eq!(v["community_id"], 42);

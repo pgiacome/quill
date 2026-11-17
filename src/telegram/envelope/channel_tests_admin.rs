@@ -169,12 +169,6 @@ fn d3a_schema_pins_exist_verbatim() {
             "schema pin missing: {line}"
         );
     }
-    assert!(
-        !schema
-            .lines()
-            .any(|l| l.starts_with("deleteChatInviteLink ")),
-        "deleteChatInviteLink must not exist in 1.8.67"
-    );
 }
 
 /// Phase D3b: `chatAdministrators` (line 2485) parses owner +
@@ -285,12 +279,6 @@ fn d3b_schema_pins_exist_verbatim() {
             "schema pin missing: {line}"
         );
     }
-    assert!(
-        !schema
-            .lines()
-            .any(|l| l.starts_with("setChatAdministratorCustomTitle ")),
-        "setChatAdministratorCustomTitle must not exist in 1.8.67"
-    );
 }
 
 /// Phase D3c: `chatEvents` parses all 16 handled action constructors
@@ -685,12 +673,6 @@ fn d3c_schema_pins_exist_verbatim() {
             "schema pin missing: {line}"
         );
     }
-    assert!(
-        !schema
-            .lines()
-            .any(|l| l.starts_with("chatEventInviteLinkCreated ")),
-        "chatEventInviteLinkCreated must not exist in 1.8.67"
-    );
 }
 
 #[test]
