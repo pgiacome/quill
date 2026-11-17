@@ -1,12 +1,13 @@
 # Changes made by the Quill project
 
-This directory is gpui-component 0.9.0 from crates.io (Apache-2.0,
+This directory is gpui-component 0.10.0 from crates.io (Apache-2.0,
 `LICENSE-APACHE`), used through `[patch.crates-io]` in Quill's `Cargo.toml`.
-Commit `1398c875` added the unmodified registry copy (without `.cargo-ok`,
+Commit `2ef7b0d98` added the unmodified registry copy (without `.cargo-ok`,
 `.cargo_vcs_info.json`, `Cargo.lock` and `Cargo.toml.orig`), so
-`git diff 1398c875 -- third_party/gpui-component` shows every change.
+`git diff 2ef7b0d98 -- third_party/gpui-component` shows every change.
 (First vendored at 0.7.3 in `255bf944`; carried to 0.8.0 in
-`docs/decisions/gpui-kit-0-8-0.md` and to 0.8.1 in `docs/decisions/gpui-kit-0-8-1.md`.)
+`docs/decisions/gpui-kit-0-8-0.md`, to 0.8.1 in `docs/decisions/gpui-kit-0-8-1.md`
+and to 0.10.0 in `docs/decisions/gpui-kit-0-10-0.md`.)
 
 `src/tab/tab_bar.rs`: the sliding indicator sprang (280 ms) whenever the
 selected tab's left or width changed, so a badge appearing in a tab restarted
@@ -26,15 +27,14 @@ selected tab's bounds change, so a badge would still spring the indicator.
 The patch is kept and works with it: the extra frame is the one that bumps
 the jump counter. `TabVariant::Folder` (#3415) draws no sliding indicator.
 
-`src/message_scroller.rs`: `MessageScrollerState::top_anchor` and
-`scroll_to_item_offset` expose the list's top row and its pixel offset, so
-Quill can remember where a chat was left and return to it
-(`docs/decisions/sweep-scroll-restore.md`). Re-apply both when re-vendoring.
-`top_anchor` gates on the list's follow state, not on `is_scrolled_up`, so a
-position set by `scroll_to_item_offset` reads correctly before the next layout.
-0.8.0 adds `MessageScrollerState::logical_scroll_top` (#3485), which reads
-the same position but not the follow state, and has no setter, so both
-Quill methods stay.
+`src/message_scroller.rs`: `MessageScrollerState::top_anchor` exposes the
+list's top row and its pixel offset, so Quill can remember where a chat was
+left and return to it (`docs/decisions/sweep-scroll-restore.md`). Re-apply
+when re-vendoring. It gates on the list's follow state, not on
+`is_scrolled_up`, so a position set by `scroll_to_offset` reads correctly
+before the next layout. 0.8.0's `logical_scroll_top` (#3485) reads the same
+position but not the follow state. Quill's `scroll_to_item_offset` setter was
+dropped at 0.10.0, whose `scroll_to_offset` (#3922) does the same.
 
 `src/theme/{mod,mono_font}.rs`: `installed_font_names` is public, and
 `prefetch_installed_font_names` fills the same once-per-process list on a
@@ -124,3 +124,19 @@ and refresh the windows themselves. Quill's Compact mode sets a 26px bar from
 (`docs/decisions/compact-mode-density.md`). Write the height only through the
 setter: the field is public, and writing it directly leaves the sheet and
 notification margins behind. Re-apply when re-vendoring.
+
+`src/menu/submenu_aim.rs` (new), `src/menu/{mod,menu_item,popup_menu}.rs`:
+menu aim, Telegram Desktop's rule for reaching a submenu diagonally (lib_ui
+`PopupMenu::SubmenuAim`, `insideSubmenuAim`, 300 ms rest). `SubmenuAim` is
+the pure decision, public as `menu::{SubmenuAim, AimGeometry, AimPointer,
+SUBMENU_AIM_REST}` because Quill's hand-built menus use it too
+(`src/ui/menu_aim.rs`). In `PopupMenu`, an item takes the selection on a
+pointer move (`item_pointer_moved`) instead of on hover, and only when the
+aim lets it: while the pointer crosses rows inside the triangle from where
+it left the submenu's row to the submenu's near edge, the submenu stays,
+the crossed rows are not lit (`MenuItemElement::lit_by_pointer`) and the
+row under the pointer takes the selection once the pointer rests for 300 ms
+(a `Task` held by the waiting stage; the clock is the executor's, so tests
+advance it). The corridor takes the submenu's side from the measured
+bounds, so it does not depend on `update_submenu_menu_anchor`. Re-apply
+when re-vendoring: upstream has no hover intent for submenus.

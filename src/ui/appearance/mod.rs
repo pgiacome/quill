@@ -154,7 +154,7 @@ impl QuillApp {
             super::battery_watch::watch(cx);
         }
         self.sync_omarchy_watch(cx);
-        cx.set_reduce_motion(quill::power_saving::reduce_motion_now());
+        crate::ui::reduce_motion_probe::apply(cx);
         // Quill's themes and high contrast take the single accent of old.
         let accent = quill::system_accent::effective(
             self.appearance.accent_rgb,

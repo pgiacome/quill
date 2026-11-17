@@ -192,3 +192,46 @@ fn ignoring_a_word_does_not_ask_the_backend_on_the_ui_thread(cx: &mut TestAppCon
     });
     assert_eq!(backend.0.load(Ordering::SeqCst), 0);
 }
+
+/// Misspellings reach the composer as wavy text decorations over exactly
+/// the misspelled words, and the Check spelling switch takes them away.
+#[gpui_kit::test]
+fn misspellings_are_the_composers_wavy_decorations(cx: &mut TestAppContext) {
+    use quill::spellcheck::Misspelling;
+    let (app, mut vcx) = new_app(cx);
+    app.update_in(&mut vcx, |app, window, cx| {
+        app.chat_prefs.spellcheck_enabled = true;
+        app.composer.update(cx, |state, cx| {
+            state.set_value("teh good speling", window, cx)
+        });
+        app.composer_ui.spelling.underlines.text = "teh good speling".into();
+        app.composer_ui.spelling.underlines.found = vec![
+            Misspelling {
+                word: "teh".into(),
+                start: 0,
+                end: 3,
+            },
+            Misspelling {
+                word: "speling".into(),
+                start: 9,
+                end: 16,
+            },
+        ];
+        app.sync_spellcheck_decorations(cx);
+        let marked: Vec<_> = app
+            .composer
+            .read(cx)
+            .decorations()
+            .iter()
+            .map(|d| {
+                let wavy = d.style.underline.is_some_and(|u| u.wavy);
+                (d.range.clone(), wavy)
+            })
+            .collect();
+        assert_eq!(marked, [(0..3, true), (9..16, true)]);
+
+        app.chat_prefs.spellcheck_enabled = false;
+        app.sync_spellcheck_decorations(cx);
+        assert!(app.composer.read(cx).decorations().is_empty());
+    });
+}

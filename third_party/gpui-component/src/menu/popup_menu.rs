@@ -2,6 +2,7 @@ use crate::ThemeStyled as _;
 use crate::actions::{Cancel, Confirm, SelectDown, SelectUp};
 use crate::actions::{SelectLeft, SelectRight};
 use crate::menu::menu_item::MenuItemElement;
+use crate::menu::submenu_aim::{AimGeometry, AimPointer, SubmenuAim};
 use crate::scroll::ScrollableElement;
 use crate::{ActiveTheme, ElementExt, Icon, IconName, Sizable as _, h_flex, v_flex};
 use crate::{Side, Size, kbd::Kbd};
@@ -12,11 +13,14 @@ use gpui::{
     StatefulInteractiveElement, Styled, WeakEntity, Window, anchored, deferred, div,
     prelude::FluentBuilder, px, rems,
 };
-use gpui::{ClickEvent, Half, MouseDownEvent, OwnedMenuItem, Point, Subscription};
-use gpui_base::TestSupportExt as _;
+use gpui::{
+    ClickEvent, Half, MouseDownEvent, MouseMoveEvent, OwnedMenuItem, Point, Subscription, Task,
+};
+use gpui_base::{LayoutDirection, LogicalStyledExt as _, TestSupportExt as _};
 
 use std::collections::HashSet;
 use std::rc::Rc;
+use std::time::Duration;
 
 const CONTEXT: &str = "PopupMenu";
 
@@ -320,6 +324,9 @@ pub struct PopupMenu {
     scroll_handle: ScrollHandle,
     // This will update on render
     submenu_anchor: (Anchor, Pixels),
+    /// The pointer's way to the open submenu: rows it crosses on the way do
+    /// not take the selection (`SubmenuAim`, tdesktop's menu aim).
+    aim: SubmenuAim<usize, Task<()>>,
 
     /// Paint priority for this menu layer. The top-level menu starts at 1 and
     /// each nested submenu increments it, so deeper levels are always drawn on
@@ -364,6 +371,7 @@ impl PopupMenu {
             external_link_icon: true,
             size: Size::default(),
             submenu_anchor: (Anchor::TopLeft, Pixels::ZERO),
+            aim: SubmenuAim::new(),
             priority: gpui_base::POPUP_PRIORITY,
             _subscriptions: vec![],
         }
@@ -847,6 +855,102 @@ impl PopupMenu {
         self
     }
 
+    /// The row whose submenu is open, which the pointer may be aiming at.
+    fn aim_owner(&self) -> Option<usize> {
+        self.selected_index.filter(|ix| {
+            matches!(
+                self.menu_items.get(*ix),
+                Some(PopupMenuItem::Submenu { .. })
+            )
+        })
+    }
+
+    fn aim_geometry(&self, cx: &App) -> Option<AimGeometry> {
+        let submenu = self.active_submenu()?;
+        Some(AimGeometry {
+            menu: self.bounds,
+            submenu: submenu.read(cx).bounds,
+        })
+    }
+
+    /// The wake-up of an aim that waits for the pointer to rest.
+    fn aim_wake(wait: Duration, window: &mut Window, cx: &mut Context<Self>) -> Task<()> {
+        cx.spawn_in(window, async move |this, cx| {
+            cx.background_executor().timer(wait).await;
+            let _ = this.update_in(cx, |this, window, cx| this.aim_rested(window, cx));
+        })
+    }
+
+    fn aim_rested(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let owner = self.aim_owner();
+        let geometry = self.aim_geometry(cx);
+        // The executor's clock, which tests drive by hand.
+        let now = cx.background_executor().now();
+        let row = self.aim.rested(
+            owner,
+            window.mouse_position(),
+            geometry,
+            now,
+            |wait| Self::aim_wake(wait, window, cx),
+        );
+        if let Some(ix) = row {
+            self.select_by_pointer(ix, window, cx);
+        }
+        cx.notify();
+    }
+
+    /// The pointer moved over item `ix`: it takes the selection unless the
+    /// pointer is on its way to the open submenu.
+    fn item_pointer_moved(
+        &mut self,
+        ix: usize,
+        event: &MouseMoveEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        // The pointer reached this submenu: the parent stops aiming.
+        if let Some(parent) = self.parent_menu.as_ref().and_then(|p| p.upgrade())
+            && parent.read(cx).aim.holds()
+        {
+            parent.update(cx, |parent, cx| {
+                parent.aim.reset();
+                cx.notify();
+            });
+        }
+        let held = self.aim.holds();
+        let pointer = AimPointer {
+            position: event.position,
+            row: Some(ix),
+            pressed: event.pressed_button.is_some(),
+        };
+        let owner = self.aim_owner();
+        let geometry = self.aim_geometry(cx);
+        // The executor's clock, which tests drive by hand.
+        let now = cx.background_executor().now();
+        let takes = self.aim.pointer_moved(owner, pointer, geometry, now, |wait| {
+            Self::aim_wake(wait, window, cx)
+        });
+        if takes && self.selected_index != Some(ix) {
+            self.select_by_pointer(ix, window, cx);
+            cx.notify();
+        } else if held != self.aim.holds() {
+            cx.notify();
+        }
+    }
+
+    fn select_by_pointer(&mut self, ix: usize, window: &mut Window, cx: &mut Context<Self>) {
+        // Pointing elsewhere closes the open submenu; take back the focus the
+        // keyboard may have moved into it.
+        if self.selected_index != Some(ix)
+            && self
+                .active_submenu()
+                .is_some_and(|submenu| submenu.focus_handle(cx).contains_focused(window, cx))
+        {
+            self.focus_handle.focus(window, cx);
+        }
+        self.selected_index = Some(ix);
+    }
+
     pub(crate) fn active_submenu(&self) -> Option<Entity<PopupMenu>> {
         if let Some(ix) = self.selected_index {
             if let Some(item) = self.menu_items.get(ix) {
@@ -1265,7 +1369,7 @@ impl PopupMenu {
         }
 
         let icon = if let Some(icon) = icon {
-            icon.clone()
+            icon
         } else if checked {
             Icon::new(IconName::Check)
         } else {
@@ -1278,9 +1382,8 @@ impl PopupMenu {
     /// Calculate the anchor corner and left offset for child submenu
     fn update_submenu_menu_anchor(&mut self, window: &Window, cx: &App) {
         let bounds = self.bounds;
-        // Open the submenu on the left only when, placed at this menu's right
-        // edge, it would run past the window's. Its width is the one it was
-        // last drawn at, or this menu's own until it has been drawn.
+        // The submenu's width is the one it was last drawn at, or this
+        // menu's own until it has been drawn.
         let submenu_width = self
             .selected_index
             .and_then(|ix| match self.menu_items.get(ix) {
@@ -1290,7 +1393,14 @@ impl PopupMenu {
             .filter(|width| *width > Pixels::ZERO)
             .unwrap_or(bounds.size.width);
         let rem_size = window.rem_size();
-        let (anchor, left) = if bounds.right() + submenu_width > window.viewport_size().width {
+        // A submenu opens on the end side: right in LTR, left in RTL, and
+        // flips only when it would run past the window on that side.
+        let open_left = if LayoutDirection::global(cx).is_rtl() {
+            bounds.left() - submenu_width >= Pixels::ZERO
+        } else {
+            bounds.right() + submenu_width > window.viewport_size().width
+        };
+        let (anchor, left) = if open_left {
             (Anchor::TopRight, -rems(1.).to_pixels(rem_size))
         } else {
             (
@@ -1342,29 +1452,26 @@ impl PopupMenu {
             .rounded(radius)
             .items_center()
             .selected(selected)
+            .lit_by_pointer(!self.aim.holds())
+            // Taking the selection is the move's (`item_pointer_moved`), which
+            // knows whether the pointer is on its way to the open submenu.
+            .on_mouse_move(cx.listener(move |this, event, window, cx| {
+                this.item_pointer_moved(ix, event, window, cx);
+            }))
             .on_hover(cx.listener(move |this, hovered, window, cx| {
                 if *hovered {
-                    // Pointing elsewhere closes the open submenu; take back
-                    // the focus the keyboard may have moved into it.
-                    if this.selected_index != Some(ix)
-                        && this.active_submenu().is_some_and(|submenu| {
-                            submenu.focus_handle(cx).contains_focused(window, cx)
-                        })
-                    {
-                        this.focus_handle.focus(window, cx);
-                    }
-                    this.selected_index = Some(ix);
-                } else if !is_submenu
+                    return;
+                }
+                this.aim.row_left(ix);
+                if !is_submenu
                     && this.selected_index == Some(ix)
                     // A key press ends hover under a still pointer; keep the
                     // highlight so the next arrow key moves on from this item.
                     && !window.last_input_was_keyboard()
                 {
-                    // TODO: Better handle the submenu unselection when hover out
                     this.selected_index = None;
+                    cx.notify();
                 }
-
-                cx.notify();
             }))
             .when_some(item.a11y_label(), |this, label| this.aria_label(label))
             .checked(
@@ -1382,6 +1489,7 @@ impl PopupMenu {
                 .disabled(true),
             PopupMenuItem::Label(label) => this.disabled(true).cursor_default().child(
                 h_flex()
+                    .flex_row_dir(cx)
                     .cursor_default()
                     .items_center()
                     .gap_x_1()
@@ -1402,6 +1510,7 @@ impl PopupMenu {
                 .disabled(*disabled)
                 .child(
                     h_flex()
+                        .flex_row_dir(cx)
                         .flex_1()
                         .min_h(item_height)
                         .items_center()
@@ -1414,7 +1523,7 @@ impl PopupMenu {
                             cx,
                         ))
                         .child((render)(window, cx))
-                        .children(right_check_icon.map(|icon| icon.ml_3())),
+                        .children(right_check_icon.map(|icon| icon.ms(rems(0.75), cx))),
                 ),
             PopupMenuItem::Item {
                 icon,
@@ -1445,6 +1554,7 @@ impl PopupMenu {
                 ))
                 .child(
                     h_flex()
+                        .flex_row_dir(cx)
                         .w_full()
                         .gap_3()
                         .items_center()
@@ -1454,6 +1564,7 @@ impl PopupMenu {
                         .when(show_link_icon, |this| {
                             this.child(
                                 h_flex()
+                                    .flex_row_dir(cx)
                                     .w_full()
                                     .justify_between()
                                     .gap_1p5()
@@ -1484,6 +1595,7 @@ impl PopupMenu {
                 .items_start()
                 .child(
                     h_flex()
+                        .flex_row_dir(cx)
                         .min_h(item_height)
                         .size_full()
                         .items_center()
@@ -1497,15 +1609,20 @@ impl PopupMenu {
                         ))
                         .child(
                             h_flex()
+                                .flex_row_dir(cx)
                                 .flex_1()
                                 .gap_2()
                                 .items_center()
                                 .justify_between()
                                 .child(label.clone())
                                 .child(
-                                    Icon::new(IconName::ChevronRight)
-                                        .xsmall()
-                                        .text_color(cx.theme().muted_foreground),
+                                    Icon::new(if LayoutDirection::global(cx).is_rtl() {
+                                        IconName::ChevronLeft
+                                    } else {
+                                        IconName::ChevronRight
+                                    })
+                                    .xsmall()
+                                    .text_color(cx.theme().muted_foreground),
                                 ),
                         ),
                 )
@@ -1575,7 +1692,7 @@ impl Render for PopupMenu {
 
         self.scroll_to_checked_item(cx);
 
-        let view = cx.entity().clone();
+        let view = cx.entity();
         let items_count = self.menu_items.len();
 
         let max_height = self.max_height.unwrap_or_else(|| {

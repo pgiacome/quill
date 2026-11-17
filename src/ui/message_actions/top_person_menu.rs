@@ -6,6 +6,7 @@
 use super::chat_menu_submenus::{MENU_WIDTH, menu_row};
 use super::*;
 use crate::ui::dismiss_layer::DismissLayer;
+use crate::ui::menu_aim::{MenuAimPanel as _, MenuAimRow as _};
 use crate::ui::menu_states::ChatMenuState;
 use crate::ui::menu_surface::MenuSurface;
 use gpui_kit::assets::IconName as Lucide;
@@ -44,7 +45,8 @@ impl QuillApp {
             .px_1()
             .py_1()
             .menu_surface(cx)
-            .children(rows);
+            .children(rows)
+            .menu_aim_panel(&self.frame.menu.items);
         DismissLayer::new(
             "chat-menu-overlay",
             cx.listener(|this, _, _, cx| {
@@ -93,9 +95,7 @@ impl QuillApp {
                     &self.frame.menu.items,
                     cx,
                 )
-                .on_hover(cx.listener(|this, hovered, _, cx| {
-                    this.chat_menu_row_hovered(*hovered, cx);
-                }))
+                .menu_aim_row(row_key(5), cx)
                 .on_click(cx.listener(move |this, _, window, cx| {
                     this.message_ui.menu.close_menu();
                     this.open_chat_in_new_window(chat_id, window, cx);
@@ -119,9 +119,7 @@ impl QuillApp {
                 &self.frame.menu.items,
                 cx,
             )
-            .on_hover(cx.listener(|this, hovered, _, cx| {
-                this.chat_menu_row_hovered(*hovered, cx);
-            }))
+            .menu_aim_row(row_key(10), cx)
             .on_click(cx.listener(move |this, _, window, cx| {
                 this.message_ui.menu.close_menu();
                 this.select_search_chat(chat_id, window, cx);
@@ -144,9 +142,7 @@ impl QuillApp {
                 &self.frame.menu.items,
                 cx,
             )
-            .on_hover(cx.listener(|this, hovered, _, cx| {
-                this.chat_menu_row_hovered(*hovered, cx);
-            }))
+            .menu_aim_row(row_key(50), cx)
             .on_click(cx.listener(move |this, _, window, cx| {
                 this.message_ui.menu.close_menu();
                 if let Some(target) = this
@@ -172,9 +168,7 @@ impl QuillApp {
                 &self.frame.menu.items,
                 cx,
             )
-            .on_hover(cx.listener(|this, hovered, _, cx| {
-                this.chat_menu_row_hovered(*hovered, cx);
-            }))
+            .menu_aim_row(row_key(60), cx)
             .on_click(cx.listener(move |this, _, _, cx| {
                 this.message_ui.menu.close_menu();
                 this.remove_top_chat(chat_id, cx);
@@ -193,9 +187,7 @@ impl QuillApp {
                 &self.frame.menu.items,
                 cx,
             )
-            .on_hover(cx.listener(|this, hovered, _, cx| {
-                this.chat_menu_row_hovered(*hovered, cx);
-            }))
+            .menu_aim_row(row_key(70), cx)
             .on_click(cx.listener(|this, _, _, cx| {
                 this.message_ui.menu.close_menu();
                 this.set_search_prompt(Some(SearchConfirm::DisableTopChats), cx);

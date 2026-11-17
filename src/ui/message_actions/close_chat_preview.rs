@@ -1,6 +1,7 @@
 //! Methods moved out of `message_actions.rs` to keep files under 1000 lines.
 
 use super::*;
+use crate::ui::menu_aim::MenuAimRow as _;
 use crate::ui::status_note::StatusNote;
 use quill::go_to_message::{GoToTarget, MessageListContext, go_to_message_offered, go_to_target};
 use quill::lang::{keys, tr};
@@ -271,15 +272,13 @@ impl QuillApp {
                         .cursor_pointer()
                         .text_sm()
                         .text_color(text_menu())
-                        .hover(|style| style.bg(row_hover))
+                        .menu_hover(row_hover, &self.frame.menu.items)
                         .menu_key_target(row_key($order), &self.frame.menu.items, $cx)
                         .role(gpui_kit::Role::MenuItem)
                         .aria_label($label)
                         .child(Icon::new($icon).size(px(16.)))
                         .child($label)
-                        .on_hover($cx.listener(|this, hovered, _, cx| {
-                            this.chat_menu_row_hovered(*hovered, cx);
-                        }))
+                        .menu_aim_row(row_key($order), $cx)
                         .on_click($cx.listener(move |$this, _, _, $cx| $body))
                         .into_any_element(),
                 ));
@@ -302,15 +301,13 @@ impl QuillApp {
                         .cursor_pointer()
                         .text_sm()
                         .text_color(text_menu())
-                        .hover(|style| style.bg(row_hover))
+                        .menu_hover(row_hover, &self.frame.menu.items)
                         .menu_key_target(row_key($order), &self.frame.menu.items, $cx)
                         .role(gpui_kit::Role::MenuItem)
                         .aria_label($label)
                         .child(Icon::new($icon).size(px(16.)))
                         .child($label)
-                        .on_hover($cx.listener(|this, hovered, _, cx| {
-                            this.chat_menu_row_hovered(*hovered, cx);
-                        }))
+                        .menu_aim_row(row_key($order), $cx)
                         .on_click($cx.listener(move |$this, _, $window, $cx| $body))
                         .into_any_element(),
                 ));

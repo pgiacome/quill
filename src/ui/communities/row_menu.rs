@@ -7,10 +7,11 @@
 #![deny(clippy::indexing_slicing)]
 
 use super::*;
-use crate::ui::context_menu_keys::{MenuKeyTarget, context_menu_item, submenu_key};
+use crate::ui::context_menu_keys::{MenuKeyTarget, context_menu_item, row_key, submenu_key};
 use crate::ui::dismiss_layer::DismissLayer;
+use crate::ui::menu_aim::{MenuAimPanel as _, MenuAimRow as _};
 use crate::ui::menu_states::ChatMenuSubmenu;
-use crate::ui::menu_surface::{MENU_WIDTH, MenuSurface, submenu_panel};
+use crate::ui::menu_surface::{MENU_WIDTH, MenuSurface};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::*;
 use quill::telegram::envelope::{
@@ -150,11 +151,7 @@ impl QuillApp {
                 items,
                 cx,
             )
-            .on_hover(cx.listener(|this, hovered: &bool, _, cx| {
-                if *hovered {
-                    this.close_community_submenu(cx);
-                }
-            }))
+            .menu_aim_row(row_key(MUTE_ROW_ORDER), cx)
             .on_click(cx.listener(move |this, _, _, cx| {
                 this.close_community_menu(cx);
                 this.set_community_mute_for(community_id, 0, cx);
@@ -174,19 +171,18 @@ impl QuillApp {
         .relative()
         .child(div().flex_1())
         .child(Icon::new(IconName::ChevronRight).size(px(14.)))
-        .on_hover(cx.listener(|this, hovered: &bool, _, cx| {
-            if *hovered {
-                this.open_community_submenu(ChatMenuSubmenu::Mute, cx);
-            }
-        }))
+        .menu_aim_row(row_key(MUTE_ROW_ORDER), cx)
         .on_click(cx.listener(|this, _, _, cx| {
             this.open_community_submenu(ChatMenuSubmenu::Mute, cx);
         }));
         if menu.submenu != Some(ChatMenuSubmenu::Mute) {
             return parent.into_any_element();
         }
-        let sound_off = !settings.use_default_sound && settings.sound_id == 0;
         let hover = cx.theme().accent;
+        // The row stays lit while its submenu is open (tdesktop
+        // `Menu::setChildShownAction`).
+        let parent = parent.bg(hover);
+        let sound_off = !settings.use_default_sound && settings.sound_id == 0;
         let sub_item = |index: usize, id: &'static str, icon: IconName, label: String| {
             div()
                 .id(id)
@@ -199,7 +195,7 @@ impl QuillApp {
                 .cursor_pointer()
                 .text_sm()
                 .text_color(text_menu())
-                .hover(|style| style.bg(hover))
+                .menu_hover(hover, items)
                 .menu_key_target(submenu_key(MUTE_ROW_ORDER, index), items, cx)
                 .role(Role::MenuItem)
                 .aria_label(label.clone())
@@ -291,7 +287,7 @@ impl QuillApp {
             .into_any_element(),
         );
         parent
-            .child(submenu_panel("community-mute-submenu", rows, cx))
+            .child(self.aimed_submenu_panel("community-mute-submenu", rows, cx))
             .into_any_element()
     }
 
@@ -310,7 +306,7 @@ impl QuillApp {
                     label: &'static str,
                     on_click: MenuAction,
                     cx: &mut Context<QuillApp>| {
-            context_menu_item(
+            let row = context_menu_item(
                 id,
                 icon,
                 label,
@@ -318,12 +314,11 @@ impl QuillApp {
                 true,
                 &self.frame.menu.items,
                 cx,
-            )
-            .on_hover(cx.listener(|this, hovered: &bool, _, cx| {
-                if *hovered {
-                    this.close_community_submenu(cx);
-                }
-            }))
+            );
+            match self.frame.menu.items.last_key() {
+                Some(key) => row.menu_aim_row(key, cx),
+                None => row,
+            }
             .on_click(cx.listener(move |this, _, window, cx| {
                 this.admin.community.flow.row_menu = None;
                 on_click(this, window, cx);
@@ -375,7 +370,8 @@ impl QuillApp {
             .px_1()
             .py_1()
             .menu_surface(cx)
-            .children(rows);
+            .children(rows)
+            .menu_aim_panel(&self.frame.menu.items);
         DismissLayer::new(
             "community-menu-overlay",
             cx.listener(|this, _, _, cx| {

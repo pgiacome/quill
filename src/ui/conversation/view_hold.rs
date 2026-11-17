@@ -66,7 +66,13 @@ impl QuillApp {
         };
         self.history.scroller.update(cx, |state, cx| match target {
             Some((ix, offset)) => {
-                state.scroll_to_item_offset(ix, offset, cx);
+                state.scroll_to_offset(
+                    gpui_kit::ListOffset {
+                        item_ix: ix,
+                        offset_in_item: px(offset.max(0.)),
+                    },
+                    cx,
+                );
             }
             None => state.scroll_to_end(cx),
         });

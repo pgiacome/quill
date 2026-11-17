@@ -14,12 +14,26 @@
 
 use gpui_kit::*;
 
+/// Hands Quill's answer (the OS reading, Power Saving and the battery) to
+/// the kit as an explicit choice. A plain `App::set_reduce_motion` is a value
+/// the kit's own OS reader may overwrite when it matches what the kit last
+/// wrote, so a battery or Power Saving reduction could come undone on a live
+/// OS change (Linux portal).
+pub(crate) fn apply(cx: &mut App) {
+    let preference = if quill::power_saving::reduce_motion_now() {
+        gpui_kit::base::ReduceMotionPreference::Reduce
+    } else {
+        gpui_kit::base::ReduceMotionPreference::Allow
+    };
+    gpui_kit::base::set_reduce_motion_preference(preference, cx);
+}
+
 /// Start the probe. The environment override applies at once; the OS answer
 /// follows on the background executor.
 pub(crate) fn apply_at_startup(cx: &mut App) {
     if let Some(forced) = env_override() {
         quill::power_saving::set_os_reduce_motion(forced);
-        cx.set_reduce_motion(quill::power_saving::reduce_motion_now());
+        apply(cx);
         return;
     }
     cx.spawn(async move |cx| {
@@ -29,7 +43,7 @@ pub(crate) fn apply_at_startup(cx: &mut App) {
             .await;
         cx.update(|cx| {
             quill::power_saving::set_os_reduce_motion(prefers);
-            cx.set_reduce_motion(quill::power_saving::reduce_motion_now());
+            apply(cx);
         });
     })
     .detach();

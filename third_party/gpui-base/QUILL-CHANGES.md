@@ -1,8 +1,8 @@
 # Changes made by the Quill project
 
-This directory is gpui-base 0.9.0 from crates.io (Apache-2.0, `LICENSE-APACHE`),
-used through `[patch.crates-io]` in Quill's `Cargo.toml`. Commit `1398c875`
-added the unmodified registry copy, so `git diff 1398c875 -- third_party/gpui-base`
+This directory is gpui-base 0.10.0 from crates.io (Apache-2.0, `LICENSE-APACHE`),
+used through `[patch.crates-io]` in Quill's `Cargo.toml`. Commit `2ef7b0d98`
+added the unmodified registry copy, so `git diff 2ef7b0d98 -- third_party/gpui-base`
 shows every change. (The patch was first made on 0.7.0, vendored in `eb465597`,
 carried to 0.7.1 in `docs/decisions/codex-gpui-kit-0.7.1.md`, to 0.7.3 in
 `docs/decisions/gpui-kit-0-7-3.md` and to 0.8.0 in

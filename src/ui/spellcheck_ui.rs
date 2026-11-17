@@ -1,10 +1,8 @@
 //! Composer spellcheck UI (codex:spellcheck-native), after Telegram
 //! Desktop's `Spellchecker::SpellingHighlighter`:
 //!
-//! - misspelled words get a red wavy underline painted over the kit
-//!   Textarea (an overlay canvas: the Textarea has no decoration hooks,
-//!   but `TextareaState::range_to_bounds` gives each word's laid-out
-//!   rect);
+//! - misspelled words get a red wavy underline, a text decoration of the
+//!   kit Textarea (Kit 0.10), drawn in the text's own layout;
 //! - every edit shifts the existing underlines with the text, then
 //!   schedules a background re-check — after a "cold" pause while a word
 //!   is being typed, almost immediately after a space, punctuation or a
@@ -23,14 +21,13 @@ use super::actions::{SpellingIgnore, SpellingLearn, SpellingReplace, SpellingUnl
 use super::app::QuillApp;
 use super::chat_theme::danger;
 use super::spell_state::{Check, EngineBuild};
-use gpui_kit::component::input::{Copy, Cut, Paste, SelectAll, TextareaState};
+use gpui_kit::component::input::{Copy, Cut, Paste, SelectAll, TextDecoration};
 use gpui_kit::component::native_menu::NativeMenu;
 use gpui_kit::*;
 use quill::lang::{keys, tr, tr_with};
 use quill::spell_dict::EngineKind;
 use quill::spellcheck::{
-    LearnedIn, MAX_SUGGESTIONS, Misspelling, SpellChecker, is_typing_word, shift_misspellings,
-    word_at,
+    LearnedIn, MAX_SUGGESTIONS, SpellChecker, is_typing_word, shift_misspellings, word_at,
 };
 
 /// Re-check delay while a word is being typed (tdesktop
@@ -468,23 +465,31 @@ impl QuillApp {
         quill::settings::save_spellcheck_words(&Self::appearance_paths(), &prefs);
     }
 
-    /// The red wavy underlines, as an overlay over the composer Textarea
-    /// (place it after the Textarea inside a `relative()` wrapper).
-    pub(super) fn spellcheck_underlines(&self, cx: &App) -> Option<AnyElement> {
+    /// The red wavy underlines, handed to the composer Textarea as text
+    /// decorations, so the kit draws them in the text's own layout (each
+    /// visual piece of a wrapped or mixed-direction word) and carries them
+    /// across an edit until the re-check lands. Derived from the spelling
+    /// state on every render of the field; the kit ignores an unchanged list.
+    pub(super) fn sync_spellcheck_decorations(&self, cx: &mut App) {
+        let decorations = self.spellcheck_decorations(cx);
+        self.composer
+            .update(cx, |state, cx| state.set_decorations(decorations, cx));
+    }
+
+    fn spellcheck_decorations(&self, cx: &App) -> Vec<TextDecoration> {
         if !self.chat_prefs.spellcheck_enabled
             || self.composer_ui.spelling.underlines.found.is_empty()
         {
-            return None;
+            return Vec::new();
         }
-        // Only paint ranges that match the text on screen.
-        if self.composer.read(cx).value().as_ref() != self.composer_ui.spelling.underlines.text {
-            return None;
+        let input = self.composer.read(cx);
+        // Only mark ranges that match the text on screen.
+        let text = input.value();
+        if text.as_ref() != self.composer_ui.spelling.underlines.text {
+            return Vec::new();
         }
-        let composer = self.composer.clone();
         // Like Telegram Desktop, code, links and mentions are not checked.
-        let skip: Vec<std::ops::Range<usize>> = self
-            .composer
-            .read(cx)
+        let skip: Vec<std::ops::Range<usize>> = input
             .spans()
             .iter()
             .filter(|span| {
@@ -500,30 +505,23 @@ impl QuillApp {
             })
             .map(|span| span.range())
             .collect();
-        let misspellings: Vec<_> = self
-            .composer_ui
+        let style = HighlightStyle {
+            underline: Some(UnderlineStyle {
+                color: Some(danger().into()),
+                thickness: px(1.),
+                wavy: true,
+            }),
+            ..Default::default()
+        };
+        self.composer_ui
             .spelling
             .underlines
             .found
             .iter()
+            .filter(|m| text.get(m.range()) == Some(m.word.as_str()))
             .filter(|m| !skip.iter().any(|r| r.start < m.end && m.start < r.end))
-            .cloned()
-            .collect();
-        if misspellings.is_empty() {
-            return None;
-        }
-        let color: Hsla = danger().into();
-        Some(
-            canvas(
-                |_, _, _| (),
-                move |bounds, (), window, cx| {
-                    paint_underlines(&composer, &misspellings, color, bounds, window, cx);
-                },
-            )
-            .absolute()
-            .inset_0()
-            .into_any_element(),
-        )
+            .map(|m| TextDecoration::new(m.range(), style))
+            .collect()
     }
 }
 
@@ -615,59 +613,6 @@ fn edit_menu_items(menu: NativeMenu, has_selection: bool, plain_paste: bool) -> 
     };
     menu.separator()
         .menu(tr(keys::MAC_MENU_SELECT_ALL), Box::new(SelectAll))
-}
-
-/// One underline per visual line a word occupies (a word longer than the
-/// composer is wide wraps mid-word), and per visual piece where the word
-/// crosses a direction change: the input engine reports the laid-out
-/// rectangles of the byte range, so a Hebrew or Arabic word is underlined
-/// where it is drawn (right-aligned, caret-side first) and not between its
-/// first and last character positions.
-fn word_line_rects(state: &TextareaState, range: std::ops::Range<usize>) -> Vec<Bounds<Pixels>> {
-    state.range_to_rects(&range)
-}
-
-fn paint_underlines(
-    composer: &Entity<TextareaState>,
-    misspellings: &[Misspelling],
-    color: Hsla,
-    clip: Bounds<Pixels>,
-    window: &mut Window,
-    cx: &mut App,
-) {
-    let state = composer.read(cx);
-    let text = state.value().to_string();
-    // The kit composer renders at `text_sm` (Input Size::Medium).
-    let font_size = window.rem_size() * 0.875;
-    let font_id = window
-        .text_system()
-        .resolve_font(&window.text_style().font());
-    let ascent = window.text_system().ascent(font_id, font_size);
-    let descent = window.text_system().descent(font_id, font_size);
-    let style = UnderlineStyle {
-        color: Some(color),
-        thickness: px(1.),
-        wavy: true,
-    };
-    let mut lines: Vec<(Point<Pixels>, Pixels)> = Vec::new();
-    for m in misspellings {
-        if text.get(m.range()) != Some(m.word.as_str()) {
-            continue;
-        }
-        for rect in word_line_rects(state, m.range()) {
-            let line_height = rect.size.height;
-            // Same baseline offset GPUI uses for text underlines.
-            let y = rect.top() + (line_height - ascent - descent) / 2. + ascent + descent * 0.618;
-            lines.push((point(rect.left(), y), rect.size.width));
-        }
-    }
-    window.with_content_mask(Some(ContentMask { bounds: clip }), |window| {
-        for (origin, width) in lines {
-            if width > px(0.) {
-                window.paint_underline(origin, width, &style);
-            }
-        }
-    });
 }
 
 // UI integration test (needs gpui-kit `test-support`, enabled by the

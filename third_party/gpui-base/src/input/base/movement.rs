@@ -458,7 +458,19 @@ impl<M: InputModeKind> InputBaseState<M> {
         );
     }
 
+    // QUILL: carets step in visual order (`step_horizontally`), so Left moves
+    // left on screen in any paragraph and any layout direction. 0.10's
+    // `arrows_mirrored` swap would mirror a right-to-left layout twice.
     pub(super) fn left(&mut self, _: &MoveLeft, window: &mut Window, cx: &mut Context<Self>) {
+        self.move_backward(window, cx);
+    }
+
+    pub(super) fn right(&mut self, _: &MoveRight, window: &mut Window, cx: &mut Context<Self>) {
+        self.move_forward(window, cx);
+    }
+
+    /// Moves every caret one character left on screen.
+    fn move_backward(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         // With a lone cursor at the very start there is nowhere to move.
         // Propagate the keystroke so an ancestor (e.g. a navigable command
         // palette) can act on it. This is harmless when nothing is bound there.
@@ -497,8 +509,9 @@ impl<M: InputModeKind> InputBaseState<M> {
         );
     }
 
-    pub(super) fn right(&mut self, _: &MoveRight, window: &mut Window, cx: &mut Context<Self>) {
-        // Mirror `left`: a lone cursor at the end of the text has nowhere to
+    /// Moves every caret one character right on screen.
+    fn move_forward(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        // Mirror `move_backward`: a lone cursor at the end of the text has nowhere to
         // move, so let the keystroke bubble to an ancestor.
         if self.selections.is_single()
             && self.active_selection().is_empty()
