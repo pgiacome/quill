@@ -371,7 +371,6 @@
 "qll_money_reactions_per_post" = "Реакции на пост";
 "qll_money_reactions_per_story" = "Реакции на историю";
 "qll_money_receive" = "Получить";
-"qll_money_received" = "Получено";
 "qll_money_recent_posts" = "Последние посты";
 "qll_money_recipient" = "Получатель";
 "qll_money_record" = "Записать";
@@ -412,7 +411,6 @@
 "qll_money_sending" = "Отправка…";
 "qll_money_sending_2" = "Отправка…";
 "qll_money_sending_the_offer" = "Отправляем предложение…";
-"qll_money_sent" = "Отправлено";
 "qll_money_server_error" = "Внутренняя ошибка сервера. Повторите попытку позже.";
 "qll_money_set_password" = "Задать пароль";
 "qll_money_share_this_link_with_your" = "Поделитесь этой ссылкой со своей {audience}, чтобы получать комиссию {commission_per_mille} с их трат в {app_name} {month_count}.";
@@ -530,7 +528,6 @@
 "qll_money_view_receipt" = "Посмотреть чек";
 "qll_money_view_statistics" = "Посмотреть статистику";
 "qll_money_viewing_members" = "Смотрят сейчас";
-"qll_money_views" = "Просмотры";
 "qll_money_views_per_post" = "Просмотров на пост";
 "qll_money_views_per_story" = "Просмотров на историю";
 "qll_money_wallet_address" = "Адрес кошелька: {address}";

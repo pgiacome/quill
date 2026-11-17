@@ -114,7 +114,6 @@
 "qll_leftovers_network_usage_since" = "Network usage since {date}";
 "qll_leftovers_no_older_messages_to_load" = "No older messages to load";
 "qll_leftovers_only_my_messages_in" = "Only my messages in {section}";
-"qll_leftovers_pinned" = "Pinned";
 "qll_leftovers_price_up_to_stars" = "The price can be up to {count} Stars.";
 "qll_leftovers_push_to_talk_release_delay" = "Push-to-talk release delay";
 "qll_leftovers_quick_action_react" = "React with the quick reaction";

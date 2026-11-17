@@ -244,7 +244,7 @@ impl QuillApp {
                         .flex()
                         .gap_2()
                         .child(Self::stat_cell(
-                            tr(keys::Q_MEDIA_VIEWS),
+                            tr(keys::STATS_OVERVIEW_MESSAGE_VIEWS),
                             format_stat_count(f64::from(info.view_count)),
                         ))
                         .child(Self::stat_cell(

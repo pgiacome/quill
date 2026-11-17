@@ -42,7 +42,7 @@ pub fn topic_info_rows(
         status.push(tr(keys::Q_PEOPLE_GENERAL));
     }
     if topic.is_pinned {
-        status.push(tr(keys::Q_PEOPLE_PINNED));
+        status.push(tr(keys::SR_CHAT_PINNED));
     }
     if topic.is_closed {
         status.push(tr(keys::Q_PEOPLE_CLOSED));

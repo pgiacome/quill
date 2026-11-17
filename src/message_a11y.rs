@@ -7,6 +7,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::FileId;
+use crate::lang::{keys, tr, tr_with, trn};
 use crate::state::{HistoryMessage, OutboxReceiptView};
 use crate::telegram::envelope::{MessageContent, ParsedFile};
 use crate::telegram::envelope::{PollType, ReactionType};
@@ -43,27 +44,33 @@ pub fn message_accessibility_name(
     if message.is_outgoing {
         lines.push(
             if context.receipt == Some(OutboxReceiptView::Read) {
-                "Seen"
+                tr(keys::SR_MESSAGE_SEEN)
             } else {
-                "Not seen"
+                tr(keys::SR_MESSAGE_NOT_SEEN)
             }
             .to_string(),
         );
-        lines.push("Me".to_string());
+        lines.push(tr(keys::SR_FROM_ME).to_string());
     } else if let Some(name) = context.sender_name.as_ref().filter(|name| !name.is_empty()) {
         lines.push(name.clone());
     }
     if let Some(bot) = context.via_bot.as_ref().filter(|bot| !bot.is_empty()) {
-        lines.push(format!("via @{bot}"));
+        lines.push(tr_with(keys::Q_MEDIA_A11Y_VIA_BOT, &[("bot", bot)]));
     }
     if let Some((name, text)) = &context.reply {
         let name = name.as_deref().filter(|name| !name.is_empty());
         if name.is_some() || !text.is_empty() {
-            lines.push(format!("In reply to {}: {text}", name.unwrap_or("Me")));
+            lines.push(tr_with(
+                keys::SR_MESSAGE_REPLY_TO,
+                &[
+                    ("name", name.unwrap_or(tr(keys::SR_FROM_ME))),
+                    ("text", text),
+                ],
+            ));
         }
     }
     if let Some(origin) = &context.forwarded_from {
-        lines.push(format!("Forwarded from {origin}"));
+        lines.push(tr_with(keys::FORWARDED, &[("user", origin)]));
     }
     let (media, caption) = media_parts(message, file);
     if !media.is_empty() {
@@ -93,7 +100,7 @@ pub fn message_accessibility_name(
         lines.push(check.text.clone());
     }
     if message.is_pinned {
-        lines.push("Pinned".to_string());
+        lines.push(tr(keys::SR_CHAT_PINNED).to_string());
     }
     lines.push(status_line(message, context));
     if let Some(reactions) = reactions_line(message) {
@@ -123,27 +130,27 @@ fn status_line(message: &HistoryMessage, context: &MessageA11yContext) -> String
     parts.push(
         if message.is_outgoing {
             if message.failed() {
-                "Failed"
+                tr(keys::SR_CHAT_FAILED)
             } else if message.pending() {
-                "Sending"
+                tr(keys::SR_CHAT_SENDING)
             } else {
-                "Sent"
+                tr(keys::SR_CHAT_SENT)
             }
         } else {
-            "Received"
+            tr(keys::SR_CHAT_RECEIVED)
         }
         .to_string(),
     );
     if message.extras.edit_date > 0 {
-        parts.push("edited".to_string());
+        parts.push(tr(keys::Q_MEDIA_EDITED).to_string());
     }
     if let Some(time) = &context.time {
-        parts.push(format!("at {time}"));
+        parts.push(tr_with(keys::Q_MEDIA_A11Y_AT_TIME, &[("time", time)]));
     }
     if let Some(info) = &message.interaction_info
         && info.view_count > 0
     {
-        parts.push(format!("{} Views", info.view_count));
+        parts.push(trn(keys::Q_MEDIA_A11Y_VIEWS, info.view_count));
     }
     if let Some(signature) = message.author_signature.as_ref().filter(|s| !s.is_empty()) {
         parts.push(signature.clone());
@@ -169,7 +176,12 @@ fn reactions_line(message: &HistoryMessage) -> Option<String> {
             _ => None,
         })
         .collect();
-    (!parts.is_empty()).then(|| format!("Reactions: {}", parts.join(", ")))
+    (!parts.is_empty()).then(|| {
+        tr_with(
+            keys::SR_CHAT_MESSAGE_REACTIONS,
+            &[("reactions", &parts.join(", "))],
+        )
+    })
 }
 
 /// Where a document's file stands (`Downloading` / `Downloaded` /
@@ -177,9 +189,9 @@ fn reactions_line(message: &HistoryMessage) -> Option<String> {
 fn file_parts(id: FileId, file: &dyn Fn(FileId) -> Option<ParsedFile>) -> (String, Option<i64>) {
     let parsed = file(id);
     let state = match &parsed {
-        Some(parsed) if parsed.local.is_downloading_active() => "Downloading",
-        Some(parsed) if parsed.usable_path().is_some() => "Downloaded",
-        _ => "Not downloaded",
+        Some(parsed) if parsed.local.is_downloading_active() => tr(keys::SR_MESSAGE_DOWNLOADING),
+        Some(parsed) if parsed.usable_path().is_some() => tr(keys::EMOJI_SET_READY),
+        _ => tr(keys::SR_MESSAGE_NOT_DOWNLOADED),
     };
     let size = parsed
         .map(|parsed| parsed.display_size())
@@ -205,7 +217,14 @@ fn media_parts(
         let (state, size) = file_parts(file_id, file);
         out.push(state);
         if let Some(played) = played {
-            out.push(if played { "Played" } else { "Not played" }.to_string());
+            out.push(
+                if played {
+                    tr(keys::SR_MESSAGE_PLAYED)
+                } else {
+                    tr(keys::SR_MESSAGE_NOT_PLAYED)
+                }
+                .to_string(),
+            );
         }
         if let Some((performer, title)) = song {
             out.extend(
@@ -233,7 +252,7 @@ fn media_parts(
         MessageContent::Text(text) => text.text.clone(),
         MessageContent::VoiceNote(note) => {
             parts = document(
-                "Voice message",
+                tr(keys::IN_DLG_AUDIO),
                 note.file_id,
                 Some(note.is_listened),
                 None,
@@ -245,7 +264,7 @@ fn media_parts(
         }
         MessageContent::VideoNote(note) => {
             parts = document(
-                "Video message",
+                tr(keys::IN_DLG_VIDEO_MESSAGE),
                 note.file_id,
                 Some(note.is_viewed),
                 None,
@@ -257,7 +276,7 @@ fn media_parts(
         }
         MessageContent::Audio(audio) => {
             parts = document(
-                "Audio file",
+                tr(keys::IN_DLG_AUDIO_FILE),
                 audio.file_id,
                 None,
                 Some((&audio.performer, &audio.title)),
@@ -269,7 +288,7 @@ fn media_parts(
         }
         MessageContent::Video(video) => {
             parts = document(
-                "Video",
+                tr(keys::IN_DLG_VIDEO),
                 video.file_id,
                 None,
                 None,
@@ -281,7 +300,7 @@ fn media_parts(
         }
         MessageContent::Animation(animation) => {
             parts = document(
-                "GIF",
+                tr(keys::MEDIA_TYPE_GIFS),
                 animation.file_id,
                 None,
                 None,
@@ -292,7 +311,7 @@ fn media_parts(
             animation.caption.clone()
         }
         MessageContent::Sticker(sticker) => {
-            let mut out = vec!["Sticker".to_string()];
+            let mut out = vec![tr(keys::IN_DLG_STICKER).to_string()];
             if !sticker.emoji.is_empty() {
                 out.push(sticker.emoji.clone());
             }
@@ -306,7 +325,7 @@ fn media_parts(
         }
         MessageContent::Document(doc) => {
             parts = document(
-                "File",
+                tr(keys::IN_DLG_FILE),
                 doc.file_id,
                 None,
                 None,
@@ -317,9 +336,9 @@ fn media_parts(
             doc.caption.clone()
         }
         MessageContent::Photo(photo) => {
-            parts.push("Photo".to_string());
+            parts.push(tr(keys::IN_DLG_PHOTO).to_string());
             if photo.has_spoiler {
-                parts.push("Hidden media".to_string());
+                parts.push(tr(keys::SR_MESSAGE_SPOILER).to_string());
             }
             let large = photo
                 .sizes
@@ -350,9 +369,9 @@ fn media_parts(
             let poll = &poll.poll;
             parts.push(
                 if matches!(poll.poll_type, PollType::Quiz { .. }) {
-                    "Quiz"
+                    tr(keys::POLLS_PUBLIC_QUIZ)
                 } else {
-                    "Poll"
+                    tr(keys::IN_DLG_POLL)
                 }
                 .to_string(),
             );
@@ -360,11 +379,10 @@ fn media_parts(
                 parts.push(poll.question.clone());
             }
             if poll.is_closed {
-                parts.push("Closed".to_string());
+                parts.push(tr(keys::SR_CHAT_COLUMN_CLOSED).to_string());
             }
             parts.push(match poll.total_voter_count {
-                1 => "1 vote".to_string(),
-                count => format!("{count} votes"),
+                count => trn(keys::POLLS_VOTES_COUNT, count),
             });
             String::new()
         }
@@ -381,23 +399,23 @@ fn media_parts(
         MessageContent::Location(location) => {
             parts.push(
                 if location.live.is_some() {
-                    "Live Location"
+                    tr(keys::LIVE_LOCATION)
                 } else {
-                    "Location"
+                    tr(keys::SR_MESSAGE_COLUMN_LOCATION)
                 }
                 .to_string(),
             );
             String::new()
         }
         MessageContent::Venue(venue) => {
-            parts.push("Location".to_string());
+            parts.push(tr(keys::SR_MESSAGE_COLUMN_LOCATION).to_string());
             if !venue.title.is_empty() {
                 parts.push(venue.title.clone());
             }
             String::new()
         }
         MessageContent::Widget(widget) => {
-            parts.push("Widget".to_string());
+            parts.push(tr(keys::IN_DLG_WIDGET).to_string());
             widget.caption.clone()
         }
         MessageContent::Game(game) => {

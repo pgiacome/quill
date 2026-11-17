@@ -47,7 +47,6 @@
 "qll_leftovers_network_usage_since" = "Использование сети с {date}";
 "qll_leftovers_no_older_messages_to_load" = "Старых сообщений больше нет";
 "qll_leftovers_only_my_messages_in" = "Только мои сообщения в {section}";
-"qll_leftovers_pinned" = "Закреплено";
 "qll_leftovers_price_up_to_stars" = "Цена может составлять до {count} ⭐.";
 "qll_leftovers_push_to_talk_release_delay" = "Задержка отпускания кнопки разговора";
 "qll_leftovers_quick_action_react" = "Реагировать быстрой реакцией";

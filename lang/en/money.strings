@@ -715,7 +715,6 @@
 "qll_money_reactions_per_post" = "Reactions per post";
 "qll_money_reactions_per_story" = "Reactions per story";
 "qll_money_receive" = "Receive";
-"qll_money_received" = "Received";
 "qll_money_recent_posts" = "Recent posts";
 "qll_money_recipient" = "Recipient";
 "qll_money_record" = "Record";
@@ -756,7 +755,6 @@
 "qll_money_sending" = "Sending…";
 "qll_money_sending_2" = "Sending…";
 "qll_money_sending_the_offer" = "Sending the offer…";
-"qll_money_sent" = "Sent";
 "qll_money_server_error" = "Internal server error. Please try again later.";
 "qll_money_set_password" = "Set password";
 "qll_money_share_this_link_with_your" = "Share this link with your {audience} to earn a {commission_per_mille} commission on their spending in {app_name} {month_count}.";
@@ -872,7 +870,6 @@
 "qll_money_view_receipt" = "View receipt";
 "qll_money_view_statistics" = "View Statistics";
 "qll_money_viewing_members" = "Viewing members";
-"qll_money_views" = "Views";
 "qll_money_views_per_post" = "Views per post";
 "qll_money_views_per_story" = "Views per story";
 "qll_money_wallet_address" = "Wallet address: {address}";

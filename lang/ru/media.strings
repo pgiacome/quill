@@ -603,7 +603,6 @@
 "qll_media_view_sticker_pack" = "Открыть набор стикеров";
 "qll_media_view_votes" = "Посмотреть голоса ({total_voter_count})";
 "qll_media_viewers" = "Зрители";
-"qll_media_views" = "Просмотры";
 "qll_media_voice_message" = "голосовое сообщение";
 "qll_media_vote_for_option" = "Проголосовать за вариант {index_1}";
 "qll_media_vote_retracted" = "Голос отозван";
@@ -682,3 +681,9 @@
 "qll_media_count_voice#many" = "{count} голосовых сообщений";
 "qll_media_count_voice#other" = "{count} голосового сообщения";
 "qll_media_edited" = "изменено";
+"qll_media_a11y_via_bot" = "через @{bot}";
+"qll_media_a11y_at_time" = "в {time}";
+"qll_media_a11y_views#one" = "{count} просмотр";
+"qll_media_a11y_views#few" = "{count} просмотра";
+"qll_media_a11y_views#many" = "{count} просмотров";
+"qll_media_a11y_views#other" = "{count} просмотра";

@@ -238,3 +238,17 @@
 "qll_chatlist_could_not_remove_from_folder" = "Could not remove the chat from the folder";
 "qll_chatlist_group_info" = "View group info";
 "qll_chatlist_channel_info" = "View channel info";
+"qll_chatlist_birthday_one" = "It’s {name}'s birthday today! 🎂";
+"qll_chatlist_birthday_many#one" = "{count} contact has a birthday today! 🎂";
+"qll_chatlist_birthday_many#other" = "{count} contacts have birthdays today! 🎂";
+"qll_chatlist_send_gift" = "Send them a Gift.";
+"qll_chatlist_suggestion_birthday_title" = "Add your birthday! 🎂";
+"qll_chatlist_suggestion_birthday_about" = "Let your contacts know when you’re celebrating.";
+"qll_chatlist_suggestion_photo_title" = "Add your photo! 📸";
+"qll_chatlist_suggestion_photo_about" = "Help your friends spot you easily.";
+"qll_chatlist_suggestion_phone_title" = "Is +{phone} still your number?";
+"qll_chatlist_suggestion_phone_about" = "Keep your number up to date to ensure you can always log into Telegram.";
+"qll_chatlist_suggestion_password_title" = "Your password";
+"qll_chatlist_suggestion_password_about" = "Your account is protected by 2-Step Verification. Do you still remember your password?";
+"qll_chatlist_suggestion_premium_title" = "Upgrade to Telegram Premium";
+"qll_chatlist_suggestion_premium_about" = "Switch from monthly to annual payments for Telegram Premium.";

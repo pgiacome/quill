@@ -364,7 +364,6 @@
 "qll_people_pick_a_chat_for_the" = "Выберите чат для сообщества";
 "qll_people_pick_a_date_and_time" = "Выберите дату и время";
 "qll_people_pick_at_least_one_contact" = "Выберите хотя бы один контакт для добавления";
-"qll_people_pinned" = "Закреплено";
 "qll_people_pinned_2" = " · закреплено";
 "qll_people_pinning_needs_a_live_connection" = "Для закрепления нужно подключение (демо)";
 "qll_people_posting_as" = "Публикация от имени {title}.";
