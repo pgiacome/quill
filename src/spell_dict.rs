@@ -769,30 +769,6 @@ mod tests {
         assert!(engine.checker.check_text("wrold teh").is_empty());
     }
 
-    /// Manual timing probe: `cargo test --lib -- --ignored --nocapture
-    /// large_dictionary_parse_time`. Parses a synthetic 400k-word
-    /// dictionary (the size class of the big European ones).
-    #[test]
-    #[ignore = "timing probe"]
-    fn large_dictionary_parse_time() {
-        let dir = TempDir::new();
-        let mut dic = String::from("400000\n");
-        for i in 0..400_000u32 {
-            dic.push_str(&format!("word{i}abc/S\n"));
-        }
-        let aff = "SET UTF-8\nSFX S Y 1\nSFX S 0 s .\n";
-        std::fs::write(dir.path().join("xx.aff"), aff).unwrap();
-        std::fs::write(dir.path().join("xx.dic"), dic).unwrap();
-        let file = super::DictionaryFile {
-            code: "en_US".into(),
-            aff: dir.path().join("xx.aff"),
-            dic: dir.path().join("xx.dic"),
-        };
-        let start = std::time::Instant::now();
-        let loaded = super::load_dictionary(&file).is_some();
-        println!("parse 400k words: {:?} (ok={loaded})", start.elapsed());
-    }
-
     fn english_only() -> super::HunspellBackend {
         let files: Vec<_> = discover_dictionaries(&[fixtures()])
             .into_iter()
