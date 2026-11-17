@@ -1,12 +1,13 @@
 # Changes made by the Quill project
 
-This directory is gpui-component 0.9.0 from crates.io (Apache-2.0,
+This directory is gpui-component 0.10.0 from crates.io (Apache-2.0,
 `LICENSE-APACHE`), used through `[patch.crates-io]` in Quill's `Cargo.toml`.
-Commit `1398c875` added the unmodified registry copy (without `.cargo-ok`,
+Commit `2ef7b0d98` added the unmodified registry copy (without `.cargo-ok`,
 `.cargo_vcs_info.json`, `Cargo.lock` and `Cargo.toml.orig`), so
-`git diff 1398c875 -- third_party/gpui-component` shows every change.
+`git diff 2ef7b0d98 -- third_party/gpui-component` shows every change.
 (First vendored at 0.7.3 in `255bf944`; carried to 0.8.0 in
-`docs/decisions/gpui-kit-0-8-0.md` and to 0.8.1 in `docs/decisions/gpui-kit-0-8-1.md`.)
+`docs/decisions/gpui-kit-0-8-0.md`, to 0.8.1 in `docs/decisions/gpui-kit-0-8-1.md`
+and to 0.10.0 in `docs/decisions/gpui-kit-0-10-0.md`.)
 
 `src/tab/tab_bar.rs`: the sliding indicator sprang (280 ms) whenever the
 selected tab's left or width changed, so a badge appearing in a tab restarted
@@ -26,15 +27,14 @@ selected tab's bounds change, so a badge would still spring the indicator.
 The patch is kept and works with it: the extra frame is the one that bumps
 the jump counter. `TabVariant::Folder` (#3415) draws no sliding indicator.
 
-`src/message_scroller.rs`: `MessageScrollerState::top_anchor` and
-`scroll_to_item_offset` expose the list's top row and its pixel offset, so
-Quill can remember where a chat was left and return to it
-(`docs/decisions/sweep-scroll-restore.md`). Re-apply both when re-vendoring.
-`top_anchor` gates on the list's follow state, not on `is_scrolled_up`, so a
-position set by `scroll_to_item_offset` reads correctly before the next layout.
-0.8.0 adds `MessageScrollerState::logical_scroll_top` (#3485), which reads
-the same position but not the follow state, and has no setter, so both
-Quill methods stay.
+`src/message_scroller.rs`: `MessageScrollerState::top_anchor` exposes the
+list's top row and its pixel offset, so Quill can remember where a chat was
+left and return to it (`docs/decisions/sweep-scroll-restore.md`). Re-apply
+when re-vendoring. It gates on the list's follow state, not on
+`is_scrolled_up`, so a position set by `scroll_to_offset` reads correctly
+before the next layout. 0.8.0's `logical_scroll_top` (#3485) reads the same
+position but not the follow state. Quill's `scroll_to_item_offset` setter was
+dropped at 0.10.0, whose `scroll_to_offset` (#3922) does the same.
 
 `src/theme/{mod,mono_font}.rs`: `installed_font_names` is public, and
 `prefetch_installed_font_names` fills the same once-per-process list on a

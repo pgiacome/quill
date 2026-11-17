@@ -27,9 +27,15 @@ fn opened(cx: &mut TestAppContext) -> (Entity<QuillApp>, VisualTestContext) {
 
 fn scroll_to(app: &Entity<QuillApp>, vcx: &mut VisualTestContext, row: usize) {
     app.update(vcx, |app, cx| {
-        app.history
-            .scroller
-            .update(cx, |state, cx| state.scroll_to_item_offset(row, 12., cx));
+        app.history.scroller.update(cx, |state, cx| {
+            state.scroll_to_offset(
+                gpui_kit::ListOffset {
+                    item_ix: row,
+                    offset_in_item: px(12.),
+                },
+                cx,
+            )
+        });
     });
     vcx.run_until_parked();
 }
@@ -123,9 +129,15 @@ fn the_date_shows_as_soon_as_a_separator_leaves_the_top(cx: &mut TestAppContext)
     let start = day_start(&app, vcx);
     let day = day_of(&app, vcx, start);
     app.update(vcx, |app, cx| {
-        app.history
-            .scroller
-            .update(cx, |state, cx| state.scroll_to_item_offset(start, 0., cx));
+        app.history.scroller.update(cx, |state, cx| {
+            state.scroll_to_offset(
+                gpui_kit::ListOffset {
+                    item_ix: start,
+                    offset_in_item: px(0.),
+                },
+                cx,
+            )
+        });
     });
     frames(vcx);
     assert!(!date_up(&app, vcx, &day), "the separator says it");

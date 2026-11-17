@@ -168,6 +168,7 @@ fn kit_locale(pack_id: &str, language: &str) -> &'static str {
     match language.split(['-', '_']).next().unwrap_or_default() {
         "ru" => "ru",
         "it" => "it",
+        "ja" => "ja",
         "pt" => "pt-BR",
         "zh" => "zh-CN",
         _ => "en",

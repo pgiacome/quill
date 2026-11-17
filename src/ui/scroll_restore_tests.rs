@@ -36,9 +36,15 @@ fn a_chat_left_mid_history_reopens_at_its_unread_bar(cx: &mut TestAppContext) {
     let vcx = &mut vcx;
     select(&app, vcx, A);
     app.update(vcx, |app, cx| {
-        app.history
-            .scroller
-            .update(cx, |state, cx| state.scroll_to_item_offset(40, 12., cx));
+        app.history.scroller.update(cx, |state, cx| {
+            state.scroll_to_offset(
+                gpui_kit::ListOffset {
+                    item_ix: 40,
+                    offset_in_item: px(12.),
+                },
+                cx,
+            )
+        });
     });
     frames(vcx);
     let left = top(&app, vcx).expect("scrolled away from the tail");
@@ -62,9 +68,15 @@ fn an_explicit_target_wins_over_the_saved_row(cx: &mut TestAppContext) {
     let vcx = &mut vcx;
     select(&app, vcx, A);
     app.update(vcx, |app, cx| {
-        app.history
-            .scroller
-            .update(cx, |state, cx| state.scroll_to_item_offset(40, 12., cx));
+        app.history.scroller.update(cx, |state, cx| {
+            state.scroll_to_offset(
+                gpui_kit::ListOffset {
+                    item_ix: 40,
+                    offset_in_item: px(12.),
+                },
+                cx,
+            )
+        });
     });
     frames(vcx);
     let left = top(&app, vcx).expect("scrolled away from the tail");

@@ -8,7 +8,10 @@ use std::borrow::Cow;
 use std::ops::Range;
 use std::rc::Rc;
 
-use gpui::{App, Font, Pixels, Point, ShapedLine, Size, TextAlign, Window, point, px, size};
+use gpui::{
+    App, Bounds, ContentMask, Font, Pixels, Point, ShapedLine, Size, TextAlign,
+    Window, point, px, size,
+};
 use ropey::Rope;
 use smallvec::SmallVec;
 use sum_tree::{Bias, Dimensions, SumTree};
@@ -791,8 +794,8 @@ pub(crate) struct LineLayout {
     pub(crate) wrap_indent: Pixels,
     pub(crate) longest_width: Pixels,
     pub(crate) whitespace_indicators: Option<WhitespaceIndicators>,
-    /// Whitespace indicators: (line_index, x_position, is_tab)
-    pub(crate) whitespace_chars: Vec<(usize, Pixels, bool)>,
+    /// Whitespace indicators: (line_index, x_position, the tab's width, or `None` for a space)
+    pub(crate) whitespace_chars: Vec<(usize, Pixels, Option<Pixels>)>,
     /// Whether any run of this line carries a background color, so [`Self::paint_background`]
     /// can skip the glyph walk for the common case of a line without highlights.
     has_background: bool,
@@ -979,7 +982,11 @@ impl LineLayout {
                         start_x
                     };
 
-                    self.whitespace_chars.push((line_index, x_position, is_tab));
+                    self.whitespace_chars.push((
+                        line_index,
+                        x_position,
+                        is_tab.then_some(end_x - start_x),
+                    ));
                 }
             }
         }
@@ -1303,19 +1310,39 @@ impl LineLayout {
 
         // Paint whitespace indicators
         if let Some(indicators) = self.whitespace_indicators.as_ref() {
-            for (line_index, x_position, is_tab) in &self.whitespace_chars {
-                let invisible = if *is_tab {
-                    indicators.tab.clone()
-                } else {
-                    indicators.space.clone()
-                };
-
+            for (line_index, x_position, tab_width) in &self.whitespace_chars {
                 let origin = point(
                     pos.x + *x_position + self.line_indent(*line_index),
                     pos.y + self.row_top(*line_index, line_height),
                 );
 
-                _ = invisible.paint(origin, line_height, text_align, align_width, window, cx);
+                match tab_width {
+                    Some(tab_width) => {
+                        let tab_cell = ContentMask {
+                            bounds: Bounds::new(origin, size(*tab_width, line_height)),
+                        };
+                        window.with_content_mask(Some(tab_cell), |window| {
+                            _ = indicators.tab.paint(
+                                origin,
+                                line_height,
+                                text_align,
+                                align_width,
+                                window,
+                                cx,
+                            );
+                        });
+                    }
+                    None => {
+                        _ = indicators.space.paint(
+                            origin,
+                            line_height,
+                            text_align,
+                            align_width,
+                            window,
+                            cx,
+                        );
+                    }
+                }
             }
         }
     }

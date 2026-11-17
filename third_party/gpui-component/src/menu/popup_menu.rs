@@ -16,7 +16,7 @@ use gpui::{
 use gpui::{
     ClickEvent, Half, MouseDownEvent, MouseMoveEvent, OwnedMenuItem, Point, Subscription, Task,
 };
-use gpui_base::TestSupportExt as _;
+use gpui_base::{LayoutDirection, LogicalStyledExt as _, TestSupportExt as _};
 
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -1369,7 +1369,7 @@ impl PopupMenu {
         }
 
         let icon = if let Some(icon) = icon {
-            icon.clone()
+            icon
         } else if checked {
             Icon::new(IconName::Check)
         } else {
@@ -1382,9 +1382,8 @@ impl PopupMenu {
     /// Calculate the anchor corner and left offset for child submenu
     fn update_submenu_menu_anchor(&mut self, window: &Window, cx: &App) {
         let bounds = self.bounds;
-        // Open the submenu on the left only when, placed at this menu's right
-        // edge, it would run past the window's. Its width is the one it was
-        // last drawn at, or this menu's own until it has been drawn.
+        // The submenu's width is the one it was last drawn at, or this
+        // menu's own until it has been drawn.
         let submenu_width = self
             .selected_index
             .and_then(|ix| match self.menu_items.get(ix) {
@@ -1394,7 +1393,14 @@ impl PopupMenu {
             .filter(|width| *width > Pixels::ZERO)
             .unwrap_or(bounds.size.width);
         let rem_size = window.rem_size();
-        let (anchor, left) = if bounds.right() + submenu_width > window.viewport_size().width {
+        // A submenu opens on the end side: right in LTR, left in RTL, and
+        // flips only when it would run past the window on that side.
+        let open_left = if LayoutDirection::global(cx).is_rtl() {
+            bounds.left() - submenu_width >= Pixels::ZERO
+        } else {
+            bounds.right() + submenu_width > window.viewport_size().width
+        };
+        let (anchor, left) = if open_left {
             (Anchor::TopRight, -rems(1.).to_pixels(rem_size))
         } else {
             (
@@ -1483,6 +1489,7 @@ impl PopupMenu {
                 .disabled(true),
             PopupMenuItem::Label(label) => this.disabled(true).cursor_default().child(
                 h_flex()
+                    .flex_row_dir(cx)
                     .cursor_default()
                     .items_center()
                     .gap_x_1()
@@ -1503,6 +1510,7 @@ impl PopupMenu {
                 .disabled(*disabled)
                 .child(
                     h_flex()
+                        .flex_row_dir(cx)
                         .flex_1()
                         .min_h(item_height)
                         .items_center()
@@ -1515,7 +1523,7 @@ impl PopupMenu {
                             cx,
                         ))
                         .child((render)(window, cx))
-                        .children(right_check_icon.map(|icon| icon.ml_3())),
+                        .children(right_check_icon.map(|icon| icon.ms(rems(0.75), cx))),
                 ),
             PopupMenuItem::Item {
                 icon,
@@ -1546,6 +1554,7 @@ impl PopupMenu {
                 ))
                 .child(
                     h_flex()
+                        .flex_row_dir(cx)
                         .w_full()
                         .gap_3()
                         .items_center()
@@ -1555,6 +1564,7 @@ impl PopupMenu {
                         .when(show_link_icon, |this| {
                             this.child(
                                 h_flex()
+                                    .flex_row_dir(cx)
                                     .w_full()
                                     .justify_between()
                                     .gap_1p5()
@@ -1585,6 +1595,7 @@ impl PopupMenu {
                 .items_start()
                 .child(
                     h_flex()
+                        .flex_row_dir(cx)
                         .min_h(item_height)
                         .size_full()
                         .items_center()
@@ -1598,15 +1609,20 @@ impl PopupMenu {
                         ))
                         .child(
                             h_flex()
+                                .flex_row_dir(cx)
                                 .flex_1()
                                 .gap_2()
                                 .items_center()
                                 .justify_between()
                                 .child(label.clone())
                                 .child(
-                                    Icon::new(IconName::ChevronRight)
-                                        .xsmall()
-                                        .text_color(cx.theme().muted_foreground),
+                                    Icon::new(if LayoutDirection::global(cx).is_rtl() {
+                                        IconName::ChevronLeft
+                                    } else {
+                                        IconName::ChevronRight
+                                    })
+                                    .xsmall()
+                                    .text_color(cx.theme().muted_foreground),
                                 ),
                         ),
                 )
@@ -1676,7 +1692,7 @@ impl Render for PopupMenu {
 
         self.scroll_to_checked_item(cx);
 
-        let view = cx.entity().clone();
+        let view = cx.entity();
         let items_count = self.menu_items.len();
 
         let max_height = self.max_height.unwrap_or_else(|| {
