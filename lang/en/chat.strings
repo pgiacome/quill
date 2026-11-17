@@ -680,3 +680,56 @@
 "qll_chat_sent_today" = "Sent today at {time}";
 "qll_chat_sent_yesterday" = "Sent yesterday at {time}";
 "qll_chat_sent_date" = "Sent {date} at {time}";
+
+// Threads, comments, seen/read rows and message-menu notes. The lng_* keys
+// are tdesktop's, so TDLib translates them into every language; the qll_*
+// keys are Quill-only and get a hand-written overlay.
+"lng_comments_header#one" = "{count} comment";
+"lng_comments_header#other" = "{count} comments";
+"lng_comments_header_none" = "Comments";
+"lng_comments_open_count#one" = "{count} comment";
+"lng_comments_open_count#other" = "{count} comments";
+"lng_comments_open_none" = "Leave a comment";
+"lng_replies_discussion_started" = "Discussion started";
+"lng_replies_header#one" = "{count} reply";
+"lng_replies_header#other" = "{count} replies";
+"lng_replies_header_none" = "Replies";
+"lng_replies_messages" = "Replies";
+"lng_replies_no_comments" = "No comments here yet…";
+"lng_replies_view#one" = "View {count} Reply";
+"lng_replies_view#other" = "View {count} Replies";
+"lng_replies_view_thread" = "View Thread";
+"lng_sr_chat_column_unread" = "Unread";
+"lng_preview_reply_to" = "Reply to {name}";
+"lng_reply_remove" = "Do Not Reply";
+"lng_reply_show_in_chat" = "Show in Chat";
+"lng_context_seen_listened#one" = "{count} Listened";
+"lng_context_seen_listened#other" = "{count} Listened";
+"lng_context_seen_listened_none" = "Nobody Listened";
+"lng_context_seen_reacted#one" = "{count} Reacted";
+"lng_context_seen_reacted#other" = "{count} Reacted";
+"lng_context_seen_reacted_none" = "Nobody Reacted";
+"lng_context_seen_text#one" = "{count} Seen";
+"lng_context_seen_text#other" = "{count} Seen";
+"lng_context_seen_text_none" = "Nobody Viewed";
+"lng_context_seen_watched#one" = "{count} Listened";
+"lng_context_seen_watched#other" = "{count} Listened";
+"lng_context_seen_watched_none" = "Nobody Listened";
+"lng_context_animated_emoji" = "This message contains emoji from **{name} pack**.";
+"lng_context_animated_emoji_many#one" = "This message contains emoji from **{count} pack**.";
+"lng_context_animated_emoji_many#other" = "This message contains emoji from **{count} packs**.";
+"lng_context_noforwards_info_bot" = "Copying and forwarding is not allowed from this bot.";
+"lng_context_noforwards_info_channel" = "Copying and forwarding is not allowed in this channel.";
+"lng_context_noforwards_info_group" = "Copying and forwarding is not allowed in this group.";
+"lng_context_noforwards_info_his" = "{user} disabled copying and forwarding in this chat.";
+"lng_context_noforwards_info_mine" = "You disabled copying and forwarding in this chat.";
+"lng_channel_public_link_copied" = "Link copied to clipboard.";
+"lng_context_about_private_link" = "This link will only work for members of this chat.";
+"qll_chat_noforwards_info_chat" = "Copying and forwarding is not allowed in this chat.";
+"qll_chat_quote_part_of_message" = "Quote Part of Message";
+"qll_chat_reply_to_message_from_chat" = "Reply to a message from {chat}";
+"qll_chat_reply_to_name_from_chat" = "Reply to {name} from {chat}";
+"qll_chat_seen_at" = "Seen {date}";
+"qll_chat_not_seen_yet" = "Not seen yet";
+"qll_chat_seen_a_long_time_ago" = "Seen a long time ago";
+"qll_chat_seen_time_hidden" = "Seen time hidden";

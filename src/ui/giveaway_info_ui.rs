@@ -246,13 +246,10 @@ impl QuillApp {
             let Some(lookup) = lookup else {
                 return dialog
                     .overlay(true)
-                    .title(crate::ui::shell::dialog_title(tr(
-                        keys::Q_MONEY_ABOUT_THIS_GIVEAWAY,
-                    )))
+                    .title(crate::ui::shell::dialog_title(tr(keys::PRIZES_HOW_TITLE)))
                     .on_close(on_close.clone());
             };
-            let title = about_for(session, &lookup)
-                .map_or(tr(keys::Q_MONEY_ABOUT_THIS_GIVEAWAY), |t| t.title);
+            let title = about_for(session, &lookup).map_or(tr(keys::PRIZES_HOW_TITLE), |t| t.title);
             let prize_code = match lookup.info() {
                 Some(GiveawayInfoData::Completed { gift_code, .. }) if !gift_code.0.is_empty() => {
                     Some(gift_code.0.clone())

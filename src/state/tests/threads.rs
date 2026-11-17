@@ -93,7 +93,7 @@ fn a_thread_without_replies_says_no_comments_yet() {
     assert_eq!(rows.len(), 2);
     assert_eq!(
         session.service_text(&rows[1]).map(|text| text.plain()),
-        Some("No comments here yet...".to_string())
+        Some("No comments here yet…".to_string())
     );
 }
 

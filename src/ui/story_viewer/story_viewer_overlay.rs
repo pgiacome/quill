@@ -406,7 +406,7 @@ impl QuillApp {
             None => story.as_ref().map(|story| {
                 let mut detail = story_age_label(story.date);
                 if story.is_edited {
-                    detail = format!("{detail} {STORY_BULLET} {}", tr(keys::EDITED));
+                    detail = format!("{detail} {STORY_BULLET} {}", tr(keys::Q_MEDIA_EDITED));
                 }
                 div()
                     .debug_selector(|| "story-header-age".into())

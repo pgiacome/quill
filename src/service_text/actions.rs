@@ -103,9 +103,9 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         A::NewBotThread => text(crate::lang::tr(crate::lang::keys::BOT_NEW_THREAD_ABOUT)),
         // tdesktop `lng_replies_discussion_started` / `lng_replies_no_comments`.
         A::ThreadDivider { with_comments } => text(if *with_comments {
-            "Discussion started"
+            crate::lang::tr(crate::lang::keys::REPLIES_DISCUSSION_STARTED)
         } else {
-            "No comments here yet..."
+            crate::lang::tr(crate::lang::keys::REPLIES_NO_COMMENTS)
         }),
         A::JoinByRequest => {
             if ctx.actor_is_me() {

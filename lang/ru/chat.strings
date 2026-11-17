@@ -562,3 +562,11 @@
 "qll_chat_sent_today" = "Отправлено сегодня в {time}";
 "qll_chat_sent_yesterday" = "Отправлено вчера в {time}";
 "qll_chat_sent_date" = "Отправлено {date} в {time}";
+"qll_chat_noforwards_info_chat" = "Копирование и пересылка сообщений в этом чате запрещены.";
+"qll_chat_quote_part_of_message" = "Цитировать часть сообщения";
+"qll_chat_reply_to_message_from_chat" = "Ответ на сообщение из «{chat}»";
+"qll_chat_reply_to_name_from_chat" = "Ответ {name} из «{chat}»";
+"qll_chat_seen_at" = "Просмотрено {date}";
+"qll_chat_not_seen_yet" = "Ещё не просмотрено";
+"qll_chat_seen_a_long_time_ago" = "Просмотрено давно";
+"qll_chat_seen_time_hidden" = "Время просмотра скрыто";

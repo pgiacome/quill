@@ -468,7 +468,7 @@ impl QuillApp {
                         }
                         if !menu_profile {
                             menu = menu
-                                .item(item(tr(keys::Q_AV_SHOW_IN_CHAT), |this, window, cx| {
+                                .item(item(tr(keys::REPLY_SHOW_IN_CHAT), |this, window, cx| {
                                     this.show_viewer_in_chat(window, cx)
                                 }));
                         }

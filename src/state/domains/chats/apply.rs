@@ -358,6 +358,7 @@ impl Session {
                     .set_sender_action(sender, action, name);
             }
             ChatsPayload::UpdateChatTitle { chat_id, title } => {
+                let title = self.localized_chat_title(chat_id, title);
                 self.chats
                     .entry(chat_id.0)
                     .or_insert_with(|| placeholder_chat(chat_id))

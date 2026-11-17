@@ -313,7 +313,7 @@ impl QuillApp {
                             icon_action(
                                 ("media-viewer-show-in-chat", row_id),
                                 gpui_kit::assets::IconName::MessageSquare,
-                                tr(keys::Q_AV_SHOW_IN_CHAT_2),
+                                tr(keys::REPLY_SHOW_IN_CHAT),
                             )
                             .on_click(cx.listener(
                                 |this, _, window, cx| {

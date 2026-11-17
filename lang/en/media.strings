@@ -44,7 +44,8 @@
 "lng_create_bot_username_taken" = "This username is already taken.";
 "lng_dlg_new_bot_name" = "Bot name";
 "lng_edit_bot_title" = "Edit bot";
-"lng_edited" = "edited";
+"qll_media_edited" = "edited";
+"lng_imported" = "imported";
 "lng_emoji_adapt_sticker" = "Adapt from a Sticker";
 "lng_emoji_add_existing" = "Add an Existing Emoji";
 "lng_emoji_already_in_set" = "This Emoji is already in the Set.";
@@ -837,3 +838,8 @@
 "qll_media_count_audio#other" = "{count} audio files";
 "qll_media_count_voice#one" = "{count} voice message";
 "qll_media_count_voice#other" = "{count} voice messages";
+"lng_seconds_tiny#one" = "{count}s";
+"lng_seconds_tiny#other" = "{count}s";
+"lng_mediaview_disappearing_photo" = "Disappearing Photo";
+"lng_mediaview_disappearing_video" = "Disappearing Video";
+"lng_mediaview_ttl_in" = "Disappears in {time}";

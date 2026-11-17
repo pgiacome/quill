@@ -1,5 +1,7 @@
 //! Saving viewer media into the downloads folder.
 
+use crate::lang::{keys, tr, tr_with};
+
 /// Copy `src` (a downloaded media file) into the user's downloads folder
 /// (`XDG_DOWNLOAD_DIR`, else `~/Downloads`), de-duplicating the file name
 /// with a ` (n)` suffix like the desktop clients. Returns the final path.
@@ -17,14 +19,15 @@ pub fn save_media_to_downloads(src: &std::path::Path) -> std::io::Result<std::pa
 pub fn saved_note(dest: &std::path::Path, downloads: Option<&std::path::Path>) -> String {
     let parent = dest.parent();
     if parent.is_some() && parent == downloads {
-        return "Saved to Downloads".to_string();
+        let folder = tr(keys::MEDIAVIEW_DOWNLOADS);
+        return tr_with(keys::Q_MEDIA_SAVED_TO, &[("display", folder)]);
     }
     match parent
         .and_then(std::path::Path::file_name)
         .and_then(|name| name.to_str())
     {
-        Some(folder) => format!("Saved to {folder}"),
-        None => "Saved".to_string(),
+        Some(folder) => tr_with(keys::Q_MEDIA_SAVED_TO, &[("display", folder)]),
+        None => tr(keys::Q_MEDIA_SAVED).to_string(),
     }
 }
 
@@ -114,7 +117,7 @@ mod tests {
             saved_note(Path::new("/home/me/Downloads/cat.jpg"), None),
             "Saved to Downloads"
         );
-        assert_eq!(saved_note(Path::new("cat.jpg"), None), "Saved");
+        assert_eq!(saved_note(Path::new("cat.jpg"), None), "Saved.");
     }
 
     #[test]

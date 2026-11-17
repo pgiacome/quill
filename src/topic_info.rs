@@ -3,6 +3,7 @@
 //! formatting; names and dates come in already resolved.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr, trn};
 use crate::telegram::envelope::ForumTopic;
 
 /// One label/value line of an info card.
@@ -19,10 +20,6 @@ fn row(label: &'static str, value: impl Into<String>) -> InfoRow {
     }
 }
 
-fn plural(count: i32, one: &str, other: &str) -> String {
-    format!("{count} {}", if count == 1 { one } else { other })
-}
-
 /// Info rows for a forum topic. `creator` is the resolved name of
 /// `forumTopicInfo.creator_id` and `created` its formatted creation date.
 pub fn topic_info_rows(
@@ -31,40 +28,44 @@ pub fn topic_info_rows(
     created: Option<&str>,
 ) -> Vec<InfoRow> {
     let mut rows = Vec::new();
+    let created_by = tr(keys::Q_PEOPLE_TOPIC_INFO_CREATED_BY);
     if topic.is_outgoing {
-        rows.push(row("Created by", "You"));
+        rows.push(row(created_by, tr(keys::FROM_YOU)));
     } else if let Some(name) = creator.filter(|name| !name.is_empty()) {
-        rows.push(row("Created by", name));
+        rows.push(row(created_by, name));
     }
     if let Some(date) = created.filter(|date| !date.is_empty()) {
-        rows.push(row("Created", date));
+        rows.push(row(tr(keys::Q_PEOPLE_TOPIC_INFO_CREATED), date));
     }
     let mut status = Vec::new();
     if topic.is_general {
-        status.push("General");
+        status.push(tr(keys::Q_PEOPLE_GENERAL));
     }
     if topic.is_pinned {
-        status.push("Pinned");
+        status.push(tr(keys::Q_PEOPLE_PINNED));
     }
     if topic.is_closed {
-        status.push("Closed");
+        status.push(tr(keys::Q_PEOPLE_CLOSED));
     }
     if topic.is_hidden {
-        status.push("Hidden");
+        status.push(tr(keys::COMMUNITY_HIDDEN_STATUS));
     }
     if !status.is_empty() {
-        rows.push(row("Status", status.join(", ")));
+        rows.push(row(tr(keys::PROXY_BOX_STATUS), status.join(", ")));
     }
     if topic.unread_count > 0 {
         rows.push(row(
-            "Unread",
-            plural(topic.unread_count, "message", "messages"),
+            tr(keys::SR_CHAT_COLUMN_UNREAD),
+            trn(keys::FORUM_MESSAGES, topic.unread_count),
         ));
     }
     if topic.unread_mention_count > 0 {
         rows.push(row(
-            "Mentions",
-            plural(topic.unread_mention_count, "mention", "mentions"),
+            tr(keys::Q_PEOPLE_TOPIC_INFO_MENTIONS),
+            trn(
+                keys::Q_PEOPLE_TOPIC_INFO_MENTIONS_COUNT,
+                topic.unread_mention_count,
+            ),
         ));
     }
     rows
@@ -80,23 +81,37 @@ pub fn thread_info_rows(
     started: Option<&str>,
 ) -> Vec<InfoRow> {
     let mut rows = Vec::new();
-    let (one, other) = if comments {
-        ("comment", "comments")
+    let (title, header) = if comments {
+        (keys::COMMENTS_HEADER_NONE, keys::COMMENTS_HEADER)
     } else {
-        ("reply", "replies")
+        (keys::REPLIES_HEADER_NONE, keys::REPLIES_HEADER)
     };
-    rows.push(row(
-        if comments { "Comments" } else { "Replies" },
-        plural(reply_count.max(0), one, other),
-    ));
+    rows.push(row(tr(title), trn(header, reply_count.max(0))));
     if unread_count > 0 {
-        rows.push(row("Unread", plural(unread_count, "reply", "replies")));
+        rows.push(row(
+            tr(keys::SR_CHAT_COLUMN_UNREAD),
+            trn(header, unread_count),
+        ));
     }
     if let Some(name) = started_by.filter(|name| !name.is_empty()) {
-        rows.push(row(if comments { "Posted by" } else { "Started by" }, name));
+        rows.push(row(
+            tr(if comments {
+                keys::Q_PEOPLE_TOPIC_INFO_POSTED_BY
+            } else {
+                keys::Q_PEOPLE_TOPIC_INFO_STARTED_BY
+            }),
+            name,
+        ));
     }
     if let Some(date) = started.filter(|date| !date.is_empty()) {
-        rows.push(row(if comments { "Posted" } else { "Started" }, date));
+        rows.push(row(
+            tr(if comments {
+                keys::Q_PEOPLE_TOPIC_INFO_POSTED
+            } else {
+                keys::Q_PEOPLE_TOPIC_INFO_STARTED
+            }),
+            date,
+        ));
     }
     rows
 }

@@ -681,3 +681,4 @@
 "qll_media_count_voice#few" = "{count} голосовых сообщения";
 "qll_media_count_voice#many" = "{count} голосовых сообщений";
 "qll_media_count_voice#other" = "{count} голосового сообщения";
+"qll_media_edited" = "изменено";

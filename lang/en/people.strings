@@ -726,3 +726,12 @@
 "qll_people_profile_tab_links" = "Links";
 "qll_people_profile_tab_music" = "Music";
 "qll_people_profile_tab_voice" = "Voice messages";
+"qll_people_topic_info_created_by" = "Created by";
+"qll_people_topic_info_created" = "Created";
+"qll_people_topic_info_mentions" = "Mentions";
+"qll_people_topic_info_mentions_count#one" = "{count} mention";
+"qll_people_topic_info_mentions_count#other" = "{count} mentions";
+"qll_people_topic_info_posted_by" = "Posted by";
+"qll_people_topic_info_posted" = "Posted";
+"qll_people_topic_info_started_by" = "Started by";
+"qll_people_topic_info_started" = "Started";

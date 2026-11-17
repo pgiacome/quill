@@ -561,3 +561,14 @@
 "qll_people_topics_count#few" = "{count} темы";
 "qll_people_topics_count#many" = "{count} тем";
 "qll_people_topics_count#other" = "{count} темы";
+"qll_people_topic_info_created_by" = "Создал(а)";
+"qll_people_topic_info_created" = "Создана";
+"qll_people_topic_info_mentions" = "Упоминания";
+"qll_people_topic_info_mentions_count#one" = "{count} упоминание";
+"qll_people_topic_info_mentions_count#few" = "{count} упоминания";
+"qll_people_topic_info_mentions_count#many" = "{count} упоминаний";
+"qll_people_topic_info_mentions_count#other" = "{count} упоминания";
+"qll_people_topic_info_posted_by" = "Автор";
+"qll_people_topic_info_posted" = "Опубликовано";
+"qll_people_topic_info_started_by" = "Начал(а)";
+"qll_people_topic_info_started" = "Начато";

@@ -1,5 +1,6 @@
 //! Channel comments and group reply threads (tdesktop `RepliesWidget`).
 use super::*;
+use crate::lang::{keys, tr, trn};
 use crate::telegram::envelope::ServiceAction;
 
 /// The window that asked for a thread: only its frame takes the resolved
@@ -365,39 +366,34 @@ impl ThreadView {
 /// The context-menu entry of a group message with replies (tdesktop
 /// `lng_replies_view` / `lng_replies_view_thread`).
 pub fn replies_menu_label(count: i32) -> String {
-    match count {
-        n if n <= 0 => "View Thread".to_owned(),
-        1 => "View 1 Reply".to_owned(),
-        n => format!("View {n} Replies"),
+    if count <= 0 {
+        tr(keys::REPLIES_VIEW_THREAD).to_owned()
+    } else {
+        trn(keys::REPLIES_VIEW, count)
     }
 }
 
 /// tdesktop `lng_comments_header*` / `lng_replies_header*`.
 pub fn thread_count_label(count: i32, comments: bool) -> String {
     match (count, comments) {
-        (0, true) => "Comments".to_owned(),
-        (0, false) => "Replies".to_owned(),
-        (1, true) => "1 comment".to_owned(),
-        (n, true) => format!("{n} comments"),
-        (1, false) => "1 reply".to_owned(),
-        (n, false) => format!("{n} replies"),
+        (n, true) if n <= 0 => tr(keys::COMMENTS_HEADER_NONE).to_owned(),
+        (n, false) if n <= 0 => tr(keys::REPLIES_HEADER_NONE).to_owned(),
+        (n, true) => trn(keys::COMMENTS_HEADER, n),
+        (n, false) => trn(keys::REPLIES_HEADER, n),
     }
 }
 
 /// The label of the bar under a channel post (tdesktop
 /// `lng_comments_open_count*` / `lng_comments_open_none`).
 pub fn comments_bar_label(count: i32) -> String {
-    match count {
-        n if n <= 0 => "Leave a comment".to_owned(),
-        1 => "1 comment".to_owned(),
-        n => format!("{n} comments"),
+    if count <= 0 {
+        tr(keys::COMMENTS_OPEN_NONE).to_owned()
+    } else {
+        trn(keys::COMMENTS_OPEN_COUNT, count)
     }
 }
 
 /// The label of the replies link under a group message.
 pub fn replies_link_label(count: i32) -> String {
-    match count {
-        1 => "1 reply".to_owned(),
-        n => format!("{n} replies"),
-    }
+    trn(keys::REPLIES_HEADER, count)
 }

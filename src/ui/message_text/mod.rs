@@ -340,9 +340,9 @@ pub(super) fn message_footer_meta(meta: &FooterMeta) -> Option<AnyElement> {
     let tooltip = meta.tooltip.clone();
     let alpha = footer_alpha(meta.delivery.is_outgoing());
     let label = if meta.imported {
-        Some("imported")
+        Some(tr(keys::IMPORTED))
     } else if meta.edited {
-        Some("edited")
+        Some(tr(keys::Q_MEDIA_EDITED))
     } else {
         None
     };

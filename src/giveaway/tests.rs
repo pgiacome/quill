@@ -202,7 +202,7 @@ fn ongoing_giveaway_says_how_to_take_part() {
     assert!(text.result.is_none());
     assert_eq!(
         text.paragraphs[0],
-        "This giveaway is sponsored by the admins of News, who acquired 5 Telegram Premium \
+        "This giveaway is sponsored by the admins of News, who acquired **5 Telegram Premium** \
          subscriptions for 3 months for its followers.\n\nOn October 6, Telegram will \
          automatically select 5 random subscribers of News."
     );
@@ -276,7 +276,7 @@ fn ended_giveaways_report_the_users_result() {
         Some("You won a prize in this giveaway \u{1F3C6}")
     );
     assert!(won.paragraphs[0].contains("Telegram automatically selected 4 random subscribers"));
-    assert!(won.paragraphs[0].contains("2 of the winners already used their gift links."));
+    assert!(won.paragraphs[0].contains("**2** of the winners already used their gift links."));
     assert_eq!(won.paragraphs.len(), 1);
     let stars = about_text(&s, &completed("", 250, true, false), &ctx);
     assert_eq!(
@@ -328,9 +328,9 @@ fn new_members_prizes_and_groups_change_the_wording() {
     };
     let text = about_text(&s, &info, &ctx);
     let body = &text.paragraphs[0];
-    assert!(body.contains("1 Telegram Premium subscription for 1 month for its members"));
+    assert!(body.contains("**1 Telegram Premium** subscription for 1 month for its members"));
     assert!(body.contains(
-        "News also included 1 a mug in the prize. Admins of the group are responsible for delivering this prize."
+        "News also included **1 a mug** in the prize. Admins of the group are responsible for delivering this prize."
     ));
     assert!(body.contains(
         "1 random user that joined News and other listed groups and channels after October 1 at 10:00"
