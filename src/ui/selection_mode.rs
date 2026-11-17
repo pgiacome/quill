@@ -57,6 +57,13 @@ impl QuillApp {
                 .is_some_and(|draft| draft.is_from(chat_id, self.open_topic_id(chat_id)))
     }
 
+    /// Whether selection motion animates: in the active window, and never
+    /// in a test, where the wall clock would make the drawn frame flaky
+    /// (as `surface_reveal::animate`).
+    fn selection_animates(&self) -> bool {
+        self.frame.window_active.get() && !cfg!(test)
+    }
+
     /// Follow selection mode for the motion state; returns the check fade
     /// (`0..=1`) and the top bar slide (`0..=1`). Asks the frame clock for
     /// frames while either moves. An inactive window snaps.
@@ -72,7 +79,7 @@ impl QuillApp {
         if let Some(count) = count {
             fx.last_count = count;
         }
-        fx.sync_mode(on, self.frame.window_active.get(), now);
+        fx.sync_mode(on, self.selection_animates(), now);
         if fx.moving(now) {
             self.request_animation_tick(60, cx);
         }
@@ -106,7 +113,7 @@ impl QuillApp {
                     chat_id.0,
                     message_id.0,
                     selected,
-                    self.frame.window_active.get(),
+                    self.selection_animates(),
                     now,
                 )
             },

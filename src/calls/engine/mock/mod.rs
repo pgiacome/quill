@@ -94,6 +94,8 @@ struct MockInner {
 #[derive(Clone)]
 pub struct MockEngine {
     inner: Arc<Mutex<MockInner>>,
+    /// Notified after each external frame lands in `inner`.
+    frame_pushed: Arc<std::sync::Condvar>,
 }
 
 impl Default for MockEngine {
@@ -104,17 +106,15 @@ impl Default for MockEngine {
 
 impl MockEngine {
     pub fn new() -> Self {
-        Self {
-            inner: Arc::new(Mutex::new(MockInner {
-                available: true,
-                ..MockInner::default()
-            })),
-        }
+        let engine = Self::unavailable();
+        engine.inner.lock_or_recover().available = true;
+        engine
     }
 
     pub fn unavailable() -> Self {
         Self {
             inner: Arc::new(Mutex::new(MockInner::default())),
+            frame_pushed: Arc::default(),
         }
     }
 

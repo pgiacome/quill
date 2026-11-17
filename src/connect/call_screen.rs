@@ -323,9 +323,30 @@ impl CallScreen {
         })
     }
 
+    /// Block until every open in flight has answered (tests); the next
+    /// pump then takes the answers.
+    #[cfg(test)]
+    pub fn wait_opened(&self) {
+        if let Some(active) = self.active() {
+            let _ = active.run.wait_opened();
+            if let Some(audio) = &active.audio {
+                let _ = audio.run.wait_opened();
+            }
+        }
+    }
+
     /// Whether the shared window is hidden.
     pub fn paused(&self) -> bool {
         self.active().is_some_and(|active| active.paused)
+    }
+
+    /// Whether the running capture's feeder forwards frames (tests); `None`
+    /// while nothing runs.
+    #[cfg(test)]
+    pub fn forwarding(&self) -> Option<bool> {
+        self.active()
+            .and_then(|active| active.run.running())
+            .map(CaptureFeeder::forwarding)
     }
 
     /// Frames the engine accepted from the running capture.

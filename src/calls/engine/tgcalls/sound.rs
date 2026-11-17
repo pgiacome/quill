@@ -19,11 +19,11 @@ enum Stage {
     Closed,
     /// The open runs on `thread`; only the open holding `token` may land.
     Opening {
-        thread: DeviceThread,
+        thread: Arc<DeviceThread>,
         token: Arc<()>,
     },
     /// The open answered and `audio` plays on `thread`'s device.
-    Open { _thread: DeviceThread },
+    Open { _thread: Arc<DeviceThread> },
 }
 
 /// What the output should be right now. Kept here so that a choice made
@@ -145,7 +145,10 @@ impl SoundSlot {
         wanted.volume = volume;
         wanted.muted = muted;
         self.audio.store(None);
-        wanted.stage = Stage::Opening { thread, token };
+        wanted.stage = Stage::Opening {
+            thread: Arc::new(thread),
+            token,
+        };
     }
 
     fn publish(&self, token: &Arc<()>, audio: Arc<StreamAudio>) {
@@ -170,14 +173,15 @@ impl SoundSlot {
         }
     }
 
-    /// How the current open went; `None` while it runs or when no output is
-    /// wanted.
+    /// Block until the current open answers (tests); `None` when no output
+    /// is wanted. The lock is not held while waiting: the open lands under it.
     #[cfg(test)]
-    fn opened(&self) -> Option<Result<(), CaptureError>> {
-        match &self.wanted.lock_or_recover().stage {
-            Stage::Closed => None,
-            Stage::Opening { thread, .. } | Stage::Open { _thread: thread } => thread.opened(),
-        }
+    fn wait_opened(&self) -> Option<Result<(), CaptureError>> {
+        let thread = match &self.wanted.lock_or_recover().stage {
+            Stage::Closed => return None,
+            Stage::Opening { thread, .. } | Stage::Open { _thread: thread } => thread.clone(),
+        };
+        Some(thread.wait_opened())
     }
 }
 
@@ -224,12 +228,7 @@ mod tests {
     }
 
     fn wait_opened(slot: &SoundSlot) -> Result<(), CaptureError> {
-        loop {
-            if let Some(answer) = slot.opened() {
-                return answer;
-            }
-            std::thread::yield_now();
-        }
+        slot.wait_opened().expect("an output is wanted")
     }
 
     #[test]

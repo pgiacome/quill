@@ -25,6 +25,14 @@ fn frames(vcx: &mut VisualTestContext) {
     }
 }
 
+/// Run the strip's expand animation to its end (it runs on the executor's
+/// clock).
+fn finish_expand(vcx: &mut VisualTestContext) {
+    vcx.executor()
+        .advance_clock(std::time::Duration::from_millis(300));
+    frames(vcx);
+}
+
 fn open(cx: &mut TestAppContext) -> (Entity<QuillApp>, VisualTestContext) {
     open_sized(cx, 1100., 800.)
 }
@@ -229,8 +237,7 @@ fn tiles_still_open_after_a_drag_and_an_expand(cx: &mut TestAppContext) {
     drag_from(vcx, "top-tile-33", -120.);
     assert_eq!(open_chat(&app, vcx), before);
     click(vcx, "top-toggle");
-    std::thread::sleep(std::time::Duration::from_millis(300));
-    frames(vcx);
+    finish_expand(vcx);
     click(vcx, "top-tile-34");
     assert_eq!(open_chat(&app, vcx), Some(ChatId(34)));
 }
@@ -242,8 +249,7 @@ fn strip_fits(app: &Entity<QuillApp>, vcx: &mut VisualTestContext) {
     let list = app.update(vcx, |app, _| app.list_width());
     assert_eq!(strip.size.width, list - px(25.));
     click(vcx, "top-toggle");
-    std::thread::sleep(std::time::Duration::from_millis(300));
-    frames(vcx);
+    finish_expand(vcx);
     let strip = vcx.debug_bounds("top-strip").expect("strip");
     let ids = self::strip(app, vcx);
     let last = ids.last().expect("people");
@@ -313,8 +319,7 @@ fn walking_a_tall_grid_scrolls_only_to_the_tile(cx: &mut TestAppContext) {
     });
     frames(vcx);
     click(vcx, "top-toggle");
-    std::thread::sleep(std::time::Duration::from_millis(300));
-    frames(vcx);
+    finish_expand(vcx);
     for _ in 0..3 {
         press(vcx, "down");
     }

@@ -590,7 +590,7 @@ impl QuillApp {
     /// idle clock (tdesktop `mediaviewWaitHide`). They stay up while the
     /// pointer rests on one (`over_controls`).
     pub(in crate::ui) fn viewer_note_activity(&mut self, cx: &mut Context<Self>) {
-        self.viewer.last_activity = std::time::Instant::now();
+        self.viewer.last_activity = cx.background_executor().now();
         if self.viewer.visibility.show() {
             cx.notify();
         }
@@ -603,7 +603,12 @@ impl QuillApp {
     /// The idle clock's turn: hide the controls once the pause is over,
     /// else wait out the rest of it in a timer the visible stage holds.
     fn viewer_idle_check(&mut self, cx: &mut Context<Self>) {
-        let idle = self.viewer.last_activity.elapsed().as_millis() as u64;
+        // The executor's clock: a test moves it with `advance_clock`.
+        let idle = cx
+            .background_executor()
+            .now()
+            .saturating_duration_since(self.viewer.last_activity)
+            .as_millis() as u64;
         let done = !self.viewer.state.is_open() || self.viewer.visibility.is_hidden();
         if done {
             self.viewer.visibility.timer_done();
@@ -626,7 +631,7 @@ impl QuillApp {
         let due = self.viewer.last_activity + Duration::from_millis(VIEWER_WAIT_HIDE_MS);
         let timer = self.spawn_scoped(cx, async move |this, cx| {
             let wait = due
-                .saturating_duration_since(std::time::Instant::now())
+                .saturating_duration_since(cx.background_executor().now())
                 .max(Duration::from_millis(16));
             cx.background_executor().timer(wait).await;
             let _ = this.update(cx, |this, cx| this.viewer_idle_check(cx));

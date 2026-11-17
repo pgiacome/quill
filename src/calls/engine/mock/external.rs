@@ -13,6 +13,7 @@ pub struct MockExternalFrame {
 
 struct MockFrameSender {
     inner: Arc<Mutex<MockInner>>,
+    frame_pushed: Arc<std::sync::Condvar>,
     target: CaptureTarget,
 }
 
@@ -39,6 +40,8 @@ impl ExternalFrameSender for MockFrameSender {
             bytes: data.to_vec(),
             meta,
         });
+        drop(inner);
+        self.frame_pushed.notify_all();
         Ok(())
     }
 }
@@ -47,6 +50,17 @@ impl MockEngine {
     /// Every external frame pushed so far, oldest first.
     pub fn external_frames(&self) -> Vec<MockExternalFrame> {
         self.inner.lock_or_recover().external_frames.clone()
+    }
+
+    /// Block until at least `count` external frames were pushed, then
+    /// return them all. Tests: the feeder thread is the one pushing.
+    pub fn wait_external_frames(&self, count: usize) -> Vec<MockExternalFrame> {
+        let inner = self.inner.lock_or_recover();
+        let inner = self
+            .frame_pushed
+            .wait_while(inner, |inner| inner.external_frames.len() < count)
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        inner.external_frames.clone()
     }
 
     /// A sender once the call's sources exist: a connected 1:1 call or a
@@ -76,6 +90,7 @@ impl MockEngine {
         ready.then(|| {
             Arc::new(MockFrameSender {
                 inner: self.inner.clone(),
+                frame_pushed: self.frame_pushed.clone(),
                 target,
             }) as Arc<dyn ExternalFrameSender>
         })

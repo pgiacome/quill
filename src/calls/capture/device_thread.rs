@@ -45,6 +45,16 @@ impl<T> DeviceRun<T> {
         }
     }
 
+    /// Block until the open answers (tests): the open's thread always
+    /// answers or hangs up. `None` once it runs.
+    #[cfg(test)]
+    pub fn wait_opened(&self) -> Option<Result<(), CaptureError>> {
+        match self {
+            Self::Opening(thread) => Some(thread.wait_opened()),
+            Self::Running { .. } => None,
+        }
+    }
+
     /// The open answered and `running` runs on its device. Any other stage
     /// stays as it is.
     pub fn start(&mut self, running: T) {
@@ -126,6 +136,21 @@ impl DeviceThread {
         *opened = Opened::Answered(answer.clone());
         Some(answer)
     }
+
+    /// [`Self::opened`], blocking until the open's thread answers or hangs
+    /// up (tests).
+    #[cfg(test)]
+    pub fn wait_opened(&self) -> Result<(), CaptureError> {
+        let mut opened = crate::locks::lock_or_recover(&self.opened);
+        let answer = match &*opened {
+            Opened::Answered(answer) => return answer.clone(),
+            Opened::Waiting(answer) => answer.recv().unwrap_or_else(|_| {
+                Err(CaptureError::Device("The capture thread stopped.".into()))
+            }),
+        };
+        *opened = Opened::Answered(answer.clone());
+        answer
+    }
 }
 
 /// The open's answer. Whether the open answers or panics, the poll loop
@@ -156,12 +181,7 @@ mod tests {
     use std::sync::atomic::{AtomicBool, Ordering};
 
     fn answer(device: &DeviceThread) -> Result<(), CaptureError> {
-        loop {
-            if let Some(answer) = device.opened() {
-                return answer;
-            }
-            std::thread::yield_now();
-        }
+        device.wait_opened()
     }
 
     #[test]
@@ -221,8 +241,7 @@ mod tests {
     fn a_panicked_open_answers_and_wakes_the_poll_loop() {
         static WAKE: Signal = Signal::new();
         let seen = WAKE.epoch();
-        let thread_alive = Arc::new(());
-        let held = thread_alive.clone();
+        let (held, thread_gone) = channel::<()>();
         let device = DeviceThread::open(
             "test-device",
             &WAKE,
@@ -230,10 +249,8 @@ mod tests {
             move |()| drop(held),
         );
         assert!(matches!(answer(&device), Err(CaptureError::Device(_))));
-        // The thread's last act drops what it holds.
-        while Arc::strong_count(&thread_alive) > 1 {
-            std::thread::yield_now();
-        }
+        // The thread's last act drops what it holds: the channel hangs up.
+        assert!(thread_gone.recv().is_err());
         assert_ne!(WAKE.epoch(), seen, "the poll loop hears it");
     }
 
