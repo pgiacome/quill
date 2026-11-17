@@ -3,7 +3,6 @@
 use super::common::{MemorySink, apply_json, session};
 use super::{
     ChatId, HISTORY_WINDOW_CAP, HISTORY_WINDOW_TRIM_TO, MessageId, RequestPurpose, Session,
-    WindowEnd,
 };
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
@@ -220,5 +219,4 @@ fn a_page_asked_for_a_replaced_window_is_dropped_and_forgotten() {
 #[test]
 fn the_cap_constants_leave_headroom_between_trims() {
     const { assert!(HISTORY_WINDOW_TRIM_TO + 100 < HISTORY_WINDOW_CAP) };
-    assert_ne!(WindowEnd::Oldest, WindowEnd::Newest);
 }
