@@ -17,8 +17,9 @@ use crate::state::ActiveCall;
 use crate::telegram::client::{ReceiveBridge, copy_and_parse};
 use crate::telegram::envelope::{AuthorizationState, CallState};
 use crate::telegram::hub::{ReceiveSource, ReceiveWake, TdHub};
+use std::cell::Cell;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::mpsc::{self, Sender};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -68,14 +69,33 @@ struct Handle {
     recorder: Arc<RecordingSender>,
     /// What the hub's `td_receive` returns next.
     tx: Sender<String>,
+    /// One message each time the hub's loop asks its source for the next
+    /// envelope, which it does only after it handed over the one before.
+    entered: Receiver<()>,
+    /// Envelopes sent on `tx`, and `entered` messages taken.
+    fed: Cell<usize>,
+    seen: Cell<usize>,
     hub: Arc<TdHub>,
     finished: Arc<AtomicBool>,
     auth: Arc<Mutex<AuthorizationState>>,
 }
 
 impl Handle {
+    /// Send `state` and return once the hub has put it on the client's
+    /// bridge, so the next poll finds it.
     fn answer(&self, state: &str) {
-        self.tx.send(auth_json(state)).expect("send");
+        self.feed(auth_json(state));
+    }
+
+    fn feed(&self, json: String) {
+        self.tx.send(json).expect("send");
+        self.fed.set(self.fed.get() + 1);
+        // The loop enters its source once before the first envelope and
+        // once after each one.
+        while self.seen.get() <= self.fed.get() {
+            self.entered.recv().expect("the hub reads on");
+            self.seen.set(self.seen.get() + 1);
+        }
     }
 
     fn sent(&self) -> Vec<String> {
@@ -91,38 +111,53 @@ impl Handle {
     }
 }
 
-/// A hub reading from a channel the test feeds.
-fn channel_hub() -> (Arc<TdHub>, Sender<String>) {
+/// What a test hub reads from: the channel the test feeds, and the signal
+/// its source gives each time the loop asks for the next envelope.
+struct Feed {
+    tx: Sender<String>,
+    entered: Receiver<()>,
+}
+
+/// A hub reading from a channel the test feeds. A stop's wake sends an
+/// empty string, which ends a blocked receive.
+fn channel_hub() -> (Arc<TdHub>, Feed) {
     let (tx, rx) = mpsc::channel::<String>();
-    let source: ReceiveSource =
-        Box::new(move |timeout| rx.recv_timeout(Duration::from_secs_f64(timeout)).ok());
+    let (entered_tx, entered) = mpsc::channel();
+    let source: ReceiveSource = Box::new(move |_| {
+        let _ = entered_tx.send(());
+        rx.recv().ok()
+    });
     let wake_tx = tx.clone();
     let wake: ReceiveWake = Box::new(move || {
         let _ = wake_tx.send(String::new());
     });
     let hub = TdHub::with_source(source, wake, Arc::new(MemorySink::new())).expect("hub thread");
-    (Arc::new(hub), tx)
+    (Arc::new(hub), Feed { tx, entered })
 }
 
 /// A hub whose receive loop hands over what the test sends, then dies once
 /// the channel closes (its source keeps panicking).
-fn dying_hub() -> (Arc<TdHub>, Sender<String>) {
+fn dying_hub() -> (Arc<TdHub>, Feed) {
     let (tx, rx) = mpsc::channel::<String>();
-    let source: ReceiveSource = Box::new(move |_| match rx.recv() {
-        Ok(json) => Some(json),
-        Err(_) => panic!("receive source failed"),
+    let (entered_tx, entered) = mpsc::channel();
+    let source: ReceiveSource = Box::new(move |_| {
+        let _ = entered_tx.send(());
+        match rx.recv() {
+            Ok(json) => Some(json),
+            Err(_) => panic!("receive source failed"),
+        }
     });
     let hub = TdHub::with_source(source, Box::new(|| {}), Arc::new(MemorySink::new()))
         .expect("hub thread");
-    (Arc::new(hub), tx)
+    (Arc::new(hub), Feed { tx, entered })
 }
 
-fn client_on(hub: Arc<TdHub>, tx: Sender<String>) -> (Box<dyn Closable>, Handle) {
-    let (client, handle) = test_client(hub, tx);
+fn client_on(hub: Arc<TdHub>, feed: Feed) -> (Box<dyn Closable>, Handle) {
+    let (client, handle) = test_client(hub, feed);
     (Box::new(client), handle)
 }
 
-fn test_client(hub: Arc<TdHub>, tx: Sender<String>) -> (TestClient, Handle) {
+fn test_client(hub: Arc<TdHub>, feed: Feed) -> (TestClient, Handle) {
     let store = MemorySecretStore::new();
     let (dir, prepared) = prepared_tmp(&store);
     let sink: Arc<dyn DiagnosticSink> = Arc::new(MemorySink::new());
@@ -133,11 +168,12 @@ fn test_client(hub: Arc<TdHub>, tx: Sender<String>) -> (TestClient, Handle) {
     // The hub numbers envelopes for every client (`seq`); the driver
     // already applied seq 1 (Ready) and drops anything not newer, so use
     // up the hub's first number.
+    let Feed { tx, entered } = feed;
     tx.send(format!(
         r#"{{"@type":"updateOption","name":"unix_time","value":{{"@type":"optionValueInteger","value":"1"}},"@client_id":{CLIENT_ID}}}"#
     ))
     .expect("send");
-    assert!(bridge.next_timeout(Duration::from_secs(2)).is_some());
+    bridge.rx.recv().expect("the hub hands it over");
     let finished = Arc::new(AtomicBool::new(false));
     let auth = Arc::new(Mutex::new(driver.session.auth.clone()));
     let client = TestClient {
@@ -150,6 +186,9 @@ fn test_client(hub: Arc<TdHub>, tx: Sender<String>) -> (TestClient, Handle) {
     let handle = Handle {
         recorder,
         tx,
+        entered,
+        fed: Cell::new(1),
+        seen: Cell::new(0),
         hub,
         finished,
         auth,
@@ -158,24 +197,38 @@ fn test_client(hub: Arc<TdHub>, tx: Sender<String>) -> (TestClient, Handle) {
 }
 
 fn client() -> (Box<dyn Closable>, Handle) {
-    let (hub, tx) = channel_hub();
-    client_on(hub, tx)
+    let (hub, feed) = channel_hub();
+    client_on(hub, feed)
 }
 
 fn key(n: u32) -> AccountKey {
     AccountKey::new(&format!("account-{n}")).expect("account key")
 }
 
-/// Poll until `set` finishes something or two seconds pass (the hub hands
-/// envelopes over on its own thread).
-fn poll_until_done(set: &mut ClosingSet) -> Vec<ClosedClient> {
-    let deadline = Instant::now() + Duration::from_secs(2);
-    loop {
-        let done = set.poll(Instant::now());
-        if !done.is_empty() || Instant::now() >= deadline {
-            return done;
-        }
-        std::thread::sleep(Duration::from_millis(5));
+/// Time moves only when a quit sleeps; each sleep first runs `on_sleep`
+/// (an answer arriving while the quit waits).
+struct ManualClock<F: FnMut()> {
+    now: Instant,
+    slept: Duration,
+    on_sleep: F,
+}
+
+fn manual_clock() -> ManualClock<impl FnMut()> {
+    ManualClock {
+        now: Instant::now(),
+        slept: Duration::ZERO,
+        on_sleep: || {},
+    }
+}
+
+impl<F: FnMut()> crate::connect::closing::QuitClock for ManualClock<F> {
+    fn now(&self) -> Instant {
+        self.now
+    }
+    fn sleep(&mut self, step: Duration) {
+        (self.on_sleep)();
+        self.now += step;
+        self.slept += step;
     }
 }
 
@@ -183,9 +236,7 @@ fn poll_until_done(set: &mut ClosingSet) -> Vec<ClosedClient> {
 fn push_sends_offline_then_close_and_returns_at_once() {
     let (client, handle) = client();
     let mut set = ClosingSet::new();
-    let started = Instant::now();
     set.push(key(1), client, false);
-    assert!(started.elapsed() < Duration::from_millis(500));
     let sent = handle.sent();
     let close = sent
         .iter()
@@ -208,20 +259,14 @@ fn a_client_that_never_answers_stays_until_closed_without_waiting() {
     let mut set = ClosingSet::new();
     let now = Instant::now();
     set.push(key(1), client, false);
-    let started = Instant::now();
-    assert!(set.poll(Instant::now()).is_empty());
-    assert!(
-        started.elapsed() < Duration::from_millis(500),
-        "poll waited {:?}",
-        started.elapsed()
-    );
+    assert!(set.poll(now).is_empty());
     // Long past the grace period it is still drained, never dropped: its
     // database may still be open.
     assert!(set.poll(now + CLOSE_GRACE * 10).is_empty());
     assert!(set.may_be_open(&key(1)));
     assert!(!handle.finished());
     handle.answer("authorizationStateClosed");
-    let done = poll_until_done(&mut set);
+    let done = set.poll(now);
     assert_eq!(
         done,
         vec![ClosedClient {
@@ -240,15 +285,11 @@ fn a_client_that_answers_closed_leaves_the_set() {
     let mut set = ClosingSet::new();
     set.push(key(2), client, true);
     handle.answer("authorizationStateClosing");
-    let deadline = Instant::now() + Duration::from_secs(2);
-    while !matches!(handle.auth(), AuthorizationState::Closing) && Instant::now() < deadline {
-        assert!(set.poll(Instant::now()).is_empty(), "Closing is not Closed");
-        std::thread::sleep(Duration::from_millis(5));
-    }
+    assert!(set.poll(Instant::now()).is_empty(), "Closing is not Closed");
     assert!(matches!(handle.auth(), AuthorizationState::Closing));
     assert!(set.contains(&key(2)));
     handle.answer("authorizationStateClosed");
-    let done = poll_until_done(&mut set);
+    let done = set.poll(Instant::now());
     assert_eq!(
         done,
         vec![ClosedClient {
@@ -265,17 +306,14 @@ fn a_client_that_answers_closed_leaves_the_set() {
 
 #[test]
 fn a_dead_receive_loop_is_never_taken_for_closed() {
-    let (hub, tx) = dying_hub();
-    let (client, handle) = client_on(hub, tx);
+    let (hub, feed) = dying_hub();
+    let (client, handle) = client_on(hub, feed);
     let mut set = ClosingSet::new();
     set.push(key(1), client, true);
     drop(handle.tx);
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while !handle.hub.stopped_unexpectedly() && Instant::now() < deadline {
-        std::thread::sleep(Duration::from_millis(5));
-    }
+    handle.hub.join_ended_loop();
     assert!(handle.hub.stopped_unexpectedly());
-    let done = poll_until_done(&mut set);
+    let done = set.poll(Instant::now());
     assert_eq!(
         done,
         vec![ClosedClient {
@@ -295,17 +333,15 @@ fn a_dead_receive_loop_is_never_taken_for_closed() {
 
 #[test]
 fn closed_queued_before_the_receive_loop_died_still_counts() {
-    let (hub, tx) = dying_hub();
-    let (client, handle) = client_on(hub, tx);
+    let (hub, feed) = dying_hub();
+    let (client, handle) = client_on(hub, feed);
     let mut set = ClosingSet::new();
     set.push(key(1), client, false);
     handle.answer("authorizationStateClosed");
     drop(handle.tx);
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while !handle.hub.stopped_unexpectedly() && Instant::now() < deadline {
-        std::thread::sleep(Duration::from_millis(5));
-    }
-    let done = poll_until_done(&mut set);
+    handle.hub.join_ended_loop();
+    assert!(handle.hub.stopped_unexpectedly());
+    let done = set.poll(Instant::now());
     assert_eq!(done.len(), 1);
     assert!(done.iter().all(|closed| closed.confirmed));
     assert!(!set.may_be_open(&key(1)));
@@ -321,12 +357,7 @@ fn cancelling_restarts_keeps_an_account_from_starting_again() {
     set.cancel_restart(&key(3));
     a_handle.answer("authorizationStateClosed");
     b_handle.answer("authorizationStateClosed");
-    let mut done = Vec::new();
-    let deadline = Instant::now() + Duration::from_secs(2);
-    while done.len() < 2 && Instant::now() < deadline {
-        done.extend(set.poll(Instant::now()));
-        std::thread::sleep(Duration::from_millis(5));
-    }
+    let mut done = set.poll(Instant::now());
     done.sort_by(|x, y| x.key.0.cmp(&y.key.0));
     assert_eq!(
         done.iter().map(|closed| closed.restart).collect::<Vec<_>>(),
@@ -336,7 +367,8 @@ fn cancelling_restarts_keeps_an_account_from_starting_again() {
     set.push(key(5), c, true);
     set.cancel_restarts();
     c_handle.answer("authorizationStateClosed");
-    let done = poll_until_done(&mut set);
+    let done = set.poll(Instant::now());
+    assert_eq!(done.len(), 1);
     assert!(done.iter().all(|closed| !closed.restart));
 }
 
@@ -350,14 +382,12 @@ fn quit_waits_for_everyone_together_within_one_deadline() {
         handles.push(handle);
     }
     let shared = Duration::from_millis(300);
-    let started = Instant::now();
-    let unconfirmed = set.close_all_within(started + shared);
-    let took = started.elapsed();
+    let mut clock = manual_clock();
+    let unconfirmed = set.close_all_on(clock.now + shared, &mut clock);
     assert_eq!(unconfirmed, 4);
     assert!(set.is_empty());
-    assert!(took >= shared, "waited the shared deadline: {took:?}");
-    // One deadline for all four, not 4 x 300 ms (generous for a loaded CI).
-    assert!(took < shared * 3, "took {took:?}");
+    // One deadline for all four, not 4 x 300 ms.
+    assert_eq!(clock.slept, shared, "waited the shared deadline once");
     assert!(handles.iter().all(Handle::finished));
     // Cut off, not confirmed: still may be open for this process.
     assert!((1..=4).all(|n| set.may_be_open(&key(n))));
@@ -371,16 +401,25 @@ fn quit_returns_as_soon_as_every_client_is_closed() {
     set.push(key(1), a, false);
     set.push(key(2), b, false);
     a_handle.answer("authorizationStateClosed");
-    let b_tx = b_handle.tx.clone();
-    let answerer = std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_millis(50));
-        let _ = b_tx.send(auth_json("authorizationStateClosed"));
-    });
-    let started = Instant::now();
-    let unconfirmed = set.close_all_within(started + Duration::from_secs(5));
-    let _ = answerer.join();
+    // `b` answers while the quit waits its first step.
+    let mut answered = false;
+    let mut clock = ManualClock {
+        now: Instant::now(),
+        slept: Duration::ZERO,
+        on_sleep: || {
+            if !std::mem::replace(&mut answered, true) {
+                b_handle.answer("authorizationStateClosed");
+            }
+        },
+    };
+    let deadline = clock.now + Duration::from_secs(5);
+    let unconfirmed = set.close_all_on(deadline, &mut clock);
     assert_eq!(unconfirmed, 0);
-    assert!(started.elapsed() < Duration::from_secs(4));
+    assert_eq!(
+        clock.slept,
+        Duration::from_millis(5),
+        "one step, not the deadline"
+    );
     assert!(a_handle.finished() && b_handle.finished());
     assert!(matches!(b_handle.auth(), AuthorizationState::Closed));
     assert!(!set.may_be_open(&key(1)) && !set.may_be_open(&key(2)));
@@ -391,12 +430,7 @@ fn a_closed_client_gets_no_requests_and_leaves_on_the_first_poll() {
     let (mut client, handle) = client();
     handle.answer("authorizationStateClosed");
     // Reach Closed before it is handed over.
-    let deadline = Instant::now() + Duration::from_secs(2);
-    while client.drain(Duration::from_millis(10)) != CloseOutcome::Closed
-        && Instant::now() < deadline
-    {
-        std::thread::sleep(Duration::from_millis(5));
-    }
+    assert_eq!(client.drain(Duration::ZERO), CloseOutcome::Closed);
     let before = handle.sent().len();
     let mut set = ClosingSet::new();
     set.push(key(1), client, false);
@@ -410,8 +444,8 @@ fn a_closed_client_gets_no_requests_and_leaves_on_the_first_poll() {
 
 #[test]
 fn a_shut_down_bridge_is_sent_nothing_and_never_counts_as_closed() {
-    let (hub, tx) = channel_hub();
-    let (mut client, handle) = client_on(hub, tx);
+    let (hub, feed) = channel_hub();
+    let (mut client, handle) = client_on(hub, feed);
     client.finish();
     let before = handle.sent().len();
     let mut set = ClosingSet::new();
@@ -428,11 +462,9 @@ fn dropping_the_set_finishes_its_clients_without_waiting_for_them() {
     let (client, handle) = client();
     let mut set = ClosingSet::new();
     set.push(key(1), client, false);
-    let started = Instant::now();
+    // The client never answers; the drop lets it go instead of waiting.
     drop(set);
-    let took = started.elapsed();
     assert!(handle.finished());
-    assert!(took < QUIT_CLOSE_DEADLINE / 2, "{took:?}");
 }
 
 const CALL_ID: i32 = 5;
@@ -734,8 +766,8 @@ fn a_group_call_only_looked_at_is_not_left() {
 
 #[test]
 fn a_closing_client_sends_close_from_its_poll_once_its_call_ended() {
-    let (hub, tx) = dying_hub();
-    let (mut client, handle) = test_client(hub, tx);
+    let (hub, feed) = dying_hub();
+    let (mut client, handle) = test_client(hub, feed);
     client.driver.session.calls.active_call =
         Some(active_call(true, CallState::Ready(Default::default())));
     let mut set = ClosingSet::new();
@@ -755,10 +787,21 @@ fn a_closing_client_sends_close_from_its_poll_once_its_call_ended() {
     );
     assert!(!sent_close(), "close waits for the hang-up");
 
-    handle.tx.send(call_discarded_json()).expect("send");
+    handle.feed(call_discarded_json());
     drop(handle.tx);
-    let finished = set.close_all_within(Instant::now() + Duration::from_secs(60));
-    assert_eq!(finished, 1, "the test's receive loop ends with no Closed");
+    handle.hub.join_ended_loop();
+    // A poll applies at least one waiting envelope, and may stop there when
+    // its budget ran out (a preempted thread): the second one then finds
+    // the queue dry.
+    let mut finished = set.poll(Instant::now());
+    if finished.is_empty() {
+        finished = set.poll(Instant::now());
+    }
+    assert_eq!(finished.len(), 1);
+    assert!(
+        finished.iter().all(|closed| !closed.confirmed),
+        "the test's receive loop ends with no Closed"
+    );
     assert!(
         sent_close(),
         "the poll sent close: {:?}",

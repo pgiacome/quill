@@ -458,6 +458,7 @@ pub(super) fn run_register(
         let mut control = Control {
             cancel: &link.cancel,
             deadline,
+            now: &Instant::now,
             on_keepalive: &mut ignore,
         };
         let mut key = None;
@@ -530,6 +531,7 @@ pub(super) fn run_login(
             let mut control = Control {
                 cancel: &link.cancel,
                 deadline,
+                now: &Instant::now,
                 on_keepalive: &mut ignore,
             };
             let got = Authenticator::open(device, &mut control).and_then(|mut key| {

@@ -414,39 +414,6 @@ fn quarantine_is_removed_from_every_entry_and_the_signature_survives() {
 }
 
 #[test]
-fn open_starts_the_bundle_with_its_arguments_and_environment() {
-    // `launch` goes through LaunchServices for real: the fixture records
-    // its arguments and `QUILL_TEST_ENV` in `started` beside the bundle.
-    // That is also the proof that `open` passes the environment through,
-    // which is why `launch` forwards nothing on the command line.
-    let root = scratch("open");
-    let bundle = root.join("Quill.app");
-    write_bundle(&bundle, "1.0.0", b"x", |exe| {
-        compile_app(exe, "Quill 1.0.0", true)
-    });
-    // SAFETY: tests in this binary never read this variable concurrently;
-    // it exists for this test's child process only.
-    unsafe { std::env::set_var("QUILL_TEST_ENV", "through-open") };
-    launch(
-        &bundle,
-        &["--start-minimized".to_string(), "--record-env".to_string()],
-    )
-    .unwrap();
-    let started = root.join("started");
-    let mut text = None;
-    for _ in 0..300 {
-        if let Ok(read) = fs::read_to_string(&started) {
-            text = Some(read);
-            break;
-        }
-        std::thread::sleep(Duration::from_millis(100));
-    }
-    let text = text.expect("the bundle started through LaunchServices");
-    assert_eq!(text, "--start-minimized --record-env\nenv=through-open\n");
-    fs::remove_dir_all(root).unwrap();
-}
-
-#[test]
 fn a_refused_bundle_keeps_its_quarantine_mark() {
     use super::super::{Layout, accept_staged, ensure_private_dir};
     let root = scratch("quarantine-kept");

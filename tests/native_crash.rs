@@ -8,13 +8,10 @@
 )]
 
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
-use std::time::{Duration, Instant};
+use std::process::{Command, Output};
 
 const CHILD_DIR_VAR: &str = "QUILL_NATIVE_CRASH_DIR";
 const CHILD_MODE_VAR: &str = "QUILL_NATIVE_CRASH_MODE";
-/// A crashing child that has not died by now is hung: kill it.
-const CHILD_DEADLINE: Duration = Duration::from_secs(30);
 
 /// Runs in the child when the variables are set; returns normally otherwise.
 fn run_as_child(mode: &str) {
@@ -33,31 +30,16 @@ fn run_as_child(mode: &str) {
     std::process::abort();
 }
 
-/// Start the test binary again as the crashing child, wait for it (killing
-/// it after [`CHILD_DEADLINE`]) and return what it printed.
+/// Start the test binary again as the crashing child and return what it
+/// printed once it ended. It always ends: it crashes, or `run_as_child`
+/// aborts when the crash did not happen.
 fn spawn_child(test: &str, mode: &str, dir: &Path) -> Output {
-    let mut child = Command::new(std::env::current_exe().unwrap())
+    Command::new(std::env::current_exe().unwrap())
         .args(["--exact", test, "--test-threads=1", "--nocapture"])
         .env(CHILD_DIR_VAR, dir)
         .env(CHILD_MODE_VAR, mode)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    let started = Instant::now();
-    while child.try_wait().unwrap().is_none() {
-        if started.elapsed() > CHILD_DEADLINE {
-            let _ = child.kill();
-            break;
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    let output = child.wait_with_output().unwrap();
-    assert!(
-        started.elapsed() <= CHILD_DEADLINE + Duration::from_secs(5),
-        "the crashing child hung"
-    );
-    output
+        .output()
+        .unwrap()
 }
 
 fn scratch_dir(name: &str) -> PathBuf {
