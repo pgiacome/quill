@@ -82,14 +82,14 @@ mod tests {
     }
 
     #[test]
-    fn serde_round_trip() {
-        for action in [QuickAction::Reply, QuickAction::React, QuickAction::None] {
-            let json = serde_json::to_string(&action).unwrap();
-            assert_eq!(serde_json::from_str::<QuickAction>(&json).unwrap(), action);
+    fn settings_store_each_action_by_its_lowercase_name() {
+        for (action, name) in [
+            (QuickAction::Reply, "\"reply\""),
+            (QuickAction::React, "\"react\""),
+            (QuickAction::None, "\"none\""),
+        ] {
+            assert_eq!(serde_json::to_string(&action).unwrap(), name);
+            assert_eq!(serde_json::from_str::<QuickAction>(name).unwrap(), action);
         }
-        assert_eq!(
-            serde_json::from_str::<QuickAction>("\"react\"").unwrap(),
-            QuickAction::React
-        );
     }
 }

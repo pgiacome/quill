@@ -320,18 +320,7 @@ mod tests {
         assert_eq!(format_extension_list(&parsed), "log pdf txt");
         assert!(parse_extension_list("   ").is_empty());
         let many: String = (0..2000).map(|n| format!("e{n} ")).collect();
-        assert_eq!(
-            parse_extension_list(&many).len(),
-            1024.min(parsed_len(&many))
-        );
-    }
-
-    fn parsed_len(text: &str) -> usize {
-        text.chars()
-            .take(MAX_EXTENSION_INPUT)
-            .collect::<String>()
-            .split_whitespace()
-            .count()
+        assert_eq!(parse_extension_list(&many).len(), 1024);
     }
 
     #[test]

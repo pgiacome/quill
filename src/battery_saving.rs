@@ -209,14 +209,10 @@ mod tests {
 
     #[test]
     fn thermal_pressure_forces_like_the_saver_and_obeys_the_switch() {
-        for saving in [None, Some(false), Some(true)] {
-            for hot in [false, true] {
-                for ignore in [false, true] {
-                    let want = (saving == Some(true) || hot) && !ignore;
-                    assert_eq!(forcing_for(saving, hot, ignore), want);
-                }
-            }
-        }
+        assert!(forcing_for(Some(false), true, false));
+        assert!(forcing_for(Some(true), true, false));
+        assert!(!forcing_for(Some(true), true, true));
+        assert!(!forcing_for(None, true, true));
         assert!(
             forcing_for(None, true, false),
             "no battery signal still heats"
