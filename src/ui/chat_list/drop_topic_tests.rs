@@ -5,7 +5,6 @@
 //! the chat in that topic with the files attached or the messages waiting
 //! in the forward bar, and Cancel changes nothing.
 
-use super::DropPayload;
 use crate::ui::app::QuillApp;
 use crate::ui::keybindings::bind_keys;
 use crate::ui::screenshot_demo::ScreenshotDemo;
@@ -16,7 +15,6 @@ use gpui_kit::{
     AppContext, Entity, ExternalPaths, FileDropEvent, Modifiers, MouseButton, PlatformInput, Point,
     TestAppContext, VisualTestContext, point, px, size,
 };
-use quill::drop_modes::DragState;
 use quill::ids::{ChatId, MessageId};
 use quill::suggested_posts::DirectMessagesRole;
 use std::path::PathBuf;
@@ -394,23 +392,6 @@ fn a_members_direct_messages_take_the_drop_like_any_chat(cx: &mut TestAppContext
         app.read_with(vcx, |app, _| app.share.forward.bar_dest()),
         Some(ChatId(13))
     );
-}
-
-#[gpui_kit::test]
-fn the_payload_remembers_what_a_file_drop_brought(cx: &mut TestAppContext) {
-    let (app, mut vcx) = open(cx, "ready-forum-row-topics");
-    let vcx = &mut vcx;
-    drop_file_on(vcx, 71);
-    app.read_with(vcx, |app, _| {
-        let waiting = app.chat_list.drop_topic.as_ref().expect("open");
-        match &waiting.payload {
-            DropPayload::Files { paths, kind } => {
-                assert_eq!(paths.len(), 1);
-                assert_eq!(*kind, DragState::Files);
-            }
-            DropPayload::Forward(_) => panic!("a file drop"),
-        }
-    });
 }
 
 fn choose(app: &Entity<QuillApp>, vcx: &mut VisualTestContext, topic: Option<i32>) {

@@ -179,12 +179,6 @@ pub(super) struct FieldEcho {
 }
 
 impl FieldEcho {
-    /// The text the last event (or the code that set the field) left.
-    #[cfg(test)]
-    pub(super) fn prev(&self) -> &gpui_kit::SharedString {
-        &self.prev
-    }
-
     /// The field now holds `text`; `prev` is what it held before. A
     /// replacement made for other text is dropped.
     pub(super) fn set(&mut self, text: gpui_kit::SharedString) -> gpui_kit::SharedString {
