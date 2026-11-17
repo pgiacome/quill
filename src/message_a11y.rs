@@ -381,9 +381,7 @@ fn media_parts(
             if poll.is_closed {
                 parts.push(tr(keys::SR_CHAT_COLUMN_CLOSED).to_string());
             }
-            parts.push(match poll.total_voter_count {
-                count => trn(keys::POLLS_VOTES_COUNT, count),
-            });
+            parts.push(trn(keys::POLLS_VOTES_COUNT, poll.total_voter_count));
             String::new()
         }
         MessageContent::Contact(contact) => {

@@ -857,7 +857,7 @@ impl QuillApp {
                             div()
                                 .text_xs()
                                 .text_color(cx.theme().muted_foreground)
-                                .child(tr(keys::Q_PEOPLE_PINNED)),
+                                .child(tr(keys::SR_CHAT_PINNED)),
                         )
                     })
                     .when(info.is_closed, |this| {
