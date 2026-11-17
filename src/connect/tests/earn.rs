@@ -5,7 +5,6 @@ use super::*;
 use crate::diagnostics::{DiagnosticSink, MemorySink};
 use crate::earn::*;
 use crate::platform::MemorySecretStore;
-use crate::premium_hub::TxFilter;
 use crate::telegram::client::copy_and_parse;
 use crate::telegram::envelope::ChannelMemberStatus;
 use serde_json::{Value, json};
@@ -212,7 +211,6 @@ fn bot_stars_page_loads_three_lists_and_own_page_none() {
         .unwrap();
     assert_eq!(count(&p2.1, "getStarTransactions"), 0);
     assert_eq!(count(&p2.1, "getStarAdAccountUrl"), 0);
-    let _ = TxFilter::All;
 }
 
 #[test]

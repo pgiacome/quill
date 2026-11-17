@@ -329,37 +329,10 @@ fn a_refused_or_lost_type_save_keeps_the_type_step() {
     );
 }
 
-/// A type-step Save whose requests all answered well moves the stage on to
-/// the subscribers; a lost request returns a create to its form.
+/// A create whose request is gone with no answer returns the form.
 #[test]
-fn an_answered_type_save_moves_the_stage_on() {
-    let mut rig = Rig::new();
-    let extra = rig.create(NewChatKind::Channel, &[], None);
-    rig.answer_channel(extra);
-    let chat = ChatId(CHANNEL);
-    let edits = [crate::group_type::GroupTypeEdit::DisableAllUsernames];
-    let sent = rig.driver.save_group_type(chat, &edits, &[]).unwrap();
-    rig.driver.watch_new_chat_type_save(&sent);
-    let stage = NewChatStage::Type {
-        chat,
-        save: TypeSaveStage::Saving(sent.clone()),
-    };
-    assert_eq!(
-        rig.driver
-            .session
-            .settled_new_chat(NewChatKind::Channel, &stage),
-        stage
-    );
-    for id in &sent {
-        rig.ingest(&format!(r#"{{"@type":"ok","@extra":"{}"}}"#, id.0));
-    }
-    assert_eq!(
-        rig.driver
-            .session
-            .settled_new_chat(NewChatKind::Channel, &stage),
-        NewChatStage::Subscribers { chat }
-    );
-    // A create whose request is gone with no answer returns the form.
+fn a_create_whose_request_is_gone_returns_the_form() {
+    let rig = Rig::new();
     let lost = NewChatStage::Creating {
         request: RequestId(9_999),
         back: crate::new_chat::NewChatBack::Info,

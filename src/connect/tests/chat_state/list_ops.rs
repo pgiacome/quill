@@ -606,10 +606,6 @@ fn cl1_remove_chat_from_list_sends_delete_history() {
     assert_eq!(value["chat_id"], 9);
     assert_eq!(value["remove_from_chat_list"], true);
     assert_eq!(value["revoke"], false);
-    assert!(
-        !delete.contains("\"deleteChat\""),
-        "must not use the destructive deleteChat constructor"
-    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 

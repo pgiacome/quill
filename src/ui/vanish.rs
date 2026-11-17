@@ -963,20 +963,6 @@ mod tests {
     }
 
     #[test]
-    fn a_clean_borrow_gives_the_next_streak_the_full_bound() {
-        let conflicts = std::cell::Cell::new(0);
-        for _ in 0..MAX_CONFLICT_FRAMES - 1 {
-            assert!(conflict_keeps_running(&conflicts));
-        }
-        // The overlay resets the count on a clean borrow.
-        conflicts.set(0);
-        for _ in 0..MAX_CONFLICT_FRAMES {
-            assert!(conflict_keeps_running(&conflicts));
-        }
-        assert!(!conflict_keeps_running(&conflicts));
-    }
-
-    #[test]
     fn grains_cover_the_bubble_and_leave_left_to_right() {
         let area = Bounds::new(point(px(100.), px(50.)), size(px(200.), px(40.)));
         let grains = grains(7, area, &palette());

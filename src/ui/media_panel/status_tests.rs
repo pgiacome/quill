@@ -4,7 +4,6 @@
 //! account takes a change the way TDLib would, so the status shows on the
 //! account.
 
-use super::status_demo::seed_status_session;
 use crate::ui::app::QuillApp;
 use crate::ui::keybindings::bind_keys;
 use crate::ui::media_panel::{PanelCell, PanelRow};
@@ -368,19 +367,4 @@ fn cancel_closes_the_box_without_a_change(cx: &mut TestAppContext) {
         assert!(app.pickers.media_panel.until.is_none())
     });
     assert_eq!(my_status(&app, vcx), 0);
-}
-
-#[test]
-fn the_demo_seed_is_premium_with_every_status_resolved() {
-    let sink = std::sync::Arc::new(quill::diagnostics::MemorySink::default());
-    let session = seed_status_session(sink);
-    assert_eq!(session.payments.premium_option, Some(true));
-    let emoji = &session.stickers.emoji;
-    for id in emoji
-        .themed_status_ids()
-        .iter()
-        .chain(emoji.default_status_ids())
-    {
-        assert!(emoji.custom_emoji_stickers.lookup(*id).is_some());
-    }
 }

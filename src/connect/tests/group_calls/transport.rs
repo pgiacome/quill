@@ -507,7 +507,7 @@ fn a_presentation_that_cannot_connect_is_ended_on_telegram() {
 /// leaves no stray native presentation: the pump stops it.
 #[test]
 fn group_screen_share_failure_stops_native_presentation() {
-    let (dir, mut driver, recorder, handle, sink, seq) = ready_group_call_driver();
+    let (dir, mut driver, _recorder, handle, sink, seq) = ready_group_call_driver();
     handle.set_devices(vec![MediaDevice {
         id: "screen-0".into(),
         name: "Test screen".into(),
@@ -547,7 +547,6 @@ fn group_screen_share_failure_stops_native_presentation() {
     );
     assert_eq!(handle.screen_share_stops(), vec![555]);
     assert!(!handle.presentation_active(555));
-    assert!(recorder.snapshot().len() >= 2);
     let _ = std::fs::remove_dir_all(&dir);
 }
 

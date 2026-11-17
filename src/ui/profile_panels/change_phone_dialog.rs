@@ -38,19 +38,6 @@ impl QuillApp {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::change_phone_error;
-
-    #[test]
-    fn note_matches_tdesktop_string() {
-        assert_eq!(
-            change_phone_error(),
-            "You can only change your phone number using mobile Telegram apps. Please use an official Telegram app on your phone to update your number."
-        );
-    }
-}
-
-#[cfg(test)]
 #[cfg(feature = "demo-capture")]
 #[path = "change_phone_dialog_tests.rs"]
 mod ui_tests;

@@ -267,7 +267,12 @@ fn a_chat_moving_to_another_call_drops_the_old_one() {
     h.update(&call(41, "", "video", false, 5));
     h.video_chat(51, 43, true);
     assert_eq!(h.listed_ids(), vec![43]);
-    assert!(!h.driver.session.calls.group_call_details.contains_key(&41));
+    // Back at the old call: its details went, so nothing is guessed.
+    h.video_chat(51, 41, true);
+    let listed = h.listed();
+    let row = listed.first().expect("listed again");
+    assert_eq!(row.id, 41);
+    assert_eq!(row.details, None);
     h.video_chat(51, 0, false);
     assert!(h.listed().is_empty());
 }

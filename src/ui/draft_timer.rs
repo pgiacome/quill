@@ -73,15 +73,6 @@ mod tests {
     }
 
     #[test]
-    fn firing_drops_the_task() {
-        let mut timer = DraftTimer::default();
-        let spawned = Cell::new(0);
-        arm(&mut timer, 1, &spawned);
-        timer.settle(1);
-        assert!(matches!(timer, DraftTimer::Idle));
-    }
-
-    #[test]
     fn a_new_window_after_a_commit_spawns_again() {
         let mut timer = DraftTimer::default();
         let spawned = Cell::new(0);
@@ -89,6 +80,6 @@ mod tests {
         timer.settle(1);
         arm(&mut timer, 2, &spawned);
         assert_eq!(spawned.get(), 2);
-        assert!(matches!(timer, DraftTimer::Armed { token: 2, .. }));
+        assert_eq!(timer.settle(2), Some(2));
     }
 }

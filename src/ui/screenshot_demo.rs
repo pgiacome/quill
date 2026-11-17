@@ -234,6 +234,7 @@ mod tests {
     fn kinds_are_unique() {
         let all = ScreenshotDemo::all();
         let mut kinds: Vec<&str> = all.iter().map(|demo| demo.kind()).collect();
+        kinds.sort_unstable();
         kinds.dedup();
         assert_eq!(kinds.len(), all.len(), "a demo kind is registered twice");
     }

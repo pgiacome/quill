@@ -1022,7 +1022,7 @@ mod tests {
         assert!(!editor_issue_message(ProxyKind::Socks5, ProxyIssue::Invalid).contains("secret"));
         assert_eq!(
             editor_issue_message(ProxyKind::Mtproto, ProxyIssue::Unsupported),
-            ProxyIssue::Unsupported.message()
+            "Quill doesn't support this proxy type or the proxy link is invalid."
         );
     }
 }

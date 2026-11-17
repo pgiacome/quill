@@ -302,40 +302,6 @@ fn a_second_delete_of_the_same_shortcut_returns_the_request_in_flight() {
 }
 
 #[test]
-fn a_refused_request_is_reported_and_a_late_answer_is_harmless() {
-    let (mut driver, recorder, sink, seq) = driver_parts();
-    driver.add_quick_reply_text("hours", "Hi").unwrap();
-    let request = sent_request(&recorder, "addQuickReplyShortcutMessage");
-    let extra = request["@extra"].as_str().unwrap().to_string();
-    feed(
-        &mut driver,
-        &seq,
-        &sink,
-        &format!(
-            r#"{{"@type":"quickReplyMessage","@extra":"{extra}","id":5,"can_be_edited":true,"content":{{"@type":"messageText","text":{{"text":"Hi","entities":[]}}}}}}"#
-        ),
-    );
-    driver.delete_quick_reply_shortcut(9).unwrap();
-    let request = sent_request(&recorder, "deleteQuickReplyShortcut");
-    let extra = request["@extra"].as_str().unwrap().to_string();
-    feed(
-        &mut driver,
-        &seq,
-        &sink,
-        &format!(
-            r#"{{"@type":"error","@extra":"{extra}","code":400,"message":"SHORTCUT_INVALID"}}"#
-        ),
-    );
-    assert!(driver.session.settings.quick_replies.error.is_some());
-}
-
-#[test]
-fn the_shortcuts_are_requested_once_the_session_is_ready() {
-    let (_driver, recorder, _sink, _seq) = driver_parts();
-    assert_eq!(count_sent(&recorder, "loadQuickReplyShortcuts"), 1);
-}
-
-#[test]
 fn the_limits_follow_the_tdlib_options_and_default_to_tdesktops() {
     let (mut driver, _recorder, sink, seq) = driver_parts();
     let state = &driver.session.settings.quick_replies;

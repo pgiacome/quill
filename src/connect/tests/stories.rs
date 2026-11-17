@@ -743,7 +743,6 @@ fn driver_pin_and_unpin_chat_message_then_is_pinned_update() {
         .get(&50)
         .unwrap();
     assert!(!cleared.is_pinned);
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 

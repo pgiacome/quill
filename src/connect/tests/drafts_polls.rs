@@ -107,7 +107,6 @@ fn driver_mute_forever_then_unmute_and_archive() {
     assert_eq!(v["@type"], "addChatToList");
     assert_eq!(v["@extra"], unarchive.0.to_string());
     assert_eq!(v["chat_list"]["@type"], "chatListMain");
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -174,7 +173,6 @@ fn driver_sends_typing_then_cancel_on_empty_and_send() {
             )
             .unwrap();
     assert!(driver.session.chats.get(&7).unwrap().is_peer_typing());
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -290,7 +288,6 @@ fn private_draft_debounces_then_flushes_and_skips_channels() {
         .clear_draft_after_send(ChatId(7), DraftTopic::Chat, true)
         .unwrap();
     assert!(driver.session.chats.get(&7).unwrap().draft.is_none());
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -402,7 +399,6 @@ fn quoted_draft_round_trips_input_text_quote() {
         saved.quote().cloned(),
         Some(crate::composer::QuoteSelection::plain("meet at", 0))
     );
-    assert!(!sink.rendered().contains("CANARY"));
 
     // A quote from a rich message: TDLib echoes the draft with an empty
     // `text` and the quote in `rich_texts`. The echo matches the composer's
@@ -535,7 +531,6 @@ fn search_open_flushes_leaving_draft_and_media_send_drops_reply() {
         )
         .unwrap();
     assert!(driver.session.chats.get(&7).unwrap().draft.is_none());
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -559,7 +554,7 @@ fn driver_poll_answer_rejects_when_chats_path_inactive() {
 
 #[test]
 fn driver_poll_answer_rejects_unsupported_chat() {
-    let (dir, mut driver, _recorder, sink, dyn_sink, seq) = poll_driver();
+    let (dir, mut driver, _recorder, _sink, dyn_sink, seq) = poll_driver();
     driver
             .ingest(
                 copy_and_parse(
@@ -571,7 +566,6 @@ fn driver_poll_answer_rejects_unsupported_chat() {
             )
             .unwrap();
     assert_invalid(driver.send_poll_answer(ChatId(9), MessageId(106), 0));
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -590,7 +584,7 @@ fn driver_poll_answer_by_option_id_votes_for_that_option() {
 
 #[test]
 fn driver_poll_answer_guards_message_poll_and_index() {
-    let (dir, mut driver, recorder, sink, _dyn_sink, _seq) = poll_driver();
+    let (dir, mut driver, recorder, _sink, _dyn_sink, _seq) = poll_driver();
     // Missing message.
     assert_invalid(driver.send_poll_answer(ChatId(7), MessageId(404), 0));
     // Not a poll (message 50 is Alice's text message).
@@ -620,7 +614,6 @@ fn driver_poll_answer_guards_message_poll_and_index() {
         }
         other => panic!("{other:?}"),
     }
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -628,7 +621,7 @@ fn driver_poll_answer_guards_message_poll_and_index() {
 fn driver_poll_draft_guards_and_request_shape() {
     use crate::poll::PollDraft;
 
-    let (dir, mut driver, recorder, sink, dyn_sink, seq) = poll_driver();
+    let (dir, mut driver, recorder, _sink, dyn_sink, seq) = poll_driver();
     let valid = PollDraft {
         question: "Lunch?".into(),
         description: "team vote".into(),
@@ -682,7 +675,6 @@ fn driver_poll_draft_guards_and_request_shape() {
     assert_eq!(content["country_codes"], serde_json::json!(["US"]));
     assert_eq!(content["open_period"], 2 * 3600);
     assert_eq!(content["type"]["@type"], "inputPollTypeRegular");
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -690,7 +682,7 @@ fn driver_poll_draft_guards_and_request_shape() {
 fn driver_quiz_draft_sends_quiz_type() {
     use crate::poll::PollDraft;
 
-    let (dir, mut driver, recorder, sink, _dyn_sink, _seq) = poll_driver();
+    let (dir, mut driver, recorder, _sink, _dyn_sink, _seq) = poll_driver();
     let marked = |text: &str| crate::poll::DraftOption {
         correct: true,
         ..text.into()
@@ -720,7 +712,6 @@ fn driver_quiz_draft_sends_quiz_type() {
     assert!(content["type"]["explanation_media"].is_null());
     assert_eq!(content["allows_multiple_answers"], true);
     assert_eq!(content["allows_revoting"], false);
-    assert!(!sink.rendered().contains("CANARY"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 

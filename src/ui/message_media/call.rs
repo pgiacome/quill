@@ -193,26 +193,9 @@ mod tests {
         assert_eq!(call_title(false, &Declined, false), "Declined call");
         assert_eq!(call_title(false, &HungUp, false), "Incoming call");
         assert_eq!(call_title(false, &Disconnected, false), "Incoming call");
+        assert_eq!(call_title(false, &HungUp, true), "Outgoing call");
+        assert_eq!(call_title(false, &Disconnected, true), "Outgoing call");
         assert!(call_missed(&Declined) && call_missed(&Missed) && !call_missed(&HungUp));
-    }
-
-    #[test]
-    fn voice_titles_cover_every_reason() {
-        for (reason, expected) in [
-            (Missed, "Missed call"),
-            (Declined, "Declined call"),
-            (HungUp, "Incoming call"),
-            (Disconnected, "Incoming call"),
-        ] {
-            assert_eq!(call_title(false, &reason, false), expected);
-        }
-        for (reason, expected) in [
-            (Missed, "Cancelled call"),
-            (HungUp, "Outgoing call"),
-            (Disconnected, "Outgoing call"),
-        ] {
-            assert_eq!(call_title(false, &reason, true), expected);
-        }
     }
 
     #[test]

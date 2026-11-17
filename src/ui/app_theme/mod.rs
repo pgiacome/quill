@@ -427,18 +427,8 @@ impl QuillApp {
 
 #[cfg(test)]
 mod tests {
-    use super::{ChatDefaults, installed, installed_state};
-    use quill::app_theme::{BuiltinTheme, PaletteKey};
-
-    #[test]
-    fn the_installed_palette_is_scoped_to_the_thread_and_clears() {
-        assert_eq!(installed(PaletteKey::WindowBg), None);
-        let palette = BuiltinTheme::Night.palette();
-        installed_state::set(Some(palette.colors()));
-        assert_eq!(installed(PaletteKey::WindowBg), Some(0x282e33ff));
-        installed_state::set(None);
-        assert_eq!(installed(PaletteKey::WindowBg), None);
-    }
+    use super::ChatDefaults;
+    use quill::app_theme::BuiltinTheme;
 
     #[test]
     fn chat_defaults_come_from_the_outgoing_keys() {

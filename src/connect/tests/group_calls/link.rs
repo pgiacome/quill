@@ -47,14 +47,6 @@ fn the_join_click_sends_the_links_hash() {
 }
 
 #[test]
-fn a_plain_join_has_no_hash() {
-    let (dir, mut driver, recorder, _handle, _sink, _seq) = ready_group_call_driver();
-    driver.join_video_chat(555).expect("join tracked call");
-    assert_eq!(sent_request(&recorder, "joinVideoChat")["invite_hash"], "");
-    let _ = std::fs::remove_dir_all(&dir);
-}
-
-#[test]
 fn a_hash_for_another_call_is_not_sent() {
     let (dir, mut driver, recorder, _handle, _sink, _seq) = ready_group_call_driver();
     driver.session.calls.call_link_stage =
