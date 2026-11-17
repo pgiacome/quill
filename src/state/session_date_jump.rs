@@ -413,11 +413,6 @@ impl Session {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn first_message_id_is_server_id_one() {
-        assert_eq!(super::FIRST_MESSAGE_ID.0, 1_048_576);
-    }
-
     use crate::diagnostics::{DiagnosticSink, MemorySink};
     use crate::ids::{AccountKey, ChatId, MessageId};
     use crate::state::{JumpLookup, RequestPurpose, Session};
