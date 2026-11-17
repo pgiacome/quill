@@ -13,7 +13,6 @@ use quill::spellcheck::SpellChecker;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Condvar, Mutex};
-use std::time::Duration;
 
 fn new_app(cx: &mut TestAppContext) -> (Entity<QuillApp>, VisualTestContext) {
     cx.update(gpui_kit::init);
@@ -74,13 +73,13 @@ impl Gate {
         self.build_finished.load(Ordering::SeqCst)
     }
 
-    /// The 30 s cap only keeps a broken test from hanging forever; it is
-    /// not an assertion.
+    /// Blocks until the test opens the gate. The test executor runs the
+    /// build only when the test drives it, after the gate is open.
     fn build(&self, chosen: &[String]) -> (Arc<SpellChecker>, SpellInfo) {
         let open = self.open.lock().unwrap_or_else(|e| e.into_inner());
         let _released = self
             .opened
-            .wait_timeout_while(open, Duration::from_secs(30), |open| !*open)
+            .wait_while(open, |open| !*open)
             .unwrap_or_else(|e| e.into_inner());
         self.build_finished.store(true, Ordering::SeqCst);
         engine_for(chosen)

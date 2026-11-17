@@ -392,7 +392,6 @@ fn a_locked_sticker_opens_the_premium_preview_instead_of_sending(cx: &mut TestAp
 #[gpui_kit::test]
 fn a_sent_sticker_flies_from_the_panel_to_its_message_and_lands(cx: &mut TestAppContext) {
     send_fly::reset();
-    send_fly::TEST_DURATION.with(|d| d.set(Some(std::time::Duration::from_millis(1500))));
     let (app, mut vcx) = new_app(cx);
     let vcx = &mut vcx;
     app.update(vcx, |app, _| {
@@ -459,8 +458,10 @@ fn a_sent_sticker_flies_from_the_panel_to_its_message_and_lands(cx: &mut TestApp
         "the message's sticker was painted: the picture is on its way"
     );
 
-    // It lands after the reveal duration and the message shows again.
-    std::thread::sleep(std::time::Duration::from_millis(1600));
+    // It lands after the reveal duration (on the executor's clock) and the
+    // message shows again.
+    vcx.executor()
+        .advance_clock(crate::ui::motion::REVEAL_DURATION);
     frames(vcx);
     assert_eq!(send_fly::flight_state(), None);
     send_fly::reset();

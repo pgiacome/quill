@@ -4,7 +4,6 @@ use super::{Scripted, wait_until};
 use crate::video_decode::{Demuxer, Item, MediaInfo, OpenOptions, PixelOutput, Player, lock};
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
-use std::time::Duration;
 
 /// A demuxer that panics on its Nth call (the test-only panic hook).
 struct PanicsAt {
@@ -64,10 +63,14 @@ fn a_decode_panic_puts_the_player_in_its_error_state() {
 
 #[test]
 fn dropping_a_player_mid_decode_neither_errors_nor_hangs() {
-    let player = panicking_player(usize::MAX, false);
+    let mut player = panicking_player(usize::MAX, false);
     let shared = player.shared.clone();
-    std::thread::sleep(Duration::from_millis(20));
+    // Mid decode: a picture is queued and the thread decodes on.
+    player.wait_frame_settled();
+    assert!(lock(&shared.state).decoding.error().is_none());
+    let thread = player.thread.take().expect("the decode thread");
     drop(player);
-    std::thread::sleep(Duration::from_millis(50));
+    // The thread sees the stop and returns on its own, without a panic.
+    assert!(matches!(thread.join(), Ok(Some(()))));
     assert!(lock(&shared.state).decoding.error().is_none());
 }

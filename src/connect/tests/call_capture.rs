@@ -1,7 +1,7 @@
 //! Connect-driver tests: the call microphone Quill captures and feeds
 //! into the engine's external source (`connect::call_capture`).
 use super::super::*;
-use super::support::{pump_until_mic_answers, until};
+use super::support::{Latch, pump_until_mic_answers};
 use super::*;
 use crate::calls::capture::{
     AudioFrame, CaptureError, CaptureEvent, FrameSink, MicCapture, MicControls,
@@ -23,11 +23,20 @@ struct FakeMics {
     opened: Mutex<Vec<Option<String>>>,
     sink: Mutex<Option<FrameSink<AudioFrame>>>,
     controls: Mutex<Option<Arc<MicControls>>>,
-    stopped: Arc<AtomicBool>,
+    /// Raised when the microphone opened last is stopped.
+    stopped: Mutex<Arc<Latch>>,
     fail: AtomicBool,
 }
 
-struct FakeMic(Arc<AtomicBool>);
+impl FakeMics {
+    /// Block until the microphone opened last is stopped (on its thread).
+    fn wait_stopped(&self) {
+        let latch = self.stopped.lock().unwrap().clone();
+        latch.wait();
+    }
+}
+
+struct FakeMic(Arc<Latch>);
 
 impl MicCapture for FakeMic {
     fn start(
@@ -39,7 +48,7 @@ impl MicCapture for FakeMic {
     }
 
     fn stop(&mut self) {
-        self.0.store(true, Ordering::SeqCst);
+        self.0.raise();
     }
 }
 
@@ -73,27 +82,21 @@ fn install_fake_mic(driver: &mut ConnectDriver<Arc<RecordingSender>>) -> Arc<Fak
             .push(device.map(str::to_owned));
         *handle.sink.lock().unwrap() = Some(sink);
         *handle.controls.lock().unwrap() = Some(controls);
-        handle.stopped.store(false, Ordering::SeqCst);
-        Ok(Box::new(FakeMic(handle.stopped.clone())))
+        let stopped = Arc::new(Latch::default());
+        *handle.stopped.lock().unwrap() = stopped.clone();
+        Ok(Box::new(FakeMic(stopped)))
     }));
     mics
 }
 
 fn push_frames(mics: &FakeMics, count: usize) {
     let sink = mics.sink.lock().unwrap().clone().expect("microphone open");
+    let at = Instant::now();
     for i in 0..count {
         sink.push(AudioFrame {
             pcm: vec![i16::try_from(i).unwrap(); 480],
-            captured_at: Instant::now(),
+            captured_at: at + Duration::from_millis(10 * u64::try_from(i).unwrap()),
         });
-    }
-}
-
-fn wait_for(mut done: impl FnMut() -> bool) {
-    let start = Instant::now();
-    while !done() {
-        assert!(start.elapsed() < Duration::from_secs(5), "timed out");
-        std::thread::sleep(Duration::from_millis(2));
     }
 }
 
@@ -155,8 +158,7 @@ fn group_call_microphone_feeds_the_engine_and_follows_mute() {
     );
     assert_eq!(driver.call_capture().noise_suppression(), Some(true));
     push_frames(&mics, 3);
-    wait_for(|| engine.external_frames().len() == 3);
-    let frames = engine.external_frames();
+    let frames = engine.wait_external_frames(3);
     assert!(frames.iter().all(|frame| {
         frame.target == CaptureTarget::Group(77)
             && frame.device == ExternalDevice::Microphone
@@ -183,7 +185,7 @@ fn group_call_microphone_feeds_the_engine_and_follows_mute() {
     // Leaving closes the microphone.
     driver.session.calls.active_group_call = None;
     pump_until_mic_answers(&mut driver);
-    until(|| mics.stopped.load(Ordering::SeqCst));
+    mics.wait_stopped();
     assert_eq!(driver.call_capture().target(), None);
     std::fs::remove_dir_all(dir).ok();
 }
@@ -214,7 +216,7 @@ fn a_lost_microphone_is_reported_and_reopened_later() {
         "Microphone stopped: device gone".into(),
     )));
     pump_until_mic_answers(&mut driver);
-    until(|| mics.stopped.load(Ordering::SeqCst));
+    mics.wait_stopped();
     assert_eq!(
         driver.group_call_level_error(),
         Some("Microphone stopped: device gone")
@@ -250,7 +252,7 @@ fn a_refused_microphone_is_put_on_the_call_for_its_window() {
     driver.session.calls.active_group_call = Some(joined_group_call(false));
     driver.pump_call_media(Instant::now());
     while driver.call_capture().opening() {
-        std::thread::yield_now();
+        driver.call_capture().wait_opened();
         driver.pump_call_media(Instant::now());
     }
     assert_eq!(
@@ -361,10 +363,9 @@ fn private_call_uses_the_chosen_microphone() {
     driver.apply_call_noise_suppression();
     assert_eq!(driver.call_capture().noise_suppression(), Some(true));
     push_frames(&mics, 2);
-    wait_for(|| handle.external_frames().len() == 2);
     assert!(
         handle
-            .external_frames()
+            .wait_external_frames(2)
             .iter()
             .all(|frame| frame.target == CaptureTarget::Private(77))
     );
@@ -383,7 +384,7 @@ fn private_call_uses_the_chosen_microphone() {
         link: None,
     };
     pump_until_mic_answers(&mut driver);
-    until(|| mics.stopped.load(Ordering::SeqCst));
+    mics.wait_stopped();
     std::fs::remove_dir_all(dir).ok();
 }
 
@@ -462,7 +463,7 @@ fn a_lost_microphone_needs_no_telegram_update() {
         "the poll asks for it again"
     );
     while driver.call_capture().opening() {
-        std::thread::yield_now();
+        driver.call_capture().wait_opened();
         driver.request_tick(t2);
     }
     assert_eq!(mics.opened.lock().unwrap().len(), 2);
@@ -509,7 +510,7 @@ fn a_microphone_that_opens_after_you_left_closes() {
     let (dir, mut driver, _engine, _mics) = group_driver();
     let (release, released) = std::sync::mpsc::channel::<()>();
     let released = Mutex::new(released);
-    let stopped = Arc::new(AtomicBool::new(false));
+    let stopped = Arc::new(Latch::default());
     let flag = stopped.clone();
     driver.inject_call_microphone(Arc::new(move |_device, _controls, _sink| {
         let _ = released.lock().unwrap().recv();
@@ -522,10 +523,10 @@ fn a_microphone_that_opens_after_you_left_closes() {
     driver.session.calls.active_group_call = None;
     driver.pump_call_capture(Instant::now());
     assert!(!driver.call_capture().opening());
-    assert!(!stopped.load(Ordering::SeqCst));
+    assert!(!stopped.is_raised());
 
     release.send(()).unwrap();
-    until(|| stopped.load(Ordering::SeqCst));
+    stopped.wait();
     std::fs::remove_dir_all(dir).ok();
 }
 

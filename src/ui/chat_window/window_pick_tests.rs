@@ -91,7 +91,12 @@ fn a_sticker_flies_only_in_the_window_it_was_sent_from(cx: &mut TestAppContext) 
     let image = std::sync::Arc::new(gpui_kit::RenderImage::new(smallvec::SmallVec::from_buf([
         image::Frame::new(image::RgbaImage::new(2, 2)),
     ])));
-    crate::ui::send_fly::arm_for_test(Some(OTHER), OTHER, gpui_kit::ImageSource::Render(image));
+    crate::ui::send_fly::arm_for_test(
+        Some(OTHER),
+        OTHER,
+        gpui_kit::ImageSource::Render(image),
+        cx.executor().now(),
+    );
     let main = scoped(&h, None, cx, |app, cx| app.send_fly_overlay(cx).is_some());
     let window = scoped(&h, Some(OTHER), cx, |app, cx| {
         app.send_fly_overlay(cx).is_some()
@@ -110,7 +115,12 @@ fn ending_the_flight_and_a_refused_send_leave_nothing_to_fly(cx: &mut TestAppCon
         image::Frame::new(image::RgbaImage::new(2, 2)),
     ])));
     crate::ui::send_fly::reset();
-    crate::ui::send_fly::arm_for_test(None, OTHER, gpui_kit::ImageSource::Render(image.clone()));
+    crate::ui::send_fly::arm_for_test(
+        None,
+        OTHER,
+        gpui_kit::ImageSource::Render(image.clone()),
+        cx.executor().now(),
+    );
     assert_eq!(crate::ui::send_fly::flight_state(), Some(false));
     crate::ui::send_fly::end_flight();
     assert_eq!(crate::ui::send_fly::flight_state(), None, "ended");

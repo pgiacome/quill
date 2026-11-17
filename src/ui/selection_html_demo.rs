@@ -179,12 +179,9 @@ mod tests {
         (app, vcx)
     }
 
-    /// Render until the selection bar's slide has finished (it runs on the
-    /// wall clock).
+    /// Render the window (the selection bar snaps in a test).
     fn frames(cx: &mut VisualTestContext) {
-        cx.update(|window, cx| window.render_frame(cx));
-        std::thread::sleep(std::time::Duration::from_millis(400));
-        for _ in 0..2 {
+        for _ in 0..3 {
             cx.update(|window, cx| window.render_frame(cx));
         }
         cx.run_until_parked();
