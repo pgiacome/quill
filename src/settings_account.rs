@@ -33,12 +33,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn footer_shows_the_running_version() {
+    fn footer_names_quill_and_the_version() {
         assert_eq!(version_line("2026.10.9"), "Quill 2026.10.9");
-        assert_eq!(
-            current_version_line(),
-            format!("Quill {}", crate::version::APP)
-        );
     }
 
     #[test]

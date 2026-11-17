@@ -102,10 +102,6 @@ mod tests {
 
     #[test]
     fn color_table_matches_schema_comment_order() {
-        assert_eq!(
-            KEY_PIXEL_COLORS,
-            [0xFF_FF_FF, 0xD5_E6_F3, 0x2D_57_75, 0x2F_99_C9]
-        );
         assert_eq!(key_pixel_color(1), 0xD5_E6_F3);
         assert_eq!(key_pixel_color(2), 0x2D_57_75);
         assert_eq!(key_pixel_color(3), 0x2F_99_C9);

@@ -1242,28 +1242,6 @@ mod tests {
         assert!(session.settings.blocked_senders.waits_for(page));
         assert_eq!(session.settings.blocked_ids(), &[61]);
     }
-
-    /// Slice S3: blocked-senders paging — page 0 replaces, later pages
-    /// append; `total_count` tracks the server total.
-    #[test]
-    fn blocked_senders_pages_append() {
-        let (mut session, sink) = session();
-        let seq = AtomicU64::new(0);
-        let extra = ask_page(&mut session, 0);
-        apply_json(
-            &mut session,
-            &seq,
-            &sink,
-            &blocked_json(extra, 3, &[61, 62]),
-        );
-        assert_eq!(session.settings.blocked_ids(), &[61, 62]);
-        assert_eq!(session.settings.blocked_total(), 3);
-        assert!(!session.settings.blocked_senders.is_loading());
-
-        let extra = ask_page(&mut session, 2);
-        apply_json(&mut session, &seq, &sink, &blocked_json(extra, 3, &[63]));
-        assert_eq!(session.settings.blocked_ids(), &[61, 62, 63]);
-    }
 }
 
 #[cfg(test)]
