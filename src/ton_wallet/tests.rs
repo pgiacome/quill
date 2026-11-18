@@ -229,7 +229,7 @@ fn transfer_parses_and_words_like_the_ios_app() {
     );
     let sent = content(transfer_json(-1_000_000_000, "", false));
     assert!(!transfer_of(&sent).is_received());
-    assert_eq!(line(&sent, DANA, true), "You sent Dana 1 Gram");
+    assert_eq!(line(&sent, DANA, true), "You sent 1 Gram to Dana");
     // The chat-list and notification lines of a received transfer.
     assert_eq!(
         transfer.received_preview(DANA, false).as_deref(),

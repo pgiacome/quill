@@ -4,3 +4,6 @@
 # Unlike scripts/lng-reuse-baseline.txt this list may grow, but every entry
 # needs a reason a reviewer can check.
 qll_chat_link_style_invalid style-link toast; the lng_* key is an AI compose tone error
+qll_misc_email_address form field label; lng_action_secure_email names a Passport document kind.
+qll_chatlist_email_address form field label; lng_action_secure_email names a Passport document kind.
+qll_money_email_address form field label; lng_action_secure_email names a Passport document kind.
