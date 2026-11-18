@@ -26,8 +26,6 @@ fn greeting_about() -> &'static str {
 fn away_about() -> &'static str {
     tr(keys::AWAY_ABOUT)
 }
-const PERIOD_ABOUT: &str = "Choose how many days should pass after your last interaction with \
-a recipient to send them a greeting in response to their message.";
 fn offline_about() -> &'static str {
     tr(keys::AWAY_OFFLINE_ONLY_ABOUT)
 }
@@ -274,7 +272,12 @@ impl QuillApp {
                             cx.notify();
                         })),
                 )
-                .child(div().text_xs().text_color(muted).child(PERIOD_ABOUT)),
+                .child(
+                    div()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(tr(keys::GREETING_PERIOD_ABOUT)),
+                ),
         )
     }
 

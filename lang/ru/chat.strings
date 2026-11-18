@@ -563,6 +563,8 @@
 "qll_chat_sent_yesterday" = "Отправлено вчера в {time}";
 "qll_chat_sent_date" = "Отправлено {date} в {time}";
 "qll_chat_noforwards_info_chat" = "Копирование и пересылка сообщений в этом чате запрещены.";
+"qll_chat_capture_block_unsupported" = "Здесь нельзя запретить скриншоты. В Linux приложения не могут скрыть окно от захвата экрана, поэтому всё в этом секретном чате можно снять на этом компьютере.";
+"qll_chat_encryption_key_note" = "Это изображение и текст получены из ключа шифрования секретного чата с {name}.\n\nЕсли на устройстве {name} они выглядят так же, сквозное шифрование гарантировано.";
 "qll_chat_quote_part_of_message" = "Цитировать часть сообщения";
 "qll_chat_reply_to_message_from_chat" = "Ответ на сообщение из «{chat}»";
 "qll_chat_reply_to_name_from_chat" = "Ответ {name} из «{chat}»";

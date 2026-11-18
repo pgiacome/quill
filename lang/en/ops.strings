@@ -1249,3 +1249,5 @@
 "qll_ops_clear_calls" = "Clear calls";
 "qll_ops_clear_calls_about" = "Are you sure you want to completely clear your calls log?";
 "qll_ops_could_not_clear_the_call_history" = "could not clear the call history (error {code})";
+"lng_greeting_period_about" = "Choose how many days should pass after your last interaction with a recipient to send them a greeting in response to their message.";
+"qll_ops_quick_replies_typing_hint" = "You can access Quick Replies in any chat with a person by typing /.";

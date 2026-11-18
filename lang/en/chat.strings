@@ -726,6 +726,8 @@
 "lng_channel_public_link_copied" = "Link copied to clipboard.";
 "lng_context_about_private_link" = "This link will only work for members of this chat.";
 "qll_chat_noforwards_info_chat" = "Copying and forwarding is not allowed in this chat.";
+"qll_chat_capture_block_unsupported" = "Screenshots can't be blocked here. Linux desktops don't let apps hide a window from screen capture, so anything in this secret chat can be captured on this computer.";
+"qll_chat_encryption_key_note" = "This image and text were derived from the encryption key for this secret chat with {name}.\n\nIf they look the same on {name}'s device, end-to-end encryption is guaranteed.";
 "qll_chat_quote_part_of_message" = "Quote Part of Message";
 "qll_chat_reply_to_message_from_chat" = "Reply to a message from {chat}";
 "qll_chat_reply_to_name_from_chat" = "Reply to {name} from {chat}";

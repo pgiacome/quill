@@ -910,3 +910,4 @@
 "qll_ops_call_participants#few" = "{count} участника";
 "qll_ops_call_participants#many" = "{count} участников";
 "qll_ops_call_participants#other" = "{count} участника";
+"qll_ops_quick_replies_typing_hint" = "Быстрые ответы доступны в любом личном чате: введите /.";
