@@ -1,0 +1,27 @@
+// service (Quill-only service wording; lng_* keys come from Telegram).
+"qll_service_upgraded_to" = "Эта группа была преобразована в супергруппу";
+"qll_service_upgraded_from" = "Группа «{title}» была преобразована в супергруппу";
+"qll_service_topic_icon_changed" = "{from} изменил(а) значок темы";
+"qll_service_topic_edited" = "Тема изменена";
+"qll_service_users_shared" = "Вы поделились {users} с {chat}";
+"qll_service_passport_received" = "Данные Telegram Passport получены";
+"qll_service_webapp_data_received" = "Данные с кнопки \"{text}\" получены.";
+"qll_service_paid_media" = "Платные медиа · {stars}";
+"qll_service_pinned_message" = "сообщение";
+"qll_service_a_chat" = "чат";
+"qll_service_gift_upgrade_for" = "Вы отправили улучшение стоимостью {cost} для подарка пользователя {name}.";
+"qll_service_gift_sold_named" = "Вы продали {name} за {cost}.";
+"qll_service_gift_sold_named_other" = "{user} продал(а) {name} за {cost}.";
+"qll_service_offer_declined_me" = "Вы отклонили предложение о покупке вашего {name} за {cost}.";
+"qll_service_giveaway_stars#one" = "Розыгрыш: {amount} за {count} победителя";
+"qll_service_giveaway_stars#few" = "Розыгрыш: {amount} за {count} победителей";
+"qll_service_giveaway_stars#many" = "Розыгрыш: {amount} за {count} победителей";
+"qll_service_giveaway_stars#other" = "Розыгрыш: {amount} за {count} победителя";
+"qll_service_giveaway_premium#one" = "Розыгрыш: {count} подписка Telegram Premium на {months}";
+"qll_service_giveaway_premium#few" = "Розыгрыш: {count} подписки Telegram Premium на {months}";
+"qll_service_giveaway_premium#many" = "Розыгрыш: {count} подписок Telegram Premium на {months}";
+"qll_service_giveaway_premium#other" = "Розыгрыш: {count} подписки Telegram Premium на {months}";
+"qll_service_todo_marked_both" = "{from} отметил(а) {done} как выполненные, а {not_done} — как невыполненные.";
+"qll_service_todo_marked_both_self" = "Вы отметили {done} как выполненные, а {not_done} — как невыполненные.";
+"qll_service_stake_nothing" = "{from} ничего не выиграл(а)";
+"qll_service_stake_nothing_you" = "Вы ничего не выиграли";

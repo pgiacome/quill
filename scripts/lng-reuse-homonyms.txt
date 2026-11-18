@@ -3,3 +3,6 @@
 # meaning differs, e.g. "qll_door_open adjective (a state); lng_* has the verb".
 # Unlike scripts/lng-reuse-baseline.txt this list may grow, but every entry
 # needs a reason a reviewer can check.
+qll_misc_email_address form field label; lng_action_secure_email names a Passport document kind.
+qll_chatlist_email_address form field label; lng_action_secure_email names a Passport document kind.
+qll_money_email_address form field label; lng_action_secure_email names a Passport document kind.

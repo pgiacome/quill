@@ -7,6 +7,7 @@
 //! chat-list preview use.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{Key, PluralKey, keys, tr, tr_with, trn, trn_with};
 use crate::local_time::{civil_local, day_label, hhmm};
 use crate::telegram::envelope::{
     BotAccessReason, ExpiredKind, GiftOrigin, MessageContent, MessageSender, Money, PassportKind,
@@ -15,6 +16,7 @@ use crate::telegram::envelope::{
 use std::ops::Range;
 
 mod actions;
+mod gifts;
 mod wallet;
 pub use actions::*;
 
@@ -106,9 +108,7 @@ pub struct ServiceCtx<'a> {
     pub names: &'a dyn ServiceNames,
 }
 
-const WHO: &str = "Someone";
-
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct B(Vec<Seg>);
 
 impl B {
@@ -151,39 +151,128 @@ impl B {
     }
 }
 
-fn plural(count: i64, one: &str, other: &str) -> String {
-    format!("{count} {}", if count == 1 { one } else { other })
+/// A name placeholder inside a sentence: each name gets its own
+/// private-use character, so the pack may put it anywhere in the
+/// sentence and [`sentence`] still finds it.
+fn mark(index: usize) -> String {
+    u32::try_from(index)
+        .ok()
+        .and_then(|index| 0xE000_u32.checked_add(index))
+        .and_then(char::from_u32)
+        .map_or_else(String::new, |ch| ch.to_string())
 }
 
-fn quote(text: &str) -> String {
-    format!("\"{text}\"")
+/// Rebuilds a translated sentence: each [`mark`] becomes the segments of
+/// its name (links kept), in whatever order the translation puts them.
+fn sentence(template: &str, parts: &[B]) -> B {
+    let mut out = B::default();
+    let mut plain = String::new();
+    for ch in template.chars() {
+        let slot = (ch as u32)
+            .checked_sub(0xE000)
+            .and_then(|index| usize::try_from(index).ok())
+            .and_then(|index| parts.get(index));
+        match slot {
+            Some(part) => {
+                if !plain.is_empty() {
+                    out = out.t(std::mem::take(&mut plain));
+                }
+                out = out.extend(part.clone());
+            }
+            None => plain.push(ch),
+        }
+    }
+    if !plain.is_empty() {
+        out = out.t(plain);
+    }
+    out
+}
+
+fn marks(parts: &[(&str, B)]) -> (Vec<String>, Vec<B>) {
+    let marks: Vec<String> = (0..parts.len()).map(mark).collect();
+    let bodies: Vec<B> = parts.iter().map(|(_, body)| body.clone()).collect();
+    (marks, bodies)
+}
+
+/// `key` with its `{tag}` placeholders filled by `parts`, each keeping its
+/// link. A name the translation drops simply disappears.
+fn phrase(key: Key, parts: &[(&str, B)]) -> B {
+    let (marks, bodies) = marks(parts);
+    let tags: Vec<(&str, &str)> = parts
+        .iter()
+        .zip(&marks)
+        .map(|((tag, _), mark)| (*tag, mark.as_str()))
+        .collect();
+    sentence(&tr_with(key, &tags), &bodies)
+}
+
+/// [`phrase`] with a plural form chosen by `count` (`{count}` filled in).
+fn phrase_plural(key: PluralKey, count: i64, parts: &[(&str, B)]) -> B {
+    phrase_plural_count(key, count, &count.to_string(), parts)
+}
+
+/// [`phrase_plural`] with `{count}` written as `shown` (a fractional Gram
+/// amount, say) while the form still follows `count`.
+fn phrase_plural_count(key: PluralKey, count: i64, shown: &str, parts: &[(&str, B)]) -> B {
+    let (marks, bodies) = marks(parts);
+    let mut tags: Vec<(&str, &str)> = parts
+        .iter()
+        .zip(&marks)
+        .map(|((tag, _), mark)| (*tag, mark.as_str()))
+        .collect();
+    if !parts.iter().any(|(tag, _)| *tag == "count") {
+        tags.push(("count", shown));
+    }
+    sentence(&trn_with(key, count, &tags), &bodies)
+}
+
+/// A text-only `key`, its `{tag}` placeholders filled.
+fn line(key: Key, tags: &[(&str, &str)]) -> ServiceText {
+    B::default().t(tr_with(key, tags)).done()
+}
+
+/// "A, B and C": the segments joined with the pack's list words
+/// (`lng_action_*_and_one` / `_and_last`).
+fn join_segments(items: &[B], and_one: Key, and_last: Key) -> B {
+    let Some((first, rest)) = items.split_first() else {
+        return B::default().t(someone());
+    };
+    let mut out = first.clone();
+    for (index, item) in rest.iter().enumerate() {
+        let key = if index + 1 == rest.len() {
+            and_last
+        } else {
+            and_one
+        };
+        out = phrase(key, &[("accumulated", out), ("user", item.clone())]);
+    }
+    out
 }
 
 /// `Ui::FormatTTL`.
 fn format_ttl(secs: i32) -> String {
     let secs = i64::from(secs);
     if secs < 86_400 {
-        plural(secs / 3600, "hour", "hours")
+        trn(keys::HOURS, secs / 3600)
     } else if secs < 86_400 * 7 {
-        plural(secs / 86_400, "day", "days")
+        trn(keys::DAYS, secs / 86_400)
     } else if secs < 86_400 * 31 {
         let days = secs / 86_400;
         if secs % 7 == 0 {
-            plural(days / 7, "week", "weeks")
+            trn(keys::WEEKS, days / 7)
         } else {
             format!(
                 "{} {}",
-                plural(days / 7, "week", "weeks"),
-                plural(days % 7, "day", "days")
+                trn(keys::WEEKS, days / 7),
+                trn(keys::DAYS, days % 7)
             )
         }
     } else if secs <= 86_400 * 31 * 11 {
-        plural(secs / (86_400 * 31), "month", "months")
+        trn(keys::MONTHS, secs / (86_400 * 31))
     } else {
-        plural(
+        trn(
+            keys::YEARS,
             (secs as f64 / (86_400.0 * 365.0)).round() as i64,
-            "year",
-            "years",
         )
     }
 }
@@ -193,13 +282,13 @@ fn call_duration(secs: i32) -> String {
     let secs = i64::from(secs);
     let (days, hours, minutes) = (secs / 86_400, secs / 3600, secs / 60);
     if days > 1 {
-        plural(days, "day", "days")
+        trn(keys::DAYS, days)
     } else if hours > 1 {
-        plural(hours, "hour", "hours")
+        trn(keys::HOURS, hours)
     } else if minutes > 1 {
-        plural(minutes, "minute", "minutes")
+        trn(keys::MINUTES, minutes)
     } else {
-        plural(secs, "second", "seconds")
+        trn(keys::SECONDS, secs)
     }
 }
 
@@ -214,13 +303,34 @@ fn grams(cents: i64) -> String {
     }
 }
 
+/// The plural form a Gram count already written as text selects. A
+/// fractional count reads as `other`, which the `few` form covers in
+/// Russian and `other` in English.
+fn gram_form(text: &str) -> i64 {
+    if text.contains('.') {
+        2
+    } else {
+        text.parse().unwrap_or(2)
+    }
+}
+
 /// "1 Gram" / "2.5 Grams".
 fn grams_cost(cents: i64) -> String {
-    if cents == 100 {
-        "1 Gram".into()
-    } else {
-        format!("{} Grams", grams(cents))
-    }
+    let text = grams(cents);
+    trn_with(
+        keys::ACTION_GIFT_FOR_TON,
+        gram_form(&text),
+        &[("count", &text)],
+    )
+}
+
+/// "1 Gram" / "2.5 Grams" for a Gram count already formatted as text.
+fn gram_amount(text: &str) -> String {
+    trn_with(
+        keys::ACTION_GRAM_TRANSFER_AMOUNT,
+        gram_form(text),
+        &[("amount", text)],
+    )
 }
 
 fn group_digits(value: i64) -> String {
@@ -250,14 +360,14 @@ fn amount(money: &Money) -> String {
 /// `lng_action_gift_for_stars` and friends: "N Stars" / "N Grams".
 fn cost(money: &Money) -> String {
     match money.currency.as_str() {
-        "XTR" => plural(money.amount, "Star", "Stars"),
+        "XTR" => stars_cost(money.amount),
         "TON" => grams_cost(money.amount),
         _ => amount(money),
     }
 }
 
 fn stars_cost(stars: i64) -> String {
-    plural(stars, "Star", "Stars")
+    trn(keys::ACTION_GIFT_FOR_STARS, stars)
 }
 
 fn distance(meters: i32) -> String {
@@ -265,9 +375,13 @@ fn distance(meters: i32) -> String {
         let km = f64::from(10 * (meters / 10)) / 1000.0;
         let text = format!("{km:.2}");
         let text = text.trim_end_matches('0').trim_end_matches('.');
-        format!("{text} km")
+        trn_with(
+            keys::ACTION_PROXIMITY_DISTANCE_KM,
+            gram_form(text),
+            &[("count", text)],
+        )
     } else {
-        plural(i64::from(meters), "meter", "meters")
+        trn(keys::ACTION_PROXIMITY_DISTANCE_M, i64::from(meters))
     }
 }
 
@@ -282,7 +396,7 @@ impl ServiceCtx<'_> {
     }
 
     fn user(&self, user_id: i64) -> B {
-        let name = self.names.user_name(user_id).unwrap_or_else(|| WHO.into());
+        let name = self.names.user_name(user_id).unwrap_or_else(someone_string);
         B::default().link(name, ServiceLink::Sender(MessageSender::User { user_id }))
     }
 
@@ -290,7 +404,7 @@ impl ServiceCtx<'_> {
         let name = self
             .names
             .user_short_name(user_id)
-            .unwrap_or_else(|| WHO.into());
+            .unwrap_or_else(someone_string);
         B::default().link(name, ServiceLink::Sender(MessageSender::User { user_id }))
     }
 
@@ -298,7 +412,7 @@ impl ServiceCtx<'_> {
         let name = self
             .names
             .chat_name(chat_id)
-            .unwrap_or_else(|| "a chat".into());
+            .unwrap_or_else(|| tr(keys::Q_SERVICE_A_CHAT).to_string());
         B::default().link(name, ServiceLink::Sender(MessageSender::Chat { chat_id }))
     }
 
@@ -316,34 +430,30 @@ impl ServiceCtx<'_> {
                 let mut out = self.peer(actor);
                 if self.actor_is_me()
                     && let Some(seg) = out.0.first_mut()
-                    && (seg.text == WHO || seg.text == "a chat")
+                    && (seg.text == someone() || seg.text == tr(keys::Q_SERVICE_A_CHAT))
                 {
-                    seg.text = "You".into();
+                    seg.text = tr(keys::FROM_YOU).to_string();
                 }
                 out
             }
-            None if self.is_outgoing => B::default().t("You"),
-            None => B::default().t(WHO),
+            None if self.is_outgoing => B::default().t(tr(keys::FROM_YOU)),
+            None => B::default().t(someone()),
         }
     }
 
-    /// A list "A, B and C" of user links.
+    /// A list "A, B and C" of user links, joined the way tdesktop's
+    /// `lng_action_*_users_and_one` / `_and_last` keys say.
     fn users(&self, ids: &[i64]) -> B {
-        if ids.is_empty() {
-            return B::default().t("somebody");
-        }
-        let mut out = B::default();
-        for (index, id) in ids.iter().enumerate() {
-            if index > 0 {
-                out = out.t(if index + 1 == ids.len() {
-                    " and "
-                } else {
-                    ", "
-                });
-            }
-            out = out.extend(self.user(*id));
-        }
-        out
+        self.join_users(
+            ids,
+            keys::ACTION_ADD_USERS_AND_ONE,
+            keys::ACTION_ADD_USERS_AND_LAST,
+        )
+    }
+
+    fn join_users(&self, ids: &[i64], and_one: Key, and_last: Key) -> B {
+        let links: Vec<B> = ids.iter().map(|id| self.user(*id)).collect();
+        join_segments(&links, and_one, and_last)
     }
 
     /// The other side of a private chat when the actor is me (the row's
@@ -360,31 +470,35 @@ impl ServiceCtx<'_> {
 
     /// "{user} sent you a gift for {cost}" / "You sent a gift for {cost}".
     fn gift_line(&self, cost: &str) -> ServiceText {
+        let cost = B::default().t(cost);
         if self.actor_is_me() {
-            B::default().t(format!("You sent a gift for {cost}")).done()
+            phrase(keys::ACTION_GIFT_SENT, &[("cost", cost)]).done()
         } else {
-            self.peer_of_gift()
-                .t(format!(" sent you a gift for {cost}"))
-                .done()
+            phrase(
+                keys::ACTION_GIFT_RECEIVED,
+                &[("user", self.peer_of_gift()), ("cost", cost)],
+            )
+            .done()
         }
     }
 
     fn gift_line_between(&self, gifter: i64, cost: &str) -> ServiceText {
+        let cost = B::default().t(cost);
         if self.is_me_user(gifter) || self.actor_is_me() {
-            B::default().t(format!("You sent a gift for {cost}")).done()
+            phrase(keys::ACTION_GIFT_SENT, &[("cost", cost)]).done()
         } else {
-            self.user_short(gifter)
-                .t(format!(" sent you a gift for {cost}"))
-                .done()
+            phrase(
+                keys::ACTION_GIFT_RECEIVED,
+                &[("user", self.user_short(gifter)), ("cost", cost)],
+            )
+            .done()
         }
     }
 
-    fn channel_prize(&self, text_before: &str, chat_id: i64, text_after: &str) -> ServiceText {
-        B::default()
-            .t(text_before)
-            .extend(self.chat(chat_id))
-            .t(text_after)
-            .done()
+    /// "{channel} also included …": the prize wording naming the giveaway's
+    /// chat.
+    fn channel_prize(&self, key: Key, chat_id: i64) -> ServiceText {
+        phrase(key, &[("channel", self.chat(chat_id))]).done()
     }
 
     fn format_schedule(&self, start: i32) -> String {
@@ -393,11 +507,23 @@ impl ServiceCtx<'_> {
         let time = hhmm(&scheduled);
         let ahead = scheduled.day_number() - now.day_number();
         match ahead {
-            0 => format!("today at {time}"),
-            1 => format!("tomorrow at {time}"),
-            _ => format!("{} at {time}", day_label(&scheduled, &now)),
+            0 => tr_with(keys::GROUP_CALL_STARTS_TODAY, &[("time", &time)]),
+            1 => tr_with(keys::GROUP_CALL_STARTS_TOMORROW, &[("time", &time)]),
+            _ => tr_with(
+                keys::GROUP_CALL_STARTS_DATE,
+                &[("date", &day_label(&scheduled, &now)), ("time", &time)],
+            ),
         }
     }
+}
+
+/// The "Someone" fallback for a name the session does not know.
+fn someone() -> &'static str {
+    tr(keys::Q_CHAT_SOMEONE)
+}
+
+fn someone_string() -> String {
+    someone().to_string()
 }
 
 fn pin_text(target: PinTarget) -> (String, bool) {
@@ -416,7 +542,7 @@ fn pin_text(target: PinTarget) -> (String, bool) {
             }
         }
         PinTarget::Media(phrase) => (phrase, true),
-        PinTarget::NotLoaded => ("a message".into(), true),
+        PinTarget::NotLoaded => (tr(keys::Q_SERVICE_PINNED_MESSAGE).into(), true),
     }
 }
 
@@ -424,25 +550,32 @@ fn pin_text(target: PinTarget) -> (String, bool) {
 /// text (`pinnedTextSubstring`), or `None` for text messages.
 pub fn pinned_media_phrase(content: &MessageContent) -> Option<String> {
     Some(match content {
-        MessageContent::Photo(_) => "a photo".into(),
-        MessageContent::Video(_) => "a video".into(),
-        MessageContent::Audio(_) => "an audio file".into(),
-        MessageContent::VoiceNote(_) => "a voice message".into(),
-        MessageContent::VideoNote(_) => "a video message".into(),
-        MessageContent::Document(_) => "a file".into(),
-        MessageContent::Animation(_) => "a GIF".into(),
-        MessageContent::Contact(_) => "a contact information".into(),
-        MessageContent::Location(_) | MessageContent::Venue(_) => "a location mark".into(),
+        MessageContent::Photo(_) => tr(keys::ACTION_PINNED_MEDIA_PHOTO).into(),
+        MessageContent::Video(_) => tr(keys::ACTION_PINNED_MEDIA_VIDEO).into(),
+        MessageContent::Audio(_) => tr(keys::ACTION_PINNED_MEDIA_AUDIO).into(),
+        MessageContent::VoiceNote(_) => tr(keys::ACTION_PINNED_MEDIA_VOICE).into(),
+        MessageContent::VideoNote(_) => tr(keys::ACTION_PINNED_MEDIA_VIDEO_MESSAGE).into(),
+        MessageContent::Document(_) => tr(keys::ACTION_PINNED_MEDIA_FILE).into(),
+        MessageContent::Animation(_) => tr(keys::ACTION_PINNED_MEDIA_GIF).into(),
+        MessageContent::Contact(_) => tr(keys::ACTION_PINNED_MEDIA_CONTACT).into(),
+        MessageContent::Location(_) | MessageContent::Venue(_) => {
+            tr(keys::ACTION_PINNED_MEDIA_LOCATION).into()
+        }
         MessageContent::Sticker(sticker) => {
             if sticker.emoji.is_empty() {
-                "a sticker".into()
+                tr(keys::ACTION_PINNED_MEDIA_STICKER).into()
             } else {
-                format!("a {} sticker", sticker.emoji)
+                tr_with(
+                    keys::ACTION_PINNED_MEDIA_EMOJI_STICKER,
+                    &[("emoji", &sticker.emoji)],
+                )
             }
         }
-        MessageContent::Game(game) => format!("the game \u{AB}{}\u{BB}", game.title),
+        MessageContent::Game(game) => {
+            tr_with(keys::ACTION_PINNED_MEDIA_GAME, &[("game", &game.title)])
+        }
         MessageContent::Action(action) if matches!(**action, ServiceAction::Story { .. }) => {
-            "a story".into()
+            tr(keys::ACTION_PINNED_MEDIA_STORY).into()
         }
         _ => return None,
     })
@@ -455,9 +588,9 @@ pub fn render(content: &MessageContent, ctx: &ServiceCtx<'_>) -> Option<ServiceT
         MessageContent::Action(action) => Some(render_action(action, ctx)),
         MessageContent::ChatTtlChanged { secs } => Some(render_ttl(*secs, ctx)),
         MessageContent::ScreenshotTaken => Some(if ctx.actor_is_me() {
-            B::default().t("You took a screenshot!").done()
+            B::default().t(tr(keys::ACTION_YOU_TOOK_SCREENSHOT)).done()
         } else {
-            ctx.from().t(" took a screenshot!").done()
+            phrase(keys::ACTION_TOOK_SCREENSHOT, &[("from", ctx.from())]).done()
         }),
         _ => None,
     }
@@ -466,34 +599,28 @@ pub fn render(content: &MessageContent, ctx: &ServiceCtx<'_>) -> Option<ServiceT
 fn render_ttl(secs: i32, ctx: &ServiceCtx<'_>) -> ServiceText {
     if secs <= 0 {
         return if ctx.is_channel {
-            B::default()
-                .t("Messages in this channel will no longer be automatically deleted")
-                .done()
+            B::default().t(tr(keys::ACTION_TTL_REMOVED_CHANNEL)).done()
         } else if ctx.actor_is_me() {
-            B::default().t("You disabled the auto-delete timer").done()
+            B::default().t(tr(keys::ACTION_TTL_REMOVED_YOU)).done()
         } else {
-            ctx.from().t(" disabled the auto-delete timer").done()
+            phrase(keys::ACTION_TTL_REMOVED, &[("from", ctx.from())]).done()
         };
     }
     let duration = if secs == 5 {
-        "5 seconds".to_string()
+        trn(keys::SECONDS, 5)
     } else {
         format_ttl(secs)
     };
     if ctx.is_channel {
-        B::default()
-            .t(format!(
-                "Messages in this channel will be automatically deleted after {duration}"
-            ))
-            .done()
+        line(keys::ACTION_TTL_CHANGED_CHANNEL, &[("duration", &duration)])
     } else if ctx.actor_is_me() {
-        B::default()
-            .t(format!("You set messages to auto-delete in {duration}"))
-            .done()
+        line(keys::ACTION_TTL_CHANGED_YOU, &[("duration", &duration)])
     } else {
-        ctx.from()
-            .t(format!(" set messages to auto-delete in {duration}"))
-            .done()
+        phrase(
+            keys::ACTION_TTL_CHANGED,
+            &[("from", ctx.from()), ("duration", B::default().t(duration))],
+        )
+        .done()
     }
 }
 
@@ -521,14 +648,14 @@ impl ServiceNames for NoNames {
 /// (tdesktop `BirthdayTable`): the year column only shows when it is set.
 pub fn birthday_table(day: i32, month: i32, year: i32) -> Vec<(&'static str, String)> {
     let mut rows = vec![
-        ("Day", day.to_string()),
+        (tr(keys::Q_PEOPLE_DAY), day.to_string()),
         (
-            "Month",
+            tr(keys::Q_PEOPLE_MONTH),
             crate::local_time::month_name_nominative(month.clamp(1, 12) as u8).to_string(),
         ),
     ];
     if year > 0 {
-        rows.push(("Year", year.to_string()));
+        rows.push((tr(keys::Q_PEOPLE_YEAR), year.to_string()));
     }
     rows
 }

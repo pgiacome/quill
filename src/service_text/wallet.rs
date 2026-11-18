@@ -1,16 +1,21 @@
 //! Service wording of the TON wallet messages, following the official iOS
 //! app (`Notification.GramTransfer`, `Notification.GramTransferYou`,
-//! `Notification.GramTransferUnknown`); Telegram Desktop has no wallet.
+//! `Notification.GramTransferUnknown`) in the keys Telegram Desktop uses
+//! for Gram transfers (`lng_action_gram_transfer_*`).
 use super::*;
-use crate::ton_wallet::{SERVICE_NOTIFICATIONS_CHAT_ID, TonWalletTransfer, format_grams};
+use crate::ton_wallet::{SERVICE_NOTIFICATIONS_CHAT_ID, TonWalletTransfer, format_gram_amount};
 
 /// "Dana sent you 5 Grams", "You sent Dana 5 Grams", and in the service
 /// chat "Someone sent you 5 Grams". The name links to the profile.
 pub(super) fn transfer_line(transfer: &TonWalletTransfer, ctx: &ServiceCtx<'_>) -> ServiceText {
-    let amount = format_grams(transfer.amount);
+    let amount = B::default().t(gram_amount(&format_gram_amount(transfer.amount)));
     if transfer.is_received() {
         if ctx.chat_id == SERVICE_NOTIFICATIONS_CHAT_ID {
-            return B::default().t(format!("{WHO} sent you {amount}")).done();
+            return phrase(
+                keys::ACTION_GRAM_TRANSFER_RECEIVED,
+                &[("user", B::default().t(someone())), ("amount", amount)],
+            )
+            .done();
         }
         // The sender by short name; else, as the iOS app, the chat's
         // other side.
@@ -24,19 +29,27 @@ pub(super) fn transfer_line(transfer: &TonWalletTransfer, ctx: &ServiceCtx<'_>) 
             conversation_peer(ctx)
         };
         if peer.0.is_empty() {
-            peer = B::default().t(WHO);
+            peer = B::default().t(someone());
         }
-        peer.t(format!(" sent you {amount}")).done()
+        phrase(
+            keys::ACTION_GRAM_TRANSFER_RECEIVED,
+            &[("user", peer), ("amount", amount)],
+        )
+        .done()
     } else {
         let peer = conversation_peer(ctx);
         if peer.0.is_empty() {
-            B::default().t(format!("You sent {amount}")).done()
+            phrase(
+                keys::ACTION_GRAM_TRANSFER_SENT_UNKNOWN,
+                &[("amount", amount)],
+            )
+            .done()
         } else {
-            B::default()
-                .t("You sent ")
-                .extend(peer)
-                .t(format!(" {amount}"))
-                .done()
+            phrase(
+                keys::ACTION_GRAM_TRANSFER_SENT,
+                &[("user", peer), ("amount", amount)],
+            )
+            .done()
         }
     }
 }
