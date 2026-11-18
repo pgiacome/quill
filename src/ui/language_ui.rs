@@ -137,6 +137,8 @@ pub(super) fn install_pack(snapshot: Option<quill::lang::Snapshot>, cx: &mut Con
     quill::lang::install(snapshot);
     super::refresh_app_menus(cx);
     let app = cx.weak_entity();
+    // screen-scope: the pack is app-wide; every signed-in account's titles
+    // follow it, whichever is on screen when the turn runs.
     cx.defer(move |cx| {
         let _ = app.update(cx, |this, cx| {
             this.menu_bar.update(cx, |bar, cx| bar.reload(cx));
