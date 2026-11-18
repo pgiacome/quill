@@ -50,11 +50,13 @@ pub enum HidError {
     TooLong,
 }
 
-/// What a running request watches: the cancel flag, its deadline, and
-/// who hears the keepalives.
+/// What a running request watches: the cancel flag, its deadline, the
+/// clock the deadline is read on (`&Instant::now`, or a test's), and who
+/// hears the keepalives.
 pub struct Control<'a> {
     pub cancel: &'a AtomicBool,
     pub deadline: Instant,
+    pub now: &'a dyn Fn() -> Instant,
     pub on_keepalive: &'a mut dyn FnMut(u8),
 }
 
@@ -265,7 +267,7 @@ impl Channel {
             if let Phase::Waiting { deadline } = phase {
                 let reason = if control.cancelled() {
                     Some(HidError::Cancelled)
-                } else if Instant::now() >= deadline {
+                } else if (control.now)() >= deadline {
                     Some(HidError::Timeout)
                 } else {
                     None
@@ -277,12 +279,12 @@ impl Channel {
                     let _ = self.send(CMD_CANCEL, &[]);
                     phase = Phase::Cancelling {
                         reason,
-                        until: Instant::now() + CANCEL_GRACE,
+                        until: (control.now)() + CANCEL_GRACE,
                     };
                 }
             }
             if let Phase::Cancelling { reason, until } = &phase
-                && Instant::now() >= *until
+                && (control.now)() >= *until
             {
                 return Err(reason.clone());
             }
@@ -345,7 +347,7 @@ impl Channel {
 fn check_time(control: &Control<'_>) -> Result<(), HidError> {
     if control.cancelled() {
         Err(HidError::Cancelled)
-    } else if Instant::now() >= control.deadline {
+    } else if (control.now)() >= control.deadline {
         Err(HidError::Timeout)
     } else {
         Ok(())

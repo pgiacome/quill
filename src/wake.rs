@@ -141,6 +141,28 @@ impl Signal {
     pub fn wait_since(&self, seen: u64) -> WaitSince<'_> {
         WaitSince { signal: self, seen }
     }
+
+    /// Tests: [`Signal::wait_since`] on this thread, parked until a poke.
+    /// Read `seen` before looking at the state the poke announces, so a
+    /// poke in between is not lost.
+    #[cfg(any(test, feature = "test-support"))]
+    pub fn block_since(&self, seen: u64) -> u64 {
+        struct Unpark(std::thread::Thread);
+        impl std::task::Wake for Unpark {
+            fn wake(self: std::sync::Arc<Self>) {
+                self.0.unpark();
+            }
+        }
+        let waker = Waker::from(std::sync::Arc::new(Unpark(std::thread::current())));
+        let mut cx = Context::from_waker(&waker);
+        let mut wait = std::pin::pin!(self.wait_since(seen));
+        loop {
+            if let Poll::Ready(epoch) = wait.as_mut().poll(&mut cx) {
+                return epoch;
+            }
+            std::thread::park();
+        }
+    }
 }
 
 impl Default for Signal {
@@ -224,50 +246,40 @@ mod tests {
     use super::*;
     use std::sync::Arc;
     use std::task::Wake;
-    use std::time::{Duration, Instant};
-
-    struct Unpark(std::thread::Thread);
-    impl Wake for Unpark {
-        fn wake(self: Arc<Self>) {
-            self.0.unpark();
-        }
-    }
-
-    /// Block on a wait with a deadline; returns how long it took.
-    fn block_until_ready(signal: &Signal, seen: u64) -> Option<Duration> {
-        let waker = Waker::from(Arc::new(Unpark(std::thread::current())));
-        let mut cx = Context::from_waker(&waker);
-        let mut wait = Box::pin(signal.wait_since(seen));
-        let start = Instant::now();
-        while start.elapsed() < Duration::from_secs(5) {
-            if wait.as_mut().poll(&mut cx).is_ready() {
-                return Some(start.elapsed());
-            }
-            std::thread::park_timeout(Duration::from_secs(5));
-        }
-        None
-    }
 
     #[test]
     fn a_poke_before_the_wait_is_not_lost() {
         let signal = Signal::new();
         let seen = signal.epoch();
         signal.poke();
-        assert!(block_until_ready(&signal, seen).is_some());
+        let flag = Arc::new(Flag(std::sync::atomic::AtomicBool::new(false)));
+        let waker = Waker::from(flag);
+        let mut cx = Context::from_waker(&waker);
+        let mut wait = Box::pin(signal.wait_since(seen));
+        assert_eq!(wait.as_mut().poll(&mut cx), Poll::Ready(signal.epoch()));
     }
 
     #[test]
-    fn a_poke_from_another_thread_wakes_a_sleeping_waiter_at_once() {
+    fn a_poke_from_another_thread_wakes_a_sleeping_waiter() {
+        static SIGNAL: Signal = Signal::new();
+        let flag = Arc::new(Flag(std::sync::atomic::AtomicBool::new(false)));
+        let waker = Waker::from(flag.clone());
+        let mut cx = Context::from_waker(&waker);
+        let mut wait = Box::pin(SIGNAL.wait_since(SIGNAL.epoch()));
+        assert!(wait.as_mut().poll(&mut cx).is_pending());
+        assert!(!woken(&flag));
+        std::thread::spawn(|| SIGNAL.poke()).join().unwrap();
+        assert!(woken(&flag), "the poke woke the parked waiter");
+        assert!(wait.as_mut().poll(&mut cx).is_ready());
+    }
+
+    #[test]
+    fn block_since_returns_once_another_thread_pokes() {
         static SIGNAL: Signal = Signal::new();
         let seen = SIGNAL.epoch();
-        let poker = std::thread::spawn(|| {
-            std::thread::sleep(Duration::from_millis(50));
-            SIGNAL.poke();
-        });
-        let waited = block_until_ready(&SIGNAL, seen);
-        let _ = poker.join();
-        let waited = waited.unwrap_or(Duration::from_secs(99));
-        assert!(waited < Duration::from_millis(1000), "waited {waited:?}");
+        let poker = std::thread::spawn(|| SIGNAL.poke());
+        assert_ne!(SIGNAL.block_since(seen), seen);
+        poker.join().unwrap();
     }
 
     #[test]

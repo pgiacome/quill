@@ -45,10 +45,11 @@ fn rich_html_export_requests_flow_through_the_driver() {
         .unwrap();
     assert_eq!(driver.session.settings.rich_html_exports.len(), 1);
 
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    // The worker pokes `wake::UPDATES` after each request and progress
+    // change, so each pass waits for the next one instead of a clock.
     let mut answered = false;
     let outcome = loop {
-        assert!(std::time::Instant::now() < deadline, "export never settled");
+        let seen = crate::wake::UPDATES.epoch();
         driver.pump_rich_html_exports();
         if let Some(outcome) = driver.take_finished_rich_html_exports().pop() {
             break outcome;
@@ -72,7 +73,7 @@ fn rich_html_export_requests_flow_through_the_driver() {
                 .unwrap();
             answered = true;
         }
-        std::thread::sleep(std::time::Duration::from_millis(5));
+        crate::wake::UPDATES.block_since(seen);
     };
     let html = base.join("Notes").join("Notes.html");
     assert_eq!(outcome, RichHtmlOutcome::Saved(html.clone()));

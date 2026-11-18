@@ -305,10 +305,9 @@ fn a_strip_wakes_a_pass_once_per_width() {
     assert_eq!(frames_at(&mut extra, 640.0), 2, "a new width");
 }
 
-/// Past the idle wait on both clocks: the wall clock the viewer measures
-/// idle time on, and the executor clock its hide timer sleeps on.
+/// Past the idle wait on the executor's clock, which the viewer measures
+/// idle time on and its hide timer sleeps on.
 fn idle(vcx: &mut VisualTestContext) {
-    std::thread::sleep(Duration::from_millis(1200));
     vcx.executor().advance_clock(Duration::from_millis(1200));
     settle(vcx);
 }

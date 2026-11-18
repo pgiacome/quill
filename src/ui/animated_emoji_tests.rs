@@ -77,6 +77,20 @@ fn settle(app: &Entity<QuillApp>, vcx: &mut VisualTestContext) {
     frames(vcx);
 }
 
+/// Move the frozen player clock on by `by` in frame-sized steps, drawing
+/// and settling the player at each.
+fn play_frozen_for(app: &Entity<QuillApp>, vcx: &mut VisualTestContext, by: Duration) {
+    let step = Duration::from_millis(50);
+    let mut left = by;
+    while !left.is_zero() {
+        let now = step.min(left);
+        app.read_with(vcx, |app, _| app.players.stickers.skip(now));
+        app.update(vcx, |_, cx| cx.notify());
+        settle(app, vcx);
+        left -= now;
+    }
+}
+
 fn message(app: &Entity<QuillApp>, vcx: &mut VisualTestContext, id: i64) -> HistoryMessage {
     app.read_with(vcx, |app, _| {
         app.demo_session
@@ -124,21 +138,16 @@ fn a_lone_emoji_plays_once_and_a_tap_plays_it_again(cx: &mut TestAppContext) {
         );
         assert!(app.players.emoji_plays.borrow().has_played(key));
     });
-    // Drawn for a second (30 frames at 30 fps), it played through.
+    // Drawn for a second (30 frames at 30 fps), it played through. The
+    // player's clock stands still and moves only by `skip`.
     let done = |app: &QuillApp| {
         app.players
             .stickers
             .head_progress(play_head(key, 0), HAND_FILE)
             .is_some_and(|(pos, total)| pos >= total)
     };
-    for _ in 0..60 {
-        if app.read_with(&vcx, |app, _| done(app)) {
-            break;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        app.update(&mut vcx, |_, cx| cx.notify());
-        frames(&mut vcx);
-    }
+    app.read_with(&vcx, |app, _| app.players.stickers.freeze());
+    play_frozen_for(&app, &mut vcx, Duration::from_millis(1200));
     assert!(app.read_with(&vcx, |app, _| done(app)), "it played through");
     // A tap plays it again, on a new head.
     app.update(&mut vcx, |app, _| {
@@ -157,20 +166,20 @@ fn a_lone_emoji_plays_once_and_a_tap_plays_it_again(cx: &mut TestAppContext) {
             "the replay started"
         );
     });
-    // A second tap while it plays does not start it over; once it played
-    // through (a slow machine can get there during `settle`), it does.
-    let replaying = app.read_with(&vcx, |app, _| {
-        app.players
-            .stickers
-            .head_progress(play_head(key, 1), HAND_FILE)
-            .is_some_and(|(pos, total)| pos < total)
-    });
+    // A second tap while it plays does not start it over.
     app.update(&mut vcx, |app, _| {
         app.tap_animated_emoji(ChatId(CHAT), MessageId(FIRST_MESSAGE));
     });
     app.read_with(&vcx, |app, _| {
-        let expected = if replaying { 1 } else { 2 };
-        assert_eq!(app.players.emoji_plays.borrow().generation(key), expected);
+        assert_eq!(app.players.emoji_plays.borrow().generation(key), 1);
+    });
+    // Once it played through, a tap does.
+    play_frozen_for(&app, &mut vcx, Duration::from_millis(1200));
+    app.update(&mut vcx, |app, _| {
+        app.tap_animated_emoji(ChatId(CHAT), MessageId(FIRST_MESSAGE));
+    });
+    app.read_with(&vcx, |app, _| {
+        assert_eq!(app.players.emoji_plays.borrow().generation(key), 2);
     });
     // Leaving the chat forgets it: it plays again next time.
     let other = other_chat(&app, &vcx);

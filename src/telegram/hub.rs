@@ -321,7 +321,15 @@ pub struct TdHub {
     seq: Arc<AtomicU64>,
     run: Arc<Run>,
     wake: ReceiveWake,
-    thread: Mutex<Option<JoinHandle<Option<()>>>>,
+    thread: Mutex<Option<ReceiveThread>>,
+}
+
+/// The receive loop's thread, while it has not been joined.
+struct ReceiveThread {
+    handle: JoinHandle<Option<()>>,
+    /// Disconnects when the thread's closure is gone (returned or
+    /// unwound), so [`TdHub::stop_within`] waits on it instead of polling.
+    ended: Receiver<()>,
 }
 
 /// Where one receive loop is.
@@ -529,15 +537,18 @@ impl TdHub {
         // Marks the loop dead when it ends for any reason other than a
         // requested shutdown, including a panic unwind.
         let guard = DropGuard::new(run.clone(), |run| run.died());
-        let thread = {
+        let (ended_tx, ended) = mpsc::channel::<()>();
+        let handle = {
             let routes = routes.clone();
             let seq = seq.clone();
             let run = run.clone();
             crate::thread_guard::spawn_guarded("quill-td-receive", move || {
                 let _guard = guard;
+                let _ended = ended_tx;
                 receive_loop(source, &routes, &seq, &run, &sink);
             })?
         };
+        let thread = ReceiveThread { handle, ended };
         Ok(Self {
             api: None,
             routes,
@@ -580,7 +591,7 @@ impl TdHub {
     pub fn shutdown(&self) {
         self.request_stop();
         if let Some(thread) = lock(&self.thread).take() {
-            let _ = thread.join();
+            let _ = thread.handle.join();
             self.run.joined();
         }
     }
@@ -592,20 +603,29 @@ impl TdHub {
         let Some(thread) = lock(&self.thread).take() else {
             return true;
         };
-        let deadline = std::time::Instant::now() + max;
-        while !thread.is_finished() && std::time::Instant::now() < deadline {
-            std::thread::sleep(Duration::from_millis(2));
-        }
-        if !thread.is_finished() {
+        // Nothing is ever sent: the receive ends when the thread drops its
+        // sender, and a `max` too long for the clock waits without a limit.
+        let ended = thread.ended.recv_timeout(max);
+        if !matches!(ended, Err(mpsc::RecvTimeoutError::Disconnected)) {
             // Still running: the handle stays with the hub, so the stage
             // `Stopping` keeps the thread it waits for and a later stop
             // can join it.
             *lock(&self.thread) = Some(thread);
             return false;
         }
-        let _ = thread.join();
+        let _ = thread.handle.join();
         self.run.joined();
         true
+    }
+
+    /// Tests: wait for a loop that ends by itself (a source that keeps
+    /// panicking) by joining its thread, without asking it to stop. Returns
+    /// once the loop has reported itself.
+    #[cfg(any(test, feature = "test-support"))]
+    pub fn join_ended_loop(&self) {
+        if let Some(thread) = lock(&self.thread).take() {
+            let _ = thread.handle.join();
+        }
     }
 
     fn request_stop(&self) {

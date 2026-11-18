@@ -25,6 +25,7 @@ fn open(script: &Arc<Mutex<Script>>, cancel: &AtomicBool) -> Authenticator {
     let mut control = Control {
         cancel,
         deadline: Instant::now() + Duration::from_secs(5),
+        now: &Instant::now,
         on_keepalive: &mut ignore,
     };
     Authenticator::open(Box::new(FakeKey::new(script.clone())), &mut control).unwrap()
@@ -121,6 +122,7 @@ fn make_credential_without_a_pin() {
     let mut control = Control {
         cancel: &cancel,
         deadline: Instant::now() + Duration::from_secs(5),
+        now: &Instant::now,
         on_keepalive: &mut hear,
     };
     let options = creation();
@@ -191,6 +193,7 @@ fn a_pin_becomes_a_token_with_permissions() {
         let mut control = Control {
             cancel: &cancel,
             deadline: Instant::now() + Duration::from_secs(5),
+            now: &Instant::now,
             on_keepalive: &mut ignore,
         };
         let mut rng = rand::rng();
@@ -240,6 +243,7 @@ fn a_key_with_a_pin_asks_for_it() {
     let mut control = Control {
         cancel: &cancel,
         deadline: Instant::now() + Duration::from_secs(5),
+        now: &Instant::now,
         on_keepalive: &mut ignore,
     };
     let made = make_credential(&mut key, &creation(), &[3; 32], None, &mut control);
@@ -255,6 +259,7 @@ fn get_assertion_reads_the_first_assertion() {
     let mut control = Control {
         cancel: &cancel,
         deadline: Instant::now() + Duration::from_secs(5),
+        now: &Instant::now,
         on_keepalive: &mut ignore,
     };
     let options = RequestOptions {
@@ -302,20 +307,26 @@ fn cancel_while_waiting_for_a_touch() {
     let mut control = Control {
         cancel: &cancel,
         deadline: Instant::now() + Duration::from_secs(5),
+        now: &Instant::now,
         on_keepalive: &mut hear,
     };
     let made = make_credential(&mut key, &creation(), &[3; 32], None, &mut control);
     assert_eq!(made, Err(CtapError::Hid(HidError::Cancelled)));
     assert_eq!(fake.lock().unwrap().cancels, 1);
-    // The deadline cancels the same way.
+    // The deadline cancels the same way. The clock moves only with the
+    // key's keepalives: the third one is past the deadline.
     let cancel = AtomicBool::new(false);
     let fake = script(|s| s.hold = true);
     let mut key = open(&fake, &cancel);
-    let mut ignore = |_: u8| {};
+    let start = Instant::now();
+    let clock = std::cell::Cell::new(start);
+    let now = || clock.get();
+    let mut tick = |_: u8| clock.set(clock.get() + Duration::from_millis(20));
     let mut control = Control {
         cancel: &cancel,
-        deadline: Instant::now() + Duration::from_millis(50),
-        on_keepalive: &mut ignore,
+        deadline: start + Duration::from_millis(50),
+        now: &now,
+        on_keepalive: &mut tick,
     };
     let made = make_credential(&mut key, &creation(), &[3; 32], None, &mut control);
     assert_eq!(made, Err(CtapError::Hid(HidError::Timeout)));

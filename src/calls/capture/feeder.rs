@@ -369,10 +369,7 @@ fn run<T: FeedFrame>(
     mode: &SharedMode,
     stats: &FeederStats,
 ) {
-    let mut clock = CaptureClock::new();
-    let mut bytes = Vec::new();
-    let mut last_log: Option<Instant> = None;
-    let mut failed_run = 0u32;
+    let mut forwarder = Forwarder::new(CaptureClock::new());
     while mode.get() != FeederMode::Stopped {
         let Some(frame) = sink.pop_timeout(Duration::from_millis(100)) else {
             if sink.is_closed() {
@@ -380,38 +377,72 @@ fn run<T: FeedFrame>(
             }
             continue;
         };
-        if mode.get() != FeederMode::Forwarding {
-            continue;
+        forwarder.feed(frame, mode.get(), sink, sender, stats);
+    }
+}
+
+/// What the feeder thread keeps between frames.
+struct Forwarder {
+    clock: CaptureClock,
+    bytes: Vec<u8>,
+    last_log: Option<Instant>,
+    failed_run: u32,
+}
+
+impl Forwarder {
+    fn new(clock: CaptureClock) -> Self {
+        Self {
+            clock,
+            bytes: Vec::new(),
+            last_log: None,
+            failed_run: 0,
+        }
+    }
+
+    /// Hand one frame taken from `sink` to `sender`, unless `mode` drops it.
+    fn feed<T: FeedFrame>(
+        &mut self,
+        frame: T,
+        mode: FeederMode,
+        sink: &FrameSink<T>,
+        sender: &dyn ExternalFrameSender,
+        stats: &FeederStats,
+    ) {
+        if mode != FeederMode::Forwarding {
+            return;
         }
         let (width, height) = frame.size();
         let meta = ExternalFrameMeta {
-            timestamp_ms: clock.map(frame.captured_at()),
+            timestamp_ms: self.clock.map(frame.captured_at()),
             width,
             height,
         };
-        frame.write_bytes(&mut bytes);
-        if !external_frame_valid(T::DEVICE, bytes.len(), meta) {
+        frame.write_bytes(&mut self.bytes);
+        if !external_frame_valid(T::DEVICE, self.bytes.len(), meta) {
             stats.rejected.fetch_add(1, Ordering::Relaxed);
-            continue;
+            return;
         }
-        match sender.send(T::DEVICE, &bytes, meta) {
+        match sender.send(T::DEVICE, &self.bytes, meta) {
             Ok(()) => {
                 stats.sent.fetch_add(1, Ordering::Relaxed);
                 // Recovered: the old error is not the current one.
-                failed_run = 0;
+                self.failed_run = 0;
                 *stats.last_error.lock_or_recover() = None;
             }
             Err(err) => {
                 stats.failed.fetch_add(1, Ordering::Relaxed);
                 let text = err.to_string();
-                failed_run = failed_run.saturating_add(1);
-                if failed_run == FAILED_RUN {
+                self.failed_run = self.failed_run.saturating_add(1);
+                if self.failed_run == FAILED_RUN {
                     sink.push_event(CaptureEvent::Failed(CaptureError::Refused(format!(
                         "The call refused the captured frames ({text})."
                     ))));
                 }
-                if last_log.is_none_or(|at| at.elapsed() >= ERROR_LOG_EVERY) {
-                    last_log = Some(Instant::now());
+                if self
+                    .last_log
+                    .is_none_or(|at| at.elapsed() >= ERROR_LOG_EVERY)
+                {
+                    self.last_log = Some(Instant::now());
                     eprintln!("quill: call capture: {text}");
                 }
                 *stats.last_error.lock_or_recover() = Some(text);
@@ -425,10 +456,24 @@ mod tests {
     use super::*;
     use crate::calls::engine::EngineError;
 
+    type Sent = (ExternalDevice, Vec<u8>, ExternalFrameMeta);
+
     #[derive(Default)]
     struct Recorder {
-        frames: Mutex<Vec<(ExternalDevice, Vec<u8>, ExternalFrameMeta)>>,
+        frames: Mutex<Vec<Sent>>,
+        arrived: Condvar,
         fail: AtomicBool,
+    }
+
+    impl Recorder {
+        /// Block until `count` frames arrived (from the feeder thread).
+        fn wait_frames(&self, count: usize) -> Vec<Sent> {
+            let frames = self.frames.lock().unwrap();
+            self.arrived
+                .wait_while(frames, |frames| frames.len() < count)
+                .unwrap()
+                .clone()
+        }
     }
 
     impl ExternalFrameSender for Recorder {
@@ -448,6 +493,7 @@ mod tests {
                 .lock()
                 .unwrap()
                 .push((device, data.to_vec(), meta));
+            self.arrived.notify_all();
             Ok(())
         }
     }
@@ -459,12 +505,22 @@ mod tests {
         }
     }
 
-    fn wait_until(mut done: impl FnMut() -> bool) {
-        let start = Instant::now();
-        while !done() {
-            assert!(start.elapsed() < Duration::from_secs(5), "timed out");
-            std::thread::sleep(Duration::from_millis(2));
+    /// Feed `frames` in `mode` the way the feeder thread does, on this one.
+    fn feed<T: FeedFrame>(
+        forwarder: &mut Forwarder,
+        mode: FeederMode,
+        frames: impl IntoIterator<Item = T>,
+        sender: &dyn ExternalFrameSender,
+        stats: &FeederStats,
+    ) {
+        let sink = FrameSink::new(1);
+        for frame in frames {
+            forwarder.feed(frame, mode, &sink, sender, stats);
         }
+    }
+
+    fn forwarder() -> Forwarder {
+        Forwarder::new(CaptureClock::starting_at(Instant::now(), 0))
     }
 
     /// Refuses every frame and stops the feeder after `limit` of them.
@@ -557,13 +613,23 @@ mod tests {
     }
 
     #[test]
-    fn closed_sink_takes_nothing_and_wakes_the_reader() {
+    fn closed_sink_takes_nothing() {
         let sink: FrameSink<AudioFrame> = FrameSink::new(2);
         sink.close();
         sink.push(audio(1));
-        let start = Instant::now();
-        assert!(sink.pop_timeout(Duration::from_secs(5)).is_none());
-        assert!(start.elapsed() < Duration::from_secs(1));
+        assert!(sink.pop_timeout(Duration::ZERO).is_none());
+    }
+
+    #[test]
+    fn closing_wakes_a_waiting_reader() {
+        let sink: FrameSink<AudioFrame> = FrameSink::new(2);
+        let reader = {
+            let sink = sink.clone();
+            // Far longer than any test run: only the close can end the wait.
+            std::thread::spawn(move || sink.pop_timeout(Duration::from_secs(24 * 3600)))
+        };
+        sink.close();
+        assert!(reader.join().unwrap().is_none());
     }
 
     #[test]
@@ -593,12 +659,14 @@ mod tests {
         let recorder = Arc::new(Recorder::default());
         let sink = FrameSink::new(AUDIO_SINK_FRAMES);
         let feeder = CaptureFeeder::start(sink.clone(), recorder.clone()).unwrap();
+        let at = Instant::now();
         for value in 0..5 {
-            sink.push(audio(value));
-            std::thread::sleep(Duration::from_millis(3));
+            sink.push(AudioFrame {
+                pcm: vec![value; 480],
+                captured_at: at + Duration::from_millis(3 * u64::try_from(value).unwrap()),
+            });
         }
-        wait_until(|| feeder.stats().sent() == 5);
-        let frames = recorder.frames.lock().unwrap().clone();
+        let frames = recorder.wait_frames(5);
         assert!(frames.iter().all(|(device, bytes, meta)| {
             *device == ExternalDevice::Microphone && bytes.len() == 960 && meta.width == 0
         }));
@@ -613,30 +681,37 @@ mod tests {
 
     #[test]
     fn bad_frame_sizes_never_reach_the_engine() {
-        let recorder = Arc::new(Recorder::default());
-        let sink = FrameSink::new(AUDIO_SINK_FRAMES);
-        let feeder = CaptureFeeder::start(sink.clone(), recorder.clone()).unwrap();
-        sink.push(AudioFrame {
+        let recorder = Recorder::default();
+        let stats = FeederStats::default();
+        let short = AudioFrame {
             pcm: vec![0; 479],
             captured_at: Instant::now(),
-        });
-        sink.push(audio(1));
-        wait_until(|| feeder.stats().sent() == 1);
-        assert_eq!(feeder.stats().rejected(), 1);
+        };
+        feed(
+            &mut forwarder(),
+            FeederMode::Forwarding,
+            [short, audio(1)],
+            &recorder,
+            &stats,
+        );
+        assert_eq!((stats.sent(), stats.rejected()), (1, 1));
 
-        let video_recorder = Arc::new(Recorder::default());
-        let video_sink = FrameSink::new(VIDEO_SINK_FRAMES);
-        let video = CaptureFeeder::start(video_sink.clone(), video_recorder.clone()).unwrap();
+        let video_recorder = Recorder::default();
+        let video_stats = FeederStats::default();
         let picture = |len: usize| VideoFrame {
             i420: vec![0; len],
             width: 320,
             height: 240,
             captured_at: Instant::now(),
         };
-        video_sink.push(picture(320 * 240));
-        video_sink.push(picture(320 * 240 * 3 / 2));
-        wait_until(|| video.stats().sent() == 1);
-        assert_eq!(video.stats().rejected(), 1);
+        feed(
+            &mut forwarder(),
+            FeederMode::Forwarding,
+            [picture(320 * 240), picture(320 * 240 * 3 / 2)],
+            &video_recorder,
+            &video_stats,
+        );
+        assert_eq!((video_stats.sent(), video_stats.rejected()), (1, 1));
         let sent = video_recorder.frames.lock().unwrap();
         assert_eq!(sent[0].0, ExternalDevice::Screen);
         assert_eq!((sent[0].2.width, sent[0].2.height), (320, 240));
@@ -644,34 +719,44 @@ mod tests {
 
     #[test]
     fn paused_feeder_forwards_nothing() {
-        let recorder = Arc::new(Recorder::default());
-        let sink = FrameSink::new(AUDIO_SINK_FRAMES);
-        let feeder = CaptureFeeder::start(sink.clone(), recorder.clone()).unwrap();
-        feeder.set_forwarding(false);
-        for value in 0..4 {
-            sink.push(audio(value));
-        }
-        wait_until(|| sink.pop_timeout(Duration::ZERO).is_none());
-        std::thread::sleep(Duration::from_millis(20));
-        assert_eq!(feeder.stats().sent(), 0);
-        feeder.set_forwarding(true);
-        sink.push(audio(9));
-        wait_until(|| feeder.stats().sent() == 1);
+        let recorder = Recorder::default();
+        let stats = FeederStats::default();
+        let mut forwarder = forwarder();
+        feed(
+            &mut forwarder,
+            FeederMode::Paused,
+            (0..4).map(audio),
+            &recorder,
+            &stats,
+        );
+        assert_eq!(stats.sent(), 0);
+        assert!(recorder.frames.lock().unwrap().is_empty());
+        feed(
+            &mut forwarder,
+            FeederMode::Forwarding,
+            [audio(9)],
+            &recorder,
+            &stats,
+        );
+        assert_eq!(stats.sent(), 1);
         assert_eq!(recorder.frames.lock().unwrap()[0].1[0], 9);
     }
 
     #[test]
     fn engine_errors_are_counted_and_kept() {
-        let recorder = Arc::new(Recorder::default());
+        let recorder = Recorder::default();
         recorder.fail.store(true, Ordering::Relaxed);
-        let sink = FrameSink::new(AUDIO_SINK_FRAMES);
-        let feeder = CaptureFeeder::start(sink.clone(), recorder.clone()).unwrap();
-        sink.push(audio(1));
-        sink.push(audio(2));
-        wait_until(|| feeder.stats().failed() == 2);
+        let stats = FeederStats::default();
+        feed(
+            &mut forwarder(),
+            FeederMode::Forwarding,
+            [audio(1), audio(2)],
+            &recorder,
+            &stats,
+        );
+        assert_eq!(stats.failed(), 2);
         assert!(
-            feeder
-                .stats()
+            stats
                 .last_error()
                 .is_some_and(|err| err.contains("qc_external_frame"))
         );

@@ -647,10 +647,8 @@ mod viewer {
     }
 
     /// The controls as just after a pointer move. The idle timer runs on
-    /// the wall clock, so on a busy machine they can fade out before a
-    /// frame is drawn, and faded controls are not drawn at all.
+    /// the executor's clock, which only moves when a test advances it.
     pub(super) fn wake_controls(app: &mut QuillApp) {
-        app.viewer.last_activity = std::time::Instant::now();
         app.viewer.visibility.show();
     }
 

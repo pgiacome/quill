@@ -3,10 +3,55 @@
 //! the condvar the decode thread notifies.
 #![deny(clippy::indexing_slicing)]
 
-use super::{Player, Shared, State, lock};
-use std::time::Instant;
+use super::{PixelOutput, Player, Shared, State, lock};
+use std::sync::{Condvar, Mutex, MutexGuard};
+use std::time::{Duration, Instant};
 
 impl Shared {
+    pub(super) fn new(video_frames: usize, output: PixelOutput) -> Self {
+        Self {
+            state: Mutex::new(State {
+                video_cap: video_frames.max(1),
+                output,
+                ..State::default()
+            }),
+            wake: Condvar::new(),
+            progress: Condvar::new(),
+            #[cfg(test)]
+            manual_now: Mutex::new(None),
+        }
+    }
+
+    /// The time the player and its decode thread go by: the wall clock, or
+    /// in a test the one it moves by hand.
+    pub(super) fn now(&self) -> Instant {
+        #[cfg(test)]
+        if let Some(at) = *lock(&self.manual_now) {
+            return at;
+        }
+        Instant::now()
+    }
+
+    /// The decode thread sleeps until woken, or `wait` passes. On a test's
+    /// hand-moved clock only a wake ends it: real time does not pass there.
+    pub(super) fn idle<'s>(
+        &self,
+        state: MutexGuard<'s, State>,
+        wait: Duration,
+    ) -> MutexGuard<'s, State> {
+        #[cfg(test)]
+        if lock(&self.manual_now).is_some() {
+            return self
+                .wake
+                .wait(state)
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+        }
+        self.wake
+            .wait_timeout(state, wait)
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .0
+    }
+
     /// The open ended (the file is open, or opening failed or the thread
     /// died): run the wakes waiting for it, outside the lock.
     pub(super) fn open_settled(&self) {

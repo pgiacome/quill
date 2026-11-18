@@ -28,24 +28,9 @@ use std::cell::Cell;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-/// `st::itemRevealDuration`.
+/// The flight's length, `st::itemRevealDuration`. It runs on the
+/// executor's clock, which a test moves itself.
 const DURATION: Duration = super::motion::REVEAL_DURATION;
-
-/// The flight's length. Tests stretch it so a slow, loaded run cannot see
-/// the flight end between two assertions.
-fn duration() -> Duration {
-    #[cfg(test)]
-    if let Some(stretched) = TEST_DURATION.with(std::cell::Cell::get) {
-        return stretched;
-    }
-    DURATION
-}
-
-#[cfg(test)]
-thread_local! {
-    pub(super) static TEST_DURATION: std::cell::Cell<Option<Duration>> =
-        const { std::cell::Cell::new(None) };
-}
 /// A message whose sticker never shows (scrolled away, failed to send)
 /// ends the flight after this long.
 const WAIT_FOR_TARGET: Duration = Duration::from_secs(2);
@@ -357,7 +342,7 @@ impl QuillApp {
             since,
             from,
             image: source.image,
-            armed: Instant::now(),
+            armed: cx.background_executor().now(),
         }));
         self.notify_conversation(cx);
     }
@@ -372,7 +357,7 @@ impl QuillApp {
         }) {
             return None;
         }
-        let now = Instant::now();
+        let now = cx.background_executor().now();
         let step = with_taken(&FLIGHT, |flight| {
             let (fly, started) = match std::mem::take(flight) {
                 Flight::Idle => return Step::Idle,
@@ -383,7 +368,7 @@ impl QuillApp {
                 Flight::Flying { fly, started } => (fly, Some(started)),
             };
             let ended = match started {
-                Some(started) => now.duration_since(started) >= duration(),
+                Some(started) => now.duration_since(started) >= DURATION,
                 None => now.duration_since(fly.armed) >= WAIT_FOR_TARGET,
             };
             if ended {
@@ -418,7 +403,7 @@ impl QuillApp {
         let origin = ORIGIN.with(Cell::get);
         let positioned = started.zip(TARGET.with(Cell::get)).zip(origin);
         let picture = positioned.map(|((started, target), origin)| {
-            let progress = super::motion::progress(now.duration_since(started), duration());
+            let progress = super::motion::progress(now.duration_since(started), DURATION);
             let at = flight(rect_of(from), rect_of(target), ease_out_quint(progress));
             div()
                 .absolute()
@@ -485,10 +470,16 @@ pub(super) fn flight_state() -> Option<bool> {
     })
 }
 
-/// A flight armed from `window` for `chat`, as `arm_send_fly` leaves it.
+/// A flight armed from `window` for `chat` at `armed` (the executor's
+/// clock), as `arm_send_fly` leaves it.
 #[cfg(test)]
 #[cfg(feature = "demo-capture")]
-pub(super) fn arm_for_test(window: Option<ChatId>, chat: ChatId, image: ImageSource) {
+pub(super) fn arm_for_test(
+    window: Option<ChatId>,
+    chat: ChatId,
+    image: ImageSource,
+    armed: Instant,
+) {
     let from = Bounds::new(point(px(10.), px(10.)), size(px(40.), px(40.)));
     FLIGHT.set(Flight::Waiting(Fly {
         window,
@@ -497,7 +488,7 @@ pub(super) fn arm_for_test(window: Option<ChatId>, chat: ChatId, image: ImageSou
         since: 0,
         from,
         image,
-        armed: Instant::now(),
+        armed,
     }));
 }
 

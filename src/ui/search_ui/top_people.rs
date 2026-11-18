@@ -61,7 +61,12 @@ impl QuillApp {
         let Some(started) = self.search_ui.top_toggled_at.get() else {
             return target;
         };
-        let elapsed = started.elapsed().as_millis() as u64;
+        // The executor's clock: the wall clock, which a test moves itself.
+        let elapsed = cx
+            .background_executor()
+            .now()
+            .saturating_duration_since(started)
+            .as_millis() as u64;
         if !model::expand_running(elapsed) {
             return target;
         }
@@ -85,7 +90,7 @@ impl QuillApp {
         let expanding = search.top_view.expanded();
         self.search_ui
             .top_toggled_at
-            .set(Some(std::time::Instant::now()));
+            .set(Some(cx.background_executor().now()));
         if !expanding {
             self.search_ui.top_scroll.set_offset(point(px(0.), px(0.)));
         }

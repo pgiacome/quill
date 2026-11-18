@@ -5,7 +5,7 @@ use crate::telegram::hub::TdHub;
 use std::mem::DropGuard;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
@@ -172,10 +172,11 @@ fn injected_loop(
     shutdown: Arc<AtomicBool>,
     sink: Arc<dyn DiagnosticSink>,
 ) {
+    // `shutdown` sends `Shutdown` after setting the flag, and dropping the
+    // bridge drops the command side, so the blocking receive always ends.
     while !shutdown.load(Ordering::SeqCst) {
-        match rx_cmd.recv_timeout(Duration::from_millis(50)) {
-            Ok(BridgeCommand::Shutdown) | Err(RecvTimeoutError::Disconnected) => break,
-            Err(RecvTimeoutError::Timeout) => continue,
+        match rx_cmd.recv() {
+            Ok(BridgeCommand::Shutdown) | Err(_) => break,
             Ok(BridgeCommand::Json(json)) => {
                 if let Some(owned) = copy_and_parse(&json, &seq, &sink)
                     && tx_out.send(owned).is_err()
@@ -318,9 +319,9 @@ mod tests {
         bridge.inject(r#"{"@type":"ok","@extra":"1"}"#);
         bridge.inject(r#"{"@type":"updateNewMessage","message":{"id":10,"chat_id":1,"is_outgoing":false,"content":{"@type":"messageText","text":{"@type":"formattedText","text":"hi","entities":[]}}}}"#);
 
-        let a = bridge.next_timeout(Duration::from_secs(1)).unwrap();
-        let b = bridge.next_timeout(Duration::from_secs(1)).unwrap();
-        let c = bridge.next_timeout(Duration::from_secs(1)).unwrap();
+        let a = bridge.rx.recv().unwrap();
+        let b = bridge.rx.recv().unwrap();
+        let c = bridge.rx.recv().unwrap();
         assert_eq!(a.seq, 1);
         assert_eq!(b.seq, 2);
         assert_eq!(c.seq, 3);
@@ -343,23 +344,17 @@ mod tests {
         let sink = Arc::new(MemorySink::new());
         let bridge = ReceiveBridge::spawn_injected(sink).unwrap();
         let mut seen = crate::wake::UPDATES.epoch();
-        let start = std::time::Instant::now();
         bridge
             .inject(r#"{"@type":"updateOption","name":"x","value":{"@type":"optionValueEmpty"}}"#);
         // Other tests running in parallel poke the same global wake-up
         // (call engine hooks), so a poke with nothing queued is noise:
         // wait for the next one. Ours must arrive with the update readable.
-        let mut received = false;
-        while !received && start.elapsed() < Duration::from_secs(2) {
-            if crate::wake::UPDATES.epoch() == seen {
-                std::thread::sleep(Duration::from_millis(2));
-                continue;
+        loop {
+            seen = crate::wake::UPDATES.block_since(seen);
+            if bridge.rx.try_recv().is_ok() {
+                break;
             }
-            seen = crate::wake::UPDATES.epoch();
-            received = bridge.rx.try_recv().is_ok();
         }
-        assert!(received, "no wake-up with the update queued");
-        assert!(start.elapsed() < Duration::from_millis(500));
     }
 
     #[test]
@@ -369,7 +364,7 @@ mod tests {
         bridge.inject(
             r#"{"@type":"updateSomethingSecret","phone":"CANARY_PHONE_+15551212","text":"CANARY_MSG"}"#,
         );
-        let env = bridge.next_timeout(Duration::from_secs(1)).unwrap();
+        let env = bridge.rx.recv().unwrap();
         assert!(matches!(env.envelope.payload, EnvelopePayload::Unknown(_)));
         let rendered = sink.rendered();
         assert!(!rendered.contains("CANARY_PHONE"));
@@ -383,7 +378,7 @@ mod tests {
         let sink = Arc::new(MemorySink::new());
         let mut bridge = ReceiveBridge::spawn_injected(sink).unwrap();
         bridge.inject(r#"{"@type":"ok"}"#);
-        let _ = bridge.next_timeout(Duration::from_secs(1));
+        bridge.rx.recv().unwrap();
         bridge.shutdown();
         assert!(bridge.is_joined());
         bridge.shutdown();
@@ -399,10 +394,10 @@ mod tests {
         // A pushed update that cannot parse has no request to fail.
         bridge.inject(r#"{"@type":"updateNewMessage","message":"CANARY_BAD"}"#);
         bridge.inject(r#"{"@type":"ok"}"#);
-        let first = bridge.next_timeout(Duration::from_secs(1)).unwrap();
+        let first = bridge.rx.recv().unwrap();
         assert_eq!(first.envelope.extra, Some(crate::ids::RequestId(41)));
         assert!(matches!(first.envelope.payload, EnvelopePayload::Error(_)));
-        let next = bridge.next_timeout(Duration::from_secs(1)).unwrap();
+        let next = bridge.rx.recv().unwrap();
         assert!(matches!(next.envelope.payload, EnvelopePayload::Ok));
         assert!(!sink.rendered().contains("CANARY_BAD"));
     }
@@ -425,10 +420,12 @@ mod tests {
         // Dropping the command side ends the loop without a shutdown flag.
         let (dead_tx, _) = mpsc::channel();
         bridge.tx_cmd = dead_tx;
-        let deadline = std::time::Instant::now() + Duration::from_secs(2);
-        while !bridge.stopped_unexpectedly() && std::time::Instant::now() < deadline {
-            std::thread::sleep(Duration::from_millis(10));
-        }
+        let BridgeFeed::Injected { thread, .. } =
+            std::mem::replace(&mut bridge.feed, BridgeFeed::Closed)
+        else {
+            panic!("an injected bridge owns its thread");
+        };
+        thread.join().unwrap();
         assert!(bridge.stopped_unexpectedly());
         let sink = Arc::new(MemorySink::new());
         let mut clean = ReceiveBridge::spawn_injected(sink).unwrap();
@@ -446,9 +443,12 @@ mod tests {
         bridge.inject(
             r#"{"@type":"updateAuthorizationState","authorization_state":{"@type":"authorizationStateClosed"}}"#,
         );
-        let got = bridge.next_timeout(Duration::from_secs(1));
-        assert!(got.is_some(), "the Closed update is delivered");
-        std::thread::sleep(Duration::from_millis(150));
+        bridge.inject(r#"{"@type":"ok"}"#);
+        let closed = bridge.rx.recv().unwrap();
+        assert!(matches!(closed.envelope.payload, EnvelopePayload::Auth(_)));
+        // The loop is still running: what comes after is delivered too.
+        let after = bridge.rx.recv().unwrap();
+        assert!(matches!(after.envelope.payload, EnvelopePayload::Ok));
         assert!(!bridge.stopped_unexpectedly());
         bridge.shutdown();
     }
