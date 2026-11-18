@@ -301,7 +301,7 @@ fn gift_name(value: &Value) -> String {
     }
     let stars = int(gift.get("star_count"));
     if stars > 0 {
-        trn_decimal(keys::Q_MONEY_TX_STARS, stars)
+        trn_decimal(keys::PRIZES_CREDITS_ADMINS_AMOUNT, stars)
     } else {
         String::new()
     }

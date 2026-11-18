@@ -80,7 +80,10 @@ def direct_count(line):
 def english_count(path):
     count = 0
     in_tests = False
-    for line in open(path, encoding='utf-8'):
+    # Join Rust string literals split over lines (`"first \
+    # second"`): the line scanner used to miss them entirely.
+    text = re.sub(r'\\\n[ \t]*', ' ', open(path, encoding='utf-8').read())
+    for line in text.splitlines():
         if line.startswith('#[cfg(test)]'):
             in_tests = True
         if in_tests or SKIP_LINE.search(line):

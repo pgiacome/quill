@@ -2,6 +2,29 @@
 use super::*;
 
 impl Session {
+    /// The title a chat shows. The Replies bot's chat has a fixed server
+    /// title ("Replies"); tdesktop shows it in the interface language
+    /// (`lng_replies_messages`).
+    pub(crate) fn localized_chat_title(&self, chat_id: ChatId, title: String) -> String {
+        if self.users_state.replies_bot_chat_id == Some(chat_id.0) {
+            crate::lang::tr(crate::lang::keys::REPLIES_MESSAGES).to_string()
+        } else {
+            title
+        }
+    }
+
+    /// Words the stored titles that follow the interface language again:
+    /// after `replies_bot_chat_id` arrives (the chat may have loaded
+    /// first) and after a language pack is installed.
+    pub fn localize_titles(&mut self) {
+        let Some(id) = self.users_state.replies_bot_chat_id else {
+            return;
+        };
+        if let Some(chat) = self.chats.get_mut(&id) {
+            chat.title = crate::lang::tr(crate::lang::keys::REPLIES_MESSAGES).to_string();
+        }
+    }
+
     /// Batch 8: store (or drop) a chat's action bar.
     pub fn set_chat_action_bar(&mut self, chat_id: i64, bar: Option<ChatActionBar>) {
         match bar {
@@ -155,6 +178,7 @@ impl Session {
         // it carries the old settings: while a save is out, the save's own
         // answer settles what shows.
         let saving = self.settings.chat_saves.is_saving(&chat_id);
+        let title = self.localized_chat_title(chat_id, title);
         let chat = self
             .chats
             .entry(chat_id.0)

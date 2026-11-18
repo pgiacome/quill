@@ -427,7 +427,7 @@ impl QuillApp {
         if let Some(views) = views {
             cells.push(OverviewCell::plain(
                 format_short(i64::from(views)),
-                tr(keys::Q_MONEY_VIEWS),
+                tr(keys::STATS_OVERVIEW_MESSAGE_VIEWS),
             ));
         }
         cells.push(OverviewCell::plain(
@@ -645,7 +645,7 @@ impl QuillApp {
             page = page.child(overview_grid(vec![
                 OverviewCell::plain(
                     format_short(i64::from(info.view_count)),
-                    tr(keys::Q_MONEY_VIEWS),
+                    tr(keys::STATS_OVERVIEW_MESSAGE_VIEWS),
                 ),
                 OverviewCell::plain(
                     format_short(i64::from(public)),

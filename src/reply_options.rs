@@ -5,6 +5,8 @@
 //! wording of a reply that comes from another chat.
 #![deny(clippy::indexing_slicing)]
 
+use crate::lang::{keys, tr, tr_with};
+
 /// Longest quote Telegram accepts by default (`quote_length_max`).
 pub const QUOTE_MAX_CHARS: usize = 1024;
 
@@ -24,11 +26,11 @@ pub enum ReplyOption {
 impl ReplyOption {
     pub fn label(self, has_quote: bool) -> &'static str {
         match self {
-            Self::UpdateQuote if has_quote => "Update Quote",
-            Self::UpdateQuote => "Quote Part of Message",
-            Self::ReplyInAnotherChat => "Reply in Another Chat",
-            Self::ShowInChat => "Show in Chat",
-            Self::DoNotReply => "Do Not Reply",
+            Self::UpdateQuote if has_quote => tr(keys::REPLY_OPTIONS_QUOTE),
+            Self::UpdateQuote => tr(keys::Q_CHAT_QUOTE_PART_OF_MESSAGE),
+            Self::ReplyInAnotherChat => tr(keys::REPLY_IN_ANOTHER_CHAT),
+            Self::ShowInChat => tr(keys::REPLY_SHOW_IN_CHAT),
+            Self::DoNotReply => tr(keys::REPLY_REMOVE),
         }
     }
 }
@@ -61,10 +63,13 @@ pub fn reply_options(
 /// when the message belongs to another chat than the one being written in.
 pub fn reply_bar_title(sender: Option<&str>, from_chat: Option<&str>) -> String {
     match (sender, from_chat) {
-        (Some(name), Some(chat)) => format!("Reply to {name} from {chat}"),
-        (None, Some(chat)) => format!("Reply to a message from {chat}"),
-        (Some(name), None) => format!("Reply to {name}"),
-        (None, None) => "Reply".to_string(),
+        (Some(name), Some(chat)) => tr_with(
+            keys::Q_CHAT_REPLY_TO_NAME_FROM_CHAT,
+            &[("name", name), ("chat", chat)],
+        ),
+        (None, Some(chat)) => tr_with(keys::Q_CHAT_REPLY_TO_MESSAGE_FROM_CHAT, &[("chat", chat)]),
+        (Some(name), None) => tr_with(keys::PREVIEW_REPLY_TO, &[("name", name)]),
+        (None, None) => tr(keys::Q_CHAT_REPLY).to_string(),
     }
 }
 

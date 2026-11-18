@@ -1,27 +1,74 @@
 //! `{tag}` substitution and the count formats tdesktop's `lt_count`,
 //! `lt_count_decimal` and `lt_count_short` produce.
 
-/// Replaces each `{name}` whose name is in `tags`; others stay literal.
-pub(crate) fn substitute(template: &str, tags: &[(&str, &str)]) -> String {
-    let mut out = String::with_capacity(template.len() + 16);
+/// One piece of a template: literal text or a `{name}` placeholder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Piece<'a> {
+    Text(&'a str),
+    Tag(&'a str),
+}
+
+/// `template` split at its `{name}` placeholders. An unclosed `{` is text.
+pub fn pieces(template: &str) -> Vec<Piece<'_>> {
+    let mut out = Vec::new();
     let mut rest = template;
     while let Some(open) = rest.find('{') {
         let (before, from_open) = rest.split_at(open);
-        out.push_str(before);
         let Some(close) = from_open.find('}') else {
-            out.push_str(from_open);
-            return out;
+            break;
         };
-        let (tag, after) = from_open.split_at(close + 1);
-        let name = tag.trim_start_matches('{').trim_end_matches('}');
-        match tags.iter().find(|(n, _)| *n == name) {
-            Some((_, value)) => out.push_str(value),
-            None => out.push_str(tag),
+        if !before.is_empty() {
+            out.push(Piece::Text(before));
         }
+        let (tag, after) = from_open.split_at(close + 1);
+        out.push(Piece::Tag(
+            tag.trim_start_matches('{').trim_end_matches('}'),
+        ));
         rest = after;
     }
-    out.push_str(rest);
+    if !rest.is_empty() {
+        out.push(Piece::Text(rest));
+    }
     out
+}
+
+/// Replaces each `{name}` whose name is in `tags`; others stay literal.
+pub(crate) fn substitute(template: &str, tags: &[(&str, &str)]) -> String {
+    let mut out = String::with_capacity(template.len() + 16);
+    for piece in pieces(template) {
+        match piece {
+            Piece::Text(text) => out.push_str(text),
+            Piece::Tag(name) => match tags.iter().find(|(n, _)| *n == name) {
+                Some((_, value)) => out.push_str(value),
+                None => {
+                    out.push('{');
+                    out.push_str(name);
+                    out.push('}');
+                }
+            },
+        }
+    }
+    out
+}
+
+/// `text` without its `**` marks (tdesktop marked text), and the byte
+/// ranges they enclosed.
+pub fn split_bold(text: &str) -> (String, Vec<std::ops::Range<usize>>) {
+    let mut plain = String::with_capacity(text.len());
+    let mut bold = Vec::new();
+    for (index, part) in text.split("**").enumerate() {
+        let start = plain.len();
+        plain.push_str(part);
+        if index % 2 == 1 && !part.is_empty() {
+            bold.push(start..plain.len());
+        }
+    }
+    (plain, bold)
+}
+
+/// A name put into a marked string: its own `**` cannot open a bold run.
+pub fn unmarked(name: &str) -> String {
+    name.replace("**", "*\u{2060}*")
 }
 
 /// `1234567` → `1,234,567`.

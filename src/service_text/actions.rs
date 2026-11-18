@@ -1,224 +1,261 @@
 //! Service text: the wording for every `ServiceAction`, including giveaway results and gifts.
+use super::gifts::{giveaway_results, render_gift, render_upgraded_gift};
 use super::*;
 use crate::telegram::envelope::GiftOfferState;
 
 #[allow(clippy::too_many_lines)]
 pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceText {
     use ServiceAction as A;
-    let text = |s: &str| B::default().t(s).done();
+    let text = |s: &str| B::from(s).done();
     let from = || ctx.from();
     match action {
         A::ChatCreate { title, supergroup } => {
             if *supergroup && ctx.is_channel {
-                text("Channel created")
+                say(keys::ACTION_CREATED_CHANNEL)
             } else {
-                from()
-                    .t(format!(" created the group \u{AB}{title}\u{BB}"))
-                    .done()
+                phrase(
+                    keys::ACTION_CREATED_CHAT,
+                    &[("from", from()), ("title", B::from(title))],
+                )
+                .done()
             }
         }
         A::ChatTitle { title } => {
             if ctx.is_channel {
-                text(&format!("Channel name was changed to \u{AB}{title}\u{BB}"))
+                line(keys::ACTION_CHANGED_TITLE_CHANNEL, &[("title", title)])
             } else {
-                from()
-                    .t(format!(" changed group name to \u{AB}{title}\u{BB}"))
-                    .done()
+                phrase(
+                    keys::ACTION_CHANGED_TITLE,
+                    &[("from", from()), ("title", B::from(title))],
+                )
+                .done()
             }
         }
         A::ChatPhoto { .. } => {
             if ctx.is_channel {
-                text("Channel photo updated")
+                say(keys::ACTION_CHANGED_PHOTO_CHANNEL)
             } else {
-                from().t(" updated group photo").done()
+                phrase(keys::ACTION_CHANGED_PHOTO, &[("from", from())]).done()
             }
         }
         A::ChatPhotoDeleted => {
             if ctx.is_channel {
-                text("Channel photo removed")
+                say(keys::ACTION_REMOVED_PHOTO_CHANNEL)
             } else {
-                from().t(" removed group photo").done()
+                phrase(keys::ACTION_REMOVED_PHOTO, &[("from", from())]).done()
             }
         }
-        A::OwnerLeft { new_owner } => ctx
-            .user(*new_owner)
-            .t(" will become the new main admin in 7 days if ")
-            .extend(from())
-            .t(" does not return.")
-            .done(),
-        A::OwnerChanged { new_owner } => from()
-            .t(" made ")
-            .extend(ctx.user(*new_owner))
-            .t(" the new main admin of the group.")
-            .done(),
+        A::OwnerLeft { new_owner } => phrase(
+            keys::ACTION_NEW_CREATOR_PENDING,
+            &[("user", ctx.user(*new_owner)), ("from", from())],
+        )
+        .done(),
+        A::OwnerChanged { new_owner } => phrase(
+            keys::ACTION_CHANGE_CREATOR,
+            &[("from", from()), ("user", ctx.user(*new_owner))],
+        )
+        .done(),
         A::ProtectedToggled {
             enabled,
             was_enabled,
             ..
-        } => match (enabled == was_enabled, ctx.actor_is_me(), enabled) {
-            (true, ..) => text("Sharing in this chat is still disabled"),
-            (false, true, true) => text("You disabled sharing in this chat"),
-            (false, true, false) => text("You enabled sharing in this chat"),
-            (false, false, true) => from().t(" disabled sharing in this chat").done(),
-            (false, false, false) => from().t(" enabled sharing in this chat").done(),
-        },
+        } => {
+            if enabled == was_enabled {
+                say(keys::ACTION_NO_FORWARDS_STILL_DISABLED)
+            } else if *enabled {
+                ctx.by_actor(
+                    keys::ACTION_NO_FORWARDS_YOU_DISABLED,
+                    keys::ACTION_NO_FORWARDS_DISABLED,
+                    &[],
+                )
+            } else {
+                ctx.by_actor(
+                    keys::ACTION_NO_FORWARDS_YOU_ENABLED,
+                    keys::ACTION_NO_FORWARDS_ENABLED,
+                    &[],
+                )
+            }
+        }
         A::ProtectedDisableRequested { expired } => {
             if *expired {
-                text("Sharing enable request has expired")
-            } else if ctx.actor_is_me() {
-                text("You requested to enable sharing in this chat, which includes:")
+                say(keys::ACTION_NO_FORWARDS_REQUEST_EXPIRED)
             } else {
-                from()
-                    .t(" would like to enable sharing in this chat, which includes:")
-                    .done()
+                ctx.by_actor(
+                    keys::ACTION_NO_FORWARDS_REQUEST_YOU,
+                    keys::ACTION_NO_FORWARDS_REQUEST,
+                    &[],
+                )
             }
         }
         A::AddMembers { users } => match users.as_slice() {
             [only] if matches!(ctx.actor, Some(MessageSender::User { user_id }) if user_id == *only) => {
                 if ctx.is_channel {
-                    text("You joined this channel")
+                    say(keys::ACTION_YOU_JOINED)
                 } else {
-                    from().t(" joined the group").done()
+                    phrase(keys::ACTION_USER_JOINED, &[("from", from())]).done()
                 }
             }
-            [only] if ctx.is_me_user(*only) && !ctx.actor_is_me() => from()
-                .t(if ctx.is_channel {
-                    " added you to this channel"
+            [only] if ctx.is_me_user(*only) && !ctx.actor_is_me() => phrase(
+                if ctx.is_channel {
+                    keys::ACTION_ADD_YOU
                 } else {
-                    " added you to this group"
-                })
-                .done(),
-            users => from().t(" added ").extend(ctx.users(users)).done(),
+                    keys::ACTION_ADD_YOU_GROUP
+                },
+                &[("from", from())],
+            )
+            .done(),
+            [one] => phrase(
+                keys::ACTION_ADD_USER,
+                &[("from", from()), ("user", ctx.user(*one))],
+            )
+            .done(),
+            users => phrase(
+                keys::ACTION_ADD_USERS_MANY,
+                &[("from", from()), ("users", ctx.users(users))],
+            )
+            .done(),
         },
         A::DeleteMember { user } => {
             if matches!(ctx.actor, Some(MessageSender::User { user_id }) if user_id == *user) {
-                from().t(" left the group").done()
+                phrase(keys::ACTION_USER_LEFT, &[("from", from())]).done()
             } else {
-                from().t(" removed ").extend(ctx.user(*user)).done()
+                phrase(
+                    keys::ACTION_KICK_USER,
+                    &[("from", from()), ("user", ctx.user(*user))],
+                )
+                .done()
             }
         }
-        A::JoinByLink => from().t(" joined the group via invite link").done(),
+        A::JoinByLink => phrase(keys::ACTION_USER_JOINED_BY_LINK, &[("from", from())]).done(),
         // tdesktop `lng_action_you_joined`.
-        A::YouJoinedChannel => text("You joined this channel"),
-        A::NewBotThread => text(crate::lang::tr(crate::lang::keys::BOT_NEW_THREAD_ABOUT)),
+        A::YouJoinedChannel => say(keys::ACTION_YOU_JOINED),
+        A::NewBotThread => say(keys::BOT_NEW_THREAD_ABOUT),
         // tdesktop `lng_replies_discussion_started` / `lng_replies_no_comments`.
         A::ThreadDivider { with_comments } => text(if *with_comments {
-            "Discussion started"
+            tr(keys::REPLIES_DISCUSSION_STARTED)
         } else {
-            "No comments here yet..."
+            tr(keys::REPLIES_NO_COMMENTS)
         }),
         A::JoinByRequest => {
             if ctx.actor_is_me() {
-                text(if ctx.is_channel {
-                    "Your request to join the channel was approved"
+                say(if ctx.is_channel {
+                    keys::ACTION_YOU_JOINED_BY_REQUEST_CHANNEL
                 } else {
-                    "Your request to join the group was approved"
+                    keys::ACTION_YOU_JOINED_BY_REQUEST
                 })
             } else {
-                from().t(" was accepted to the group").done()
+                phrase(keys::ACTION_USER_JOINED_BY_REQUEST, &[("from", from())]).done()
             }
         }
-        A::UpgradedTo => text("This group was upgraded to a supergroup"),
-        A::UpgradedFrom { title } => text(&format!(
-            "The group \u{AB}{title}\u{BB} was upgraded to a supergroup"
-        )),
+        A::UpgradedTo => say(keys::Q_SERVICE_UPGRADED_TO),
+        A::UpgradedFrom { title } => line(keys::Q_SERVICE_UPGRADED_FROM, &[("title", title)]),
         A::Pin { message_id } => {
             let (excerpt, is_media) = pin_text(ctx.names.pinned(*message_id));
             let link = ServiceLink::Message(*message_id);
             if is_media {
-                from().t(" pinned ").link(excerpt, link).done()
+                phrase(
+                    keys::ACTION_PINNED_MEDIA,
+                    &[
+                        ("from", from()),
+                        ("media", B::default().link(excerpt, link)),
+                    ],
+                )
+                .done()
             } else {
-                from().t(" pinned \"").link(excerpt, link).t("\"").done()
+                phrase(
+                    keys::ACTION_PINNED_MESSAGE,
+                    &[("from", from()), ("text", B::default().link(excerpt, link))],
+                )
+                .done()
             }
         }
         A::Background { only_for_self } => {
             if ctx.actor_is_me() {
                 if *only_for_self {
-                    text("You set a new wallpaper for this chat")
+                    say(keys::ACTION_SET_WALLPAPER_ME)
                 } else {
-                    B::default()
-                        .t("You set a new wallpaper for ")
-                        .extend(ctx.chat(ctx.chat_id))
-                        .t(" and you.")
-                        .done()
+                    phrase(
+                        keys::ACTION_SET_WALLPAPER_BOTH_ME,
+                        &[("user", ctx.chat(ctx.chat_id))],
+                    )
+                    .done()
                 }
             } else {
-                from().t(" set a new wallpaper for this chat").done()
+                phrase(keys::ACTION_SET_WALLPAPER, &[("user", from())]).done()
             }
         }
         A::Theme { emoji, gift_name } => match (gift_name, emoji.is_empty()) {
-            (Some(name), _) => {
-                if ctx.actor_is_me() {
-                    text(&format!("You set {name} as a new theme for this chat."))
-                } else {
-                    from()
-                        .t(format!(" set {name} as a new theme for this chat."))
-                        .done()
-                }
-            }
-            (None, false) => {
-                if ctx.actor_is_me() {
-                    text(&format!("You changed the chat theme to {emoji}"))
-                } else {
-                    from()
-                        .t(format!(" changed the chat theme to {emoji}"))
-                        .done()
-                }
-            }
-            (None, true) => {
-                if ctx.actor_is_me() {
-                    text("You disabled the chat theme")
-                } else {
-                    from().t(" disabled the chat theme").done()
-                }
-            }
+            (Some(name), _) => ctx.by_actor(
+                keys::ACTION_YOU_GIFT_THEME_CHANGED,
+                keys::ACTION_GIFT_THEME_CHANGED,
+                &[("name", B::from(name))],
+            ),
+            (None, false) => ctx.by_actor(
+                keys::ACTION_YOU_THEME_CHANGED,
+                keys::ACTION_THEME_CHANGED,
+                &[("emoji", B::from(emoji))],
+            ),
+            (None, true) => ctx.by_actor(
+                keys::ACTION_YOU_THEME_DISABLED,
+                keys::ACTION_THEME_DISABLED,
+                &[],
+            ),
         },
         A::Boost { count } => {
             if ctx.actor_is_me() {
-                text("You boosted the group")
-            } else if *count > 1 {
-                from().t(format!(" boosted the group {count} times")).done()
+                say(keys::ACTION_BOOST_APPLY_ME)
             } else {
-                from().t(" boosted the group").done()
+                phrase_plural(
+                    keys::ACTION_BOOST_APPLY,
+                    i64::from(*count),
+                    &[("from", from())],
+                )
+                .done()
             }
         }
-        A::TopicCreated { name } => text(&format!("The topic {} was created", quote(name))),
+        A::TopicCreated { name } => line(keys::ACTION_TOPIC_CREATED, &[("topic", name)]),
         A::TopicEdited {
             name, icon_edited, ..
         } => {
             if name.is_empty() && *icon_edited {
-                from().t(" changed the topic icon").done()
+                phrase(keys::Q_SERVICE_TOPIC_ICON_CHANGED, &[("from", from())]).done()
             } else if name.is_empty() {
-                text("Topic edited")
+                say(keys::Q_SERVICE_TOPIC_EDITED)
             } else {
-                from()
-                    .t(format!(" renamed the topic to {}", quote(name)))
-                    .done()
+                phrase(
+                    keys::ACTION_TOPIC_RENAMED,
+                    &[
+                        ("from", from()),
+                        ("link", B::from(tr(keys::ACTION_TOPIC_PLACEHOLDER))),
+                        ("title", B::from(name)),
+                    ],
+                )
+                .done()
             }
         }
-        A::TopicClosed { closed } => {
+        A::TopicClosed { closed } => phrase(
             if *closed {
-                from().t(" closed the topic").done()
+                keys::ACTION_TOPIC_CLOSED_INSIDE_BY
             } else {
-                from().t(" reopened the topic").done()
-            }
-        }
-        A::TopicHidden { hidden } => text(if *hidden {
-            "Topic hidden"
+                keys::ACTION_TOPIC_REOPENED_INSIDE_BY
+            },
+            &[("from", from())],
+        )
+        .done(),
+        A::TopicHidden { hidden } => say(if *hidden {
+            keys::ACTION_TOPIC_HIDDEN_INSIDE
         } else {
-            "Topic unhidden"
+            keys::ACTION_TOPIC_UNHIDDEN_INSIDE
         }),
         A::SuggestProfilePhoto { .. } => {
             if ctx.actor_is_me() {
-                B::default()
-                    .t("You suggested this photo for ")
-                    .extend(ctx.chat(ctx.chat_id))
-                    .t("'s Telegram profile.")
-                    .done()
+                phrase(
+                    keys::ACTION_SUGGESTED_PHOTO_ME,
+                    &[("user", ctx.chat(ctx.chat_id))],
+                )
+                .done()
             } else {
-                from()
-                    .t(" suggests this photo for your Telegram profile.")
-                    .done()
+                phrase(keys::ACTION_SUGGESTED_PHOTO, &[("user", from())]).done()
             }
         }
         A::SuggestBirthdate { day, month, year } => {
@@ -230,47 +267,53 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             } else {
                 format!("{day} {}", crate::local_time::month_name(*month as u8))
             };
-            if ctx.actor_is_me() {
-                B::default()
-                    .t("You suggest ")
-                    .extend(ctx.chat(ctx.chat_id))
-                    .t(format!(" add a date of birth: {date}"))
-                    .done()
+            let (key, who) = if ctx.actor_is_me() {
+                (keys::Q_SERVICE_SUGGESTED_BIRTHDAY_ME, ctx.chat(ctx.chat_id))
             } else {
-                from()
-                    .t(format!(" suggests you add your date of birth: {date}"))
-                    .done()
-            }
+                (keys::Q_SERVICE_SUGGESTED_BIRTHDAY, from())
+            };
+            phrase(key, &[("user", who), ("date", B::from(date))]).done()
         }
         A::Custom { text: custom } => text(custom),
         A::GameScore {
             game_message_id,
             score,
         } => {
-            let scored = if ctx.actor_is_me() {
-                B::default().t(format!("You scored {score}"))
-            } else {
-                from().t(format!(" scored {score}"))
-            };
-            match ctx.names.game_title(*game_message_id) {
-                Some(title) => scored
-                    .t(" in ")
-                    .link(title, ServiceLink::Message(*game_message_id))
-                    .done(),
-                None => scored.done(),
+            let game = ctx
+                .names
+                .game_title(*game_message_id)
+                .map(|title| B::default().link(title, ServiceLink::Message(*game_message_id)));
+            let score = i64::from(*score);
+            match game {
+                Some(game) => ctx.by_actor_plural(
+                    keys::ACTION_GAME_YOU_SCORED,
+                    keys::ACTION_GAME_SCORE,
+                    score,
+                    &[("game", game)],
+                ),
+                None => ctx.by_actor_plural(
+                    keys::ACTION_GAME_YOU_SCORED_NO_GAME,
+                    keys::ACTION_GAME_SCORE_NO_GAME,
+                    score,
+                    &[],
+                ),
             }
         }
-        A::ManagedBotCreated { bot_user_id } => from()
-            .t(" created a bot ")
-            .extend(ctx.user(*bot_user_id))
-            .t(".")
-            .done(),
+        A::ManagedBotCreated { bot_user_id } => phrase(
+            keys::ACTION_MANAGED_BOT_CREATED,
+            &[("from", from()), ("bot", ctx.user(*bot_user_id))],
+        )
+        .done(),
         A::PaymentRefunded { owner, money } => {
             let who = match owner {
                 Some(owner) => ctx.peer(*owner),
-                None => B::default().t(WHO),
+                None => B::from(someone()),
             };
-            who.t(format!(" refunded {}", amount(money))).done()
+            phrase(
+                keys::ACTION_PAYMENT_REFUNDED,
+                &[("peer", who), ("amount", B::from(amount(money)))],
+            )
+            .done()
         }
         A::GiftedPremium {
             gifter,
@@ -293,15 +336,11 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         } => match creator {
             Some(MessageSender::Chat { chat_id }) => {
                 if *unclaimed {
-                    ctx.channel_prize(
-                        "You have an unclaimed prize from a giveaway by ",
-                        *chat_id,
-                        ".",
-                    )
+                    ctx.channel_prize(keys::PRIZE_UNCLAIMED_ABOUT, *chat_id)
                 } else if *from_giveaway {
-                    ctx.channel_prize("You won a prize in a giveaway organized by ", *chat_id, ".")
+                    ctx.channel_prize(keys::PRIZE_ABOUT, *chat_id)
                 } else {
-                    ctx.channel_prize("You've received a gift from ", *chat_id, ".")
+                    ctx.channel_prize(keys::PRIZE_GIFT_ABOUT, *chat_id)
                 }
             }
             Some(MessageSender::User { user_id }) => {
@@ -310,24 +349,32 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             None => ctx.gift_line(&amount(money)),
         },
         A::GiveawayCreated { stars } => {
-            let target = if ctx.is_channel {
-                "followers"
+            let (key, premium_key) = if ctx.is_channel {
+                (
+                    keys::ACTION_GIVEAWAY_CREDITS_STARTED,
+                    keys::ACTION_GIVEAWAY_STARTED,
+                )
             } else {
-                "members"
+                (
+                    keys::ACTION_GIVEAWAY_CREDITS_STARTED_GROUP,
+                    keys::ACTION_GIVEAWAY_STARTED_GROUP,
+                )
             };
             if *stars > 0 {
-                from()
-                    .t(format!(
-                        " just started a giveaway of {} to its {target}.",
-                        stars_cost(*stars)
-                    ))
-                    .done()
+                phrase(
+                    key,
+                    &[
+                        ("from", from()),
+                        (
+                            "amount",
+                            B::default()
+                                .t(trn(keys::ACTION_GIVEAWAY_CREDITS_STARTED_AMOUNT, *stars)),
+                        ),
+                    ],
+                )
+                .done()
             } else {
-                from()
-                    .t(format!(
-                        " just started a giveaway of Telegram Premium subscriptions to its {target}."
-                    ))
-                    .done()
+                phrase(premium_key, &[("from", from())]).done()
             }
         }
         A::Giveaway {
@@ -335,22 +382,21 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             stars,
             months,
         } => {
+            let winners = i64::from(*winners);
             if *stars > 0 {
-                text(&format!(
-                    "Giveaway: {} for {}",
-                    stars_cost(*stars),
-                    plural(i64::from(*winners), "winner", "winners")
-                ))
+                phrase_plural(
+                    keys::Q_SERVICE_GIVEAWAY_STARS,
+                    winners,
+                    &[("amount", B::from(stars_cost(*stars)))],
+                )
+                .done()
             } else {
-                text(&format!(
-                    "Giveaway: {winners} Telegram Premium {} for {}",
-                    if *winners == 1 {
-                        "subscription"
-                    } else {
-                        "subscriptions"
-                    },
-                    plural(i64::from(*months), "month", "months")
-                ))
+                phrase_plural(
+                    keys::Q_SERVICE_GIVEAWAY_PREMIUM,
+                    winners,
+                    &[("months", B::from(trn(keys::MONTHS, i64::from(*months))))],
+                )
+                .done()
             }
         }
         A::GiveawayCompleted {
@@ -368,17 +414,9 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             unclaimed,
         } => {
             if *unclaimed {
-                ctx.channel_prize(
-                    "You have an unclaimed prize from a giveaway by ",
-                    *boosted_chat_id,
-                    ".",
-                )
+                ctx.channel_prize(keys::PRIZE_UNCLAIMED_ABOUT, *boosted_chat_id)
             } else {
-                ctx.channel_prize(
-                    "You won a prize in a giveaway organized by ",
-                    *boosted_chat_id,
-                    ".",
-                )
+                ctx.channel_prize(keys::PRIZE_ABOUT, *boosted_chat_id)
             }
         }
         A::Gift {
@@ -405,17 +443,23 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         A::WithCard { action, .. } => render_action(action, ctx),
         A::TonWalletTransfer(transfer) => super::wallet::transfer_line(transfer, ctx),
         A::TonConnectRequest(request) => text(&request.service_line()),
-        A::RefundedUpgradedGift { .. } => text(
-            "This gift was downgraded because a request to refund the payment related to this gift was made, and the money was returned.",
-        ),
+        A::RefundedUpgradedGift { .. } => say(keys::ACTION_GIFT_REFUNDED),
         A::GiftOffer { name, price, state } => match state {
-            GiftOfferState::Accepted => text("This offer was accepted."),
-            GiftOfferState::Rejected => text("This offer was rejected."),
+            GiftOfferState::Accepted => say(keys::ACTION_GIFT_OFFER_STATE_ACCEPTED),
+            GiftOfferState::Rejected => say(keys::ACTION_GIFT_OFFER_STATE_REJECTED),
             GiftOfferState::Pending | GiftOfferState::Unknown => {
                 if ctx.actor_is_me() {
-                    text(&format!("You offered {} for {name}.", cost(price)))
+                    phrase(
+                        keys::ACTION_GIFT_OFFER_YOU,
+                        &[("cost", B::from(cost(price))), ("name", B::from(name))],
+                    )
+                    .done()
                 } else {
-                    text(&format!("An offer to buy this gift for {}.", cost(price)))
+                    phrase(
+                        keys::ACTION_GIFT_OFFER_INCOMING,
+                        &[("amount", B::from(cost(price)))],
+                    )
+                    .done()
                 }
             }
         },
@@ -425,156 +469,156 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             expired,
         } => {
             let price = cost(price);
+            let name = B::from(name);
+            let price = B::from(price);
             match (*expired, ctx.actor_is_me()) {
-                (true, true) => text(&format!(
-                    "Your offer to buy {name} for {price} has expired."
-                )),
-                (true, false) => from()
-                    .t(format!(
-                        "'s offer to buy your {name} for {price} has expired."
-                    ))
-                    .done(),
-                (false, false) => from()
-                    .t(format!(" rejected your offer to buy {name} for {price}."))
-                    .done(),
-                (false, true) => text(&format!(
-                    "You rejected the offer to buy your {name} for {price}."
-                )),
+                (true, true) => phrase(
+                    keys::ACTION_GIFT_OFFER_EXPIRED_YOUR,
+                    &[("name", name), ("cost", price)],
+                )
+                .done(),
+                (true, false) => phrase(
+                    keys::ACTION_GIFT_OFFER_EXPIRED,
+                    &[("user", from()), ("name", name), ("cost", price)],
+                )
+                .done(),
+                (false, false) => phrase(
+                    keys::ACTION_GIFT_OFFER_DECLINED,
+                    &[("user", from()), ("name", name), ("cost", price)],
+                )
+                .done(),
+                (false, true) => phrase(
+                    keys::Q_SERVICE_OFFER_DECLINED_ME,
+                    &[("name", name), ("cost", price)],
+                )
+                .done(),
             }
         }
         A::PaidMessagesRefunded { count: _, stars } => {
             if ctx.actor_is_me() {
-                B::default()
-                    .t(format!("You refunded {} to ", stars_cost(*stars)))
-                    .extend(ctx.chat(ctx.chat_id))
-                    .done()
+                phrase_plural(
+                    keys::ACTION_PAID_MESSAGE_REFUND_SELF,
+                    *stars,
+                    &[("name", ctx.chat(ctx.chat_id))],
+                )
+                .done()
             } else {
-                from()
-                    .t(format!(" refunded {} to you", stars_cost(*stars)))
-                    .done()
+                phrase_plural(
+                    keys::ACTION_PAID_MESSAGE_REFUND,
+                    *stars,
+                    &[("from", from())],
+                )
+                .done()
             }
         }
         A::PaidMessagePriceChanged { stars } => {
             if *stars == 0 {
-                text("Messages are now free in this group.")
+                say(keys::ACTION_MESSAGE_PRICE_FREE)
             } else {
-                text(&format!(
-                    "Messages now cost {} each in this group.",
-                    stars_cost(*stars)
-                ))
+                phrase_plural(keys::ACTION_MESSAGE_PRICE_PAID, *stars, &[]).done()
             }
         }
         A::DirectMessagePriceChanged { enabled, stars } => {
             if !*enabled {
-                text("Channel disabled Direct Messages.")
+                say(keys::ACTION_DIRECT_MESSAGES_DISABLED)
             } else if *stars == 0 {
-                text("Channel enabled Direct Messages.")
+                say(keys::ACTION_DIRECT_MESSAGES_ENABLED)
             } else {
-                text(&format!(
-                    "Channel allows Direct Messages for {} each.",
-                    stars_cost(*stars)
-                ))
+                phrase_plural(keys::ACTION_DIRECT_MESSAGES_PAID, *stars, &[]).done()
             }
         }
         A::ChecklistDone { done, not_done, .. } => {
-            let tasks = |n: usize| {
-                if n == 1 {
-                    "task".to_string()
-                } else {
-                    format!("{n} tasks")
-                }
-            };
-            let who = |tail: String| {
-                if ctx.actor_is_me() {
-                    B::default().t(format!("You {tail}"))
-                } else {
-                    from().t(format!(" {tail}"))
-                }
-            };
-            if *done > 0 && *not_done == 0 {
-                who(format!("marked {} as done.", tasks(*done))).done()
+            let tasks = |n: usize| B::from(trn(keys::ACTION_TODO_TASKS_FALLBACK, n as i64));
+            let (key, self_key, parts) = if *done > 0 && *not_done == 0 {
+                (
+                    keys::ACTION_TODO_MARKED_DONE,
+                    keys::ACTION_TODO_MARKED_DONE_SELF,
+                    vec![("tasks", tasks(*done))],
+                )
             } else if *not_done > 0 && *done == 0 {
-                who(format!("marked {} as not done.", tasks(*not_done))).done()
+                (
+                    keys::ACTION_TODO_MARKED_NOT_DONE,
+                    keys::ACTION_TODO_MARKED_NOT_DONE_SELF,
+                    vec![("tasks", tasks(*not_done))],
+                )
             } else {
-                who(format!(
-                    "marked {} as done and {} as not done.",
-                    tasks(*done),
-                    tasks(*not_done)
-                ))
-                .done()
-            }
-        }
-        A::ChecklistAdded { titles } => {
-            let list = join_and(titles);
-            if ctx.actor_is_me() {
-                text(&format!("You added {list} to the list."))
-            } else {
-                from().t(format!(" added {list} to the list.")).done()
-            }
-        }
-        A::PollOptionAdded { text: option } => {
-            if ctx.actor_is_me() {
-                text(&format!("You added {} to the poll.", quote(option)))
-            } else {
-                from()
-                    .t(format!(" added {} to the poll.", quote(option)))
-                    .done()
-            }
-        }
-        A::PollOptionDeleted { text: option } => {
-            if ctx.actor_is_me() {
-                text(&format!("You removed {} from the poll.", quote(option)))
-            } else {
-                from()
-                    .t(format!(" removed {} from the poll.", quote(option)))
-                    .done()
-            }
-        }
-        A::SuggestedPostApprovalFailed => text("Transaction failed."),
-        A::SuggestedPostApproved => text("Agreement reached!"),
-        A::SuggestedPostDeclined => text("The post was rejected."),
-        A::SuggestedPostPaid { stars, grams: g } => {
-            let received = if *stars > 0 {
-                stars_cost(*stars)
-            } else {
-                grams_cost(*g)
+                (
+                    keys::Q_SERVICE_TODO_MARKED_BOTH,
+                    keys::Q_SERVICE_TODO_MARKED_BOTH_SELF,
+                    vec![("done", tasks(*done)), ("not_done", tasks(*not_done))],
+                )
             };
-            from()
-                .t(format!(" has received {received} for publishing post."))
-                .done()
+            ctx.by_actor(self_key, key, &parts)
         }
-        A::SuggestedPostRefunded { post_deleted } => text(if *post_deleted {
-            "Admin deleted the post early so that the price was refunded to the user."
-        } else {
-            "User refunded the Stars so that post was deleted."
-        }),
-        A::ContactRegistered => from().t(" joined Telegram").done(),
-        A::UsersShared { users } => {
-            let mut shared = B::default();
-            for (index, (id, name)) in users.iter().enumerate() {
-                if index > 0 {
-                    shared = shared.t(if index + 1 == users.len() {
-                        " and "
-                    } else {
-                        ", "
-                    });
-                }
-                let display = ctx
-                    .names
-                    .user_name(*id)
-                    .filter(|n| !n.is_empty())
-                    .unwrap_or_else(|| name.clone());
-                shared = shared.link(
-                    display,
-                    ServiceLink::Sender(MessageSender::User { user_id: *id }),
-                );
-            }
-            B::default()
-                .t("You shared ")
-                .extend(shared)
-                .t(" with ")
-                .extend(ctx.chat(ctx.chat_id))
+        A::ChecklistAdded { titles } => ctx.by_actor(
+            keys::ACTION_TODO_ADDED_SELF,
+            keys::ACTION_TODO_ADDED,
+            &[("tasks", task_list(titles))],
+        ),
+        A::PollOptionAdded { text: option } => ctx.by_actor(
+            keys::ACTION_POLL_ADDED_ANSWER_SELF,
+            keys::ACTION_POLL_ADDED_ANSWER,
+            &[("option", B::from(option))],
+        ),
+        A::PollOptionDeleted { text: option } => ctx.by_actor(
+            keys::ACTION_POLL_DELETED_ANSWER_SELF,
+            keys::ACTION_POLL_DELETED_ANSWER,
+            &[("option", B::from(option))],
+        ),
+        A::SuggestedPostApprovalFailed => say(keys::ACTION_NOT_ENOUGH_FUNDS),
+        A::SuggestedPostApproved => say(keys::SUGGEST_ACTION_AGREEMENT),
+        A::SuggestedPostDeclined => say(keys::ACTION_POST_REJECTED),
+        A::SuggestedPostPaid { stars, grams: g } => {
+            if *stars > 0 {
+                phrase_plural(
+                    keys::ACTION_SUGGEST_SUCCESS_STARS,
+                    *stars,
+                    &[("from", from())],
+                )
                 .done()
+            } else {
+                let shown = grams(*g);
+                phrase_plural_shown(
+                    keys::ACTION_SUGGEST_SUCCESS_TON,
+                    shown.form,
+                    shown.text,
+                    &[("from", from())],
+                )
+                .done()
+            }
+        }
+        A::SuggestedPostRefunded { post_deleted } => say(if *post_deleted {
+            keys::ACTION_SUGGEST_REFUND_ADMIN
+        } else {
+            keys::ACTION_SUGGEST_REFUND_USER
+        }),
+        A::ContactRegistered => phrase(keys::ACTION_USER_REGISTERED, &[("from", from())]).done(),
+        A::UsersShared { users } => {
+            let shared: Vec<B> = users
+                .iter()
+                .map(|(id, name)| {
+                    let display = ctx
+                        .names
+                        .user_name(*id)
+                        .filter(|n| !n.is_empty())
+                        .unwrap_or_else(|| name.clone());
+                    B::default().link(
+                        display,
+                        ServiceLink::Sender(MessageSender::User { user_id: *id }),
+                    )
+                })
+                .collect();
+            phrase(
+                keys::Q_SERVICE_USERS_SHARED,
+                &[
+                    (
+                        "users",
+                        join_segments(shared, &USERS).unwrap_or_else(|| B::from(someone())),
+                    ),
+                    ("chat", ctx.chat(ctx.chat_id)),
+                ],
+            )
+            .done()
         }
         A::ChatShared { chat_id, title } => {
             let shared = B::default().link(
@@ -584,323 +628,223 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                     .unwrap_or_else(|| title.clone()),
                 ServiceLink::Sender(MessageSender::Chat { chat_id: *chat_id }),
             );
-            B::default()
-                .t("You shared ")
-                .extend(shared)
-                .t(" with ")
-                .extend(ctx.chat(ctx.chat_id))
-                .done()
+            phrase(
+                keys::ACTION_SHARED_CHAT_WITH_BOT,
+                &[("chat", shared), ("bot", ctx.chat(ctx.chat_id))],
+            )
+            .done()
         }
         A::BotWriteAccess { reason } => match reason {
-            BotAccessReason::ConnectedWebsite { domain } => B::default()
-                .t("You allowed this bot to message you when you logged in on ")
-                .link(domain.clone(), ServiceLink::Url(format!("http://{domain}")))
-                .t(".")
-                .done(),
-            BotAccessReason::AttachMenu => text(
-                "You allowed this bot to message you when you added it to your attachment menu.",
-            ),
+            BotAccessReason::ConnectedWebsite { domain } => phrase(
+                keys::ACTION_BOT_ALLOWED_FROM_DOMAIN,
+                &[(
+                    "domain",
+                    B::default().link(domain.clone(), ServiceLink::Url(format!("http://{domain}"))),
+                )],
+            )
+            .done(),
+            BotAccessReason::AttachMenu => say(keys::ACTION_ATTACH_MENU_BOT_ALLOWED),
             BotAccessReason::WebApp { title } => {
                 let app = if title.is_empty() {
-                    "App"
+                    tr(keys::Q_SERVICE_WEB_APP)
                 } else {
                     title.as_str()
                 };
-                text(&format!(
-                    "You allowed this bot to message you when you opened {app}."
-                ))
+                line(keys::ACTION_BOT_ALLOWED_FROM_APP, &[("app", app)])
             }
-            BotAccessReason::AcceptedRequest => {
-                text("You allowed this bot to message you in its web-app.")
-            }
+            BotAccessReason::AcceptedRequest => say(keys::ACTION_WEBAPP_BOT_ALLOWED),
         },
-        A::WebAppDataSent { button } => text(&format!(
-            "Data from the {} button was transferred to the bot.",
-            quote(button)
-        )),
-        A::WebAppDataReceived { button } => text(&format!(
-            "Data from the {} button was received.",
-            quote(button)
-        )),
-        A::PassportSent { kinds } => {
-            let mut names: Vec<&str> = Vec::new();
-            for kind in kinds {
-                let name = match kind {
-                    PassportKind::PersonalDetails => "personal details",
-                    PassportKind::ProofOfIdentity => "proof of identity",
-                    PassportKind::Address => "address",
-                    PassportKind::ProofOfAddress => "proof of address",
-                    PassportKind::Phone => "phone number",
-                    PassportKind::Email => "email address",
-                };
-                names.push(name);
-            }
-            ctx.chat(ctx.chat_id)
-                .t(format!(
-                    " received the following documents: {}",
-                    names.join(", ")
-                ))
-                .done()
+        A::WebAppDataSent { button } => phrase(
+            keys::ACTION_WEBVIEW_DATA_DONE,
+            &[("text", B::from(button.as_str()))],
+        )
+        .done(),
+        A::WebAppDataReceived { button } => {
+            line(keys::Q_SERVICE_WEBAPP_DATA_RECEIVED, &[("text", button)])
         }
-        A::PassportReceived => text("Telegram Passport data received"),
+        A::PassportSent { kinds } => {
+            let names: Vec<&str> = kinds
+                .iter()
+                .map(|kind| {
+                    tr(match kind {
+                        PassportKind::PersonalDetails => keys::ACTION_SECURE_PERSONAL_DETAILS,
+                        PassportKind::ProofOfIdentity => keys::ACTION_SECURE_PROOF_OF_IDENTITY,
+                        PassportKind::Address => keys::ACTION_SECURE_ADDRESS,
+                        PassportKind::ProofOfAddress => keys::ACTION_SECURE_PROOF_OF_ADDRESS,
+                        PassportKind::Phone => keys::ACTION_SECURE_PHONE,
+                        PassportKind::Email => keys::ACTION_SECURE_EMAIL,
+                    })
+                })
+                .collect();
+            phrase(
+                keys::ACTION_SECURE_VALUES_SENT,
+                &[
+                    ("user", ctx.chat(ctx.chat_id)),
+                    ("documents", B::from(names.join(", "))),
+                ],
+            )
+            .done()
+        }
+        A::PassportReceived => say(keys::Q_SERVICE_PASSPORT_RECEIVED),
         A::Proximity {
             traveler,
             watcher,
             distance: meters,
         } => {
-            let near = distance(*meters);
+            let near = B::from(distance(*meters));
             let me = |s: &MessageSender| matches!(s, MessageSender::User { user_id } if ctx.is_me_user(*user_id));
             if me(traveler) {
-                B::default()
-                    .t(format!("You are now within {near} from "))
-                    .extend(ctx.peer(*watcher))
-                    .done()
+                phrase(
+                    keys::ACTION_YOU_PROXIMITY_REACHED,
+                    &[("user", ctx.peer(*watcher)), ("distance", near)],
+                )
+                .done()
             } else if me(watcher) {
-                ctx.peer(*traveler)
-                    .t(format!(" is now within {near} from you"))
-                    .done()
+                phrase(
+                    keys::ACTION_PROXIMITY_REACHED_YOU,
+                    &[("from", ctx.peer(*traveler)), ("distance", near)],
+                )
+                .done()
             } else {
-                ctx.peer(*traveler)
-                    .t(format!(" is now within {near} from "))
-                    .extend(ctx.peer(*watcher))
-                    .done()
+                phrase(
+                    keys::ACTION_PROXIMITY_REACHED,
+                    &[
+                        ("from", ctx.peer(*traveler)),
+                        ("user", ctx.peer(*watcher)),
+                        ("distance", near),
+                    ],
+                )
+                .done()
             }
         }
         A::VideoChatScheduled { start_date } => {
             let when = ctx.format_schedule(*start_date);
             if ctx.is_channel {
-                text(&format!("Live stream scheduled for {when}"))
+                line(
+                    keys::ACTION_GROUP_CALL_SCHEDULED_CHANNEL,
+                    &[("date", &when)],
+                )
             } else {
-                from()
-                    .t(format!(" scheduled a video chat for {when}"))
-                    .done()
+                phrase(
+                    keys::ACTION_GROUP_CALL_SCHEDULED_GROUP,
+                    &[("from", from()), ("date", B::from(when))],
+                )
+                .done()
             }
         }
         A::VideoChatStarted => {
             if ctx.is_channel {
-                text("Live stream started")
+                say(keys::ACTION_GROUP_CALL_STARTED_CHANNEL)
             } else {
-                from().t(" started a video chat").done()
+                phrase(keys::ACTION_GROUP_CALL_STARTED_GROUP, &[("from", from())]).done()
             }
         }
         A::VideoChatEnded { duration } => {
             let length = call_duration(*duration);
             if ctx.is_channel {
-                text(&format!("Live stream finished ({length})"))
+                line(keys::ACTION_GROUP_CALL_FINISHED, &[("duration", &length)])
             } else {
-                from().t(format!(" ended the video chat ({length})")).done()
+                phrase(
+                    keys::ACTION_GROUP_CALL_FINISHED_GROUP,
+                    &[("from", from()), ("duration", B::from(length))],
+                )
+                .done()
             }
         }
-        A::VideoChatInvite { users } => from()
-            .t(" invited ")
-            .extend(ctx.users(users))
-            .t(" to the video chat")
-            .done(),
-        A::Expired(kind) => text(match kind {
-            ExpiredKind::Photo => "Expired photo",
-            ExpiredKind::Video => "Expired video",
-            ExpiredKind::VideoNote => "Round message expired",
-            ExpiredKind::VoiceNote => "Voice message expired",
+        A::VideoChatInvite { users } => {
+            let invited = ctx.join_users(
+                users,
+                &ListKeys {
+                    and_one: keys::ACTION_INVITE_USERS_AND_ONE,
+                    and_last: keys::ACTION_INVITE_USERS_AND_LAST,
+                    ..USERS
+                },
+            );
+            let chat = B::from(tr(keys::ACTION_INVITE_USER_CHAT));
+            if users.len() > 1 {
+                phrase(
+                    keys::ACTION_INVITE_USERS_MANY,
+                    &[("from", from()), ("users", invited), ("chat", chat)],
+                )
+                .done()
+            } else {
+                phrase(
+                    keys::ACTION_INVITE_USER,
+                    &[("from", from()), ("user", invited), ("chat", chat)],
+                )
+                .done()
+            }
+        }
+        A::Expired(kind) => say(match kind {
+            ExpiredKind::Photo => keys::TTL_PHOTO_EXPIRED,
+            ExpiredKind::Video => keys::TTL_VIDEO_EXPIRED,
+            ExpiredKind::VideoNote => keys::TTL_ROUND_EXPIRED,
+            ExpiredKind::VoiceNote => keys::TTL_VOICE_EXPIRED,
         }),
         A::StakeDice { stake, prize } => {
-            let amount = grams_cost;
-            let (verb_me, verb_other) = if *prize > *stake {
+            let (key, self_key, amount) = if *prize > *stake {
                 (
-                    format!("You won {}", amount(*prize - *stake)),
-                    format!(" won {}", amount(*prize - *stake)),
+                    keys::ACTION_STAKE_GAME_WON,
+                    keys::ACTION_STAKE_GAME_WON_YOU,
+                    Some(grams_cost(*prize - *stake)),
                 )
             } else if *prize == 0 && *stake > 0 {
                 (
-                    format!("You lost {}", amount(*stake)),
-                    format!(" lost {}", amount(*stake)),
+                    keys::ACTION_STAKE_GAME_LOST,
+                    keys::ACTION_STAKE_GAME_LOST_YOU,
+                    Some(grams_cost(*stake)),
                 )
             } else {
                 (
-                    "You didn't win anything".to_string(),
-                    " didn't win anything".to_string(),
+                    keys::Q_SERVICE_STAKE_NOTHING,
+                    keys::Q_SERVICE_STAKE_NOTHING_YOU,
+                    None,
                 )
             };
-            if ctx.actor_is_me() {
-                text(&verb_me)
-            } else {
-                from().t(verb_other).done()
-            }
+            let parts: Vec<_> = amount.map(|a| ("amount", B::from(a))).into_iter().collect();
+            ctx.by_actor(self_key, key, &parts)
         }
         // tdesktop `prepareStoryMentionText`: the chat's peer is named.
         A::Story {
             via_mention: true, ..
         } => {
             if ctx.is_outgoing {
-                B::default()
-                    .t("You mentioned ")
-                    .extend(ctx.chat(ctx.chat_id))
-                    .t(" in a story")
-                    .done()
-            } else {
-                ctx.chat(ctx.chat_id).t(" mentioned you in a story").done()
-            }
-        }
-        A::Story { .. } => text("Story"),
-        A::PaidMedia { stars, .. } => text(&format!("Paid media \u{B7} {}", stars_cost(*stars))),
-    }
-}
-
-fn join_and(items: &[String]) -> String {
-    match items {
-        [] => "task".into(),
-        [only] => only.clone(),
-        [head @ .., last] => format!("{} and {last}", head.join(", ")),
-    }
-}
-
-fn giveaway_results(winners: i32, stars: bool, unclaimed: i32) -> ServiceText {
-    let text = if winners == 0 {
-        "No winners of the giveaway could be selected.".to_string()
-    } else {
-        match (stars, unclaimed > 0) {
-            (true, true) => "Some winners of the giveaway were randomly selected by Telegram and received their prize.".into(),
-            (false, true) => "Some winners of the giveaway were randomly selected by Telegram and received private messages with giftcodes.".into(),
-            (true, false) => {
-                if winners == 1 {
-                    "1 winner of the giveaway was randomly selected by Telegram and received their prize.".into()
-                } else {
-                    format!("{winners} winners of the giveaway were randomly selected by Telegram and received their prize.")
-                }
-            }
-            (false, false) => {
-                if winners == 1 {
-                    "1 winner of the giveaway was randomly selected by Telegram and received private messages with giftcodes.".into()
-                } else {
-                    format!("{winners} winners of the giveaway were randomly selected by Telegram and received private messages with giftcodes.")
-                }
-            }
-        }
-    };
-    B::default().t(text).done()
-}
-
-fn render_gift(
-    ctx: &ServiceCtx<'_>,
-    sender: Option<MessageSender>,
-    receiver: Option<MessageSender>,
-    stars: i64,
-    prepaid_upgrade: bool,
-    from_auction: bool,
-) -> ServiceText {
-    let cost = stars_cost(stars);
-    let me = |s: &Option<MessageSender>| matches!(s, Some(MessageSender::User { user_id }) if ctx.is_me_user(*user_id));
-    let sent_by_me = me(&sender) || (sender.is_none() && ctx.actor_is_me());
-    if stars == 0 {
-        return if sent_by_me {
-            B::default().t("You sent a unique collectible item").done()
-        } else {
-            ctx.peer_of_gift()
-                .t(" sent you a unique collectible item")
+                phrase(
+                    keys::ACTION_STORY_MENTION_ME,
+                    &[("user", ctx.chat(ctx.chat_id))],
+                )
                 .done()
-        };
-    }
-    if prepaid_upgrade {
-        return if sent_by_me {
-            B::default()
-                .t(format!("You sent an upgrade worth {cost} for "))
-                .extend(match receiver {
-                    Some(r) if !me(&receiver) => ctx.peer(r),
-                    _ => B::default().t("this gift"),
-                })
-                .t(if me(&receiver) { "." } else { "'s gift." })
+            } else {
+                phrase(
+                    keys::ACTION_STORY_MENTION,
+                    &[("user", ctx.chat(ctx.chat_id))],
+                )
                 .done()
-        } else {
-            ctx.peer_of_gift()
-                .t(format!(" sent an upgrade worth {cost} for your gift."))
-                .done()
-        };
+            }
+        }
+        A::Story { .. } => say(keys::IN_DLG_STORY),
+        A::PaidMedia { stars, .. } => phrase(
+            keys::Q_SERVICE_PAID_MEDIA,
+            &[("stars", B::from(stars_cost(*stars)))],
+        )
+        .done(),
     }
-    if sender.is_none() && !ctx.actor_is_me() {
-        return B::default()
-            .t(format!("Unknown user sent you a gift for {cost}"))
-            .done();
-    }
-    if from_auction {
-        return B::default()
-            .t(format!(
-                "You've successfully bought a gift in the auction for {cost}."
-            ))
-            .done();
-    }
-    if sent_by_me && me(&receiver) {
-        return B::default()
-            .t(format!("You bought a gift for {cost}"))
-            .done();
-    }
-    ctx.gift_line(&cost)
 }
 
-fn render_upgraded_gift(
-    ctx: &ServiceCtx<'_>,
-    name: &str,
-    sender: Option<MessageSender>,
-    receiver: Option<MessageSender>,
-    origin: GiftOrigin,
-    price: Option<&Money>,
-) -> ServiceText {
-    let me = |s: &Option<MessageSender>| matches!(s, Some(MessageSender::User { user_id }) if ctx.is_me_user(*user_id));
-    let actor_me = ctx.actor_is_me();
-    match origin {
-        GiftOrigin::Upgrade | GiftOrigin::PrepaidUpgrade => {
-            if actor_me && (me(&sender) || sender.is_none()) {
-                B::default()
-                    .t("You turned this gift into a unique collectible")
-                    .done()
-            } else if actor_me {
-                B::default()
-                    .t("You turned the gift from ")
-                    .extend(match sender {
-                        Some(s) => ctx.peer(s),
-                        None => B::default().t(WHO),
-                    })
-                    .t(" into a unique collectible")
-                    .done()
-            } else {
-                ctx.from()
-                    .t(" turned the gift from you into a unique collectible")
-                    .done()
-            }
-        }
-        GiftOrigin::Transfer | GiftOrigin::Blockchain => {
-            if actor_me {
-                match receiver {
-                    Some(r) if !me(&receiver) => B::default()
-                        .t("You transferred a gift to ")
-                        .extend(ctx.peer(r))
-                        .done(),
-                    _ => B::default()
-                        .t("You transferred a unique collectible")
-                        .done(),
-                }
-            } else if ctx.actor.is_some() {
-                ctx.from().t(" transferred you a gift").done()
-            } else {
-                B::default().t("Someone transferred you a gift").done()
-            }
-        }
-        GiftOrigin::Resale => {
-            let cost = price.map(cost).unwrap_or_default();
-            if actor_me || me(&sender) {
-                B::default().t(format!("You sold a gift for {cost}")).done()
-            } else {
-                ctx.from().t(format!(" sold you a gift for {cost}")).done()
-            }
-        }
-        GiftOrigin::Offer => {
-            let cost = price.map(cost).unwrap_or_default();
-            if actor_me {
-                B::default()
-                    .t(format!("You sold {name} for {cost}."))
-                    .done()
-            } else {
-                ctx.from().t(format!(" sold {name} for {cost}.")).done()
-            }
-        }
-        GiftOrigin::Craft => B::default().t("You crafted a new gift").done(),
-    }
+/// A list of checklist tasks, quoted and joined the way tdesktop does.
+fn task_list(titles: &[String]) -> B {
+    let tasks = titles
+        .iter()
+        .map(|title| B::from(tr_with(keys::ACTION_TODO_TASK_QUOTE, &[("task", title)])))
+        .collect();
+    join_segments(
+        tasks,
+        &ListKeys {
+            and_one: keys::ACTION_TODO_TASKS_AND_ONE,
+            and_last: keys::ACTION_TODO_TASKS_AND_LAST,
+            accumulated: "tasks",
+            item: "task",
+        },
+    )
+    .unwrap_or_else(|| B::from(trn(keys::ACTION_TODO_TASKS_FALLBACK, 1)))
 }

@@ -463,10 +463,9 @@ impl QuillApp {
                         div()
                             .text_xs()
                             .text_color(cx.theme().muted_foreground)
-                            .child(format!(
-                                "This image and text were derived from the encryption key for this \
-                                 secret chat with {name}.\n\nIf they look the same on {name}'s \
-                                 device, end-to-end encryption is guaranteed."
+                            .child(tr_with(
+                                keys::Q_CHAT_ENCRYPTION_KEY_NOTE,
+                                &[("name", &name)],
                             ))
                     });
             }

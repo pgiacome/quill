@@ -35,6 +35,7 @@ use quill::calls::capture::screen::{
     SYSTEM_PICKER_SOURCE, ScreenAccess, ScreenBackend, ScreenSource, SourceId, SourceKind,
     SourceLabel, Thumbnail, native_backend, source_labels,
 };
+use quill::lang::format::split_bold;
 use quill::lang::{keys, tr, tr_with};
 use smallvec::SmallVec;
 use std::sync::Arc;
@@ -782,20 +783,6 @@ pub(super) fn bold_marked(text: &str) -> Div {
     div()
         .text_sm()
         .child(StyledText::new(plain).with_highlights(highlights))
-}
-
-/// `text` without its `**` marks, and the byte ranges they enclosed.
-pub(super) fn split_bold(text: &str) -> (String, Vec<std::ops::Range<usize>>) {
-    let mut plain = String::with_capacity(text.len());
-    let mut bold = Vec::new();
-    for (index, part) in text.split("**").enumerate() {
-        let start = plain.len();
-        plain.push_str(part);
-        if index % 2 == 1 && !part.is_empty() {
-            bold.push(start..plain.len());
-        }
-    }
-    (plain, bold)
 }
 
 /// One source: its picture over the label; blue when selected, lighter

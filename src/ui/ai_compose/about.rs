@@ -101,7 +101,7 @@ impl QuillApp {
     }
 
     pub(super) fn ai_compose_about_view(&self, cx: &mut Context<Self>) -> AnyElement {
-        let (subtitle, bold_ranges) = crate::ui::screen_chooser::split_bold(&tr_with(
+        let (subtitle, bold_ranges) = quill::lang::format::split_bold(&tr_with(
             keys::TRANSLATE_COCOON_SUBTITLE,
             &[("text", tr(keys::TRANSLATE_COCOON_EXPLAIN))],
         ));

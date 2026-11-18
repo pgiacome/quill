@@ -364,7 +364,6 @@
 "qll_people_pick_a_chat_for_the" = "Выберите чат для сообщества";
 "qll_people_pick_a_date_and_time" = "Выберите дату и время";
 "qll_people_pick_at_least_one_contact" = "Выберите хотя бы один контакт для добавления";
-"qll_people_pinned" = "Закреплено";
 "qll_people_pinned_2" = " · закреплено";
 "qll_people_pinning_needs_a_live_connection" = "Для закрепления нужно подключение (демо)";
 "qll_people_posting_as" = "Публикация от имени {title}.";
@@ -561,3 +560,15 @@
 "qll_people_topics_count#few" = "{count} темы";
 "qll_people_topics_count#many" = "{count} тем";
 "qll_people_topics_count#other" = "{count} темы";
+"qll_people_topic_info_created_by" = "Создал(а)";
+"qll_people_topic_info_created" = "Создана";
+"qll_people_topic_info_mentions" = "Упоминания";
+"qll_people_topic_info_status" = "Статус";
+"qll_people_topic_info_mentions_count#one" = "{count} упоминание";
+"qll_people_topic_info_mentions_count#few" = "{count} упоминания";
+"qll_people_topic_info_mentions_count#many" = "{count} упоминаний";
+"qll_people_topic_info_mentions_count#other" = "{count} упоминания";
+"qll_people_topic_info_posted_by" = "Автор";
+"qll_people_topic_info_posted" = "Опубликовано";
+"qll_people_topic_info_started_by" = "Начал(а)";
+"qll_people_topic_info_started" = "Начато";

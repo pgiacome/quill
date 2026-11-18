@@ -361,9 +361,9 @@ pub(super) fn transfer_card(
     let label = format!(
         "{} {}{}",
         if received {
-            tr(keys::Q_MONEY_RECEIVED)
+            tr(keys::SR_CHAT_RECEIVED)
         } else {
-            tr(keys::Q_MONEY_SENT)
+            tr(keys::SR_CHAT_SENT)
         },
         amount,
         if peer.is_empty() {

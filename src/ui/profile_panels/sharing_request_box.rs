@@ -104,7 +104,7 @@ impl QuillApp {
                 .unwrap_or_default()
                 .replace("**", "*\u{2060}*");
             let text = tr_with(keys::ENABLE_SHARING_REQUEST_TEXT, &[("name", &name)]);
-            let (plain, bold) = crate::ui::screen_chooser::split_bold(&text);
+            let (plain, bold) = quill::lang::format::split_bold(&text);
             let style = HighlightStyle {
                 font_weight: Some(FontWeight::SEMIBOLD),
                 ..Default::default()

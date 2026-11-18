@@ -10,6 +10,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::bot_invite::{Invite, Scope};
+use crate::lang::{keys, tr};
 use crate::state::DeepLinkAction;
 use crate::telegram::envelope::ChatAdminRights;
 use crate::telegram::parse_chat_admin_rights;
@@ -508,8 +509,6 @@ pub fn invite_hash(invite_link: &str) -> Option<String> {
     (!hash.is_empty()).then(|| hash.to_string())
 }
 
-const NOT_SUPPORTED: &str = "isn't supported by Quill yet.";
-
 /// Decide what to do with one resolved link. `original` is the text the
 /// user opened; only the proxy hand-off needs it back.
 pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
@@ -572,7 +571,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
             },
         }),
         InternalLink::BotStartInGroup { .. } | InternalLink::BotAddToChannel { .. } => {
-            LinkRoute::Message("This bot link is broken.".into())
+            LinkRoute::Message(tr(keys::Q_CHAT_LINK_BOT_BROKEN).into())
         }
         InternalLink::WebApp {
             username,
@@ -585,7 +584,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
                 start_parameter: start_parameter.clone(),
             })
         }
-        InternalLink::WebApp { .. } => LinkRoute::Message("This app link is broken.".into()),
+        InternalLink::WebApp { .. } => LinkRoute::Message(tr(keys::Q_CHAT_LINK_APP_BROKEN).into()),
         InternalLink::MainWebApp {
             username,
             start_parameter,
@@ -593,7 +592,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
             domain: username.clone(),
             start_parameter: start_parameter.clone(),
         }),
-        InternalLink::MainWebApp { .. } => LinkRoute::Message("This app link is broken.".into()),
+        InternalLink::MainWebApp { .. } => LinkRoute::Message(tr(keys::Q_CHAT_LINK_APP_BROKEN).into()),
         InternalLink::AttachmentMenuBot { username, url } if !username.is_empty() => {
             LinkRoute::Resolve(A::OpenAttachmentBot {
                 domain: username.clone(),
@@ -601,7 +600,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
             })
         }
         InternalLink::AttachmentMenuBot { .. } => {
-            LinkRoute::Message("This bot link is broken.".into())
+            LinkRoute::Message(tr(keys::Q_CHAT_LINK_BOT_BROKEN).into())
         }
         InternalLink::Game {
             username,
@@ -612,7 +611,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
                 game_short_name: game_short_name.clone(),
             })
         }
-        InternalLink::Game { .. } => LinkRoute::Message("This game link is broken.".into()),
+        InternalLink::Game { .. } => LinkRoute::Message(tr(keys::Q_CHAT_LINK_GAME_BROKEN).into()),
         InternalLink::RequestManagedBot {
             manager_username,
             suggested_username,
@@ -623,11 +622,11 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
             suggested_name: suggested_name.clone(),
         }),
         InternalLink::RequestManagedBot { .. } => {
-            LinkRoute::Message("This bot link is broken.".into())
+            LinkRoute::Message(tr(keys::Q_CHAT_LINK_BOT_BROKEN).into())
         }
         InternalLink::ChatInvite { invite_link } => match invite_hash(invite_link) {
             Some(hash) => LinkRoute::Resolve(A::JoinInvite { hash }),
-            None => LinkRoute::Message("This invite link is broken or has expired.".into()),
+            None => LinkRoute::Message(tr(keys::Q_CHAT_LINK_INVITE_BROKEN).into()),
         },
         InternalLink::Message { url } => LinkRoute::Resolve(A::MessageLink { url: url.clone() }),
         InternalLink::Story { username, story_id } => LinkRoute::Resolve(A::OpenUsername {
@@ -646,29 +645,28 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
             // tdesktop `ShareUrl`: a draft that starts with "@" would run an
             // inline bot query in the target chat, so it is refused.
             if text.trim().is_empty() || text.trim_start().starts_with('@') {
-                LinkRoute::Message("This share link can't be used.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_SHARE_INVALID).into())
             } else {
                 LinkRoute::Ui(DeepLinkUi::Share { text: text.clone() })
             }
         }
         InternalLink::Settings(SettingsTarget::PrivacyPolicy) => LinkRoute::Message(
-            "The Telegram Privacy Policy is at https://telegram.org/privacy.".into(),
+            tr(keys::Q_CHAT_PRIVACY_POLICY_LINK).into(),
         ),
         InternalLink::Settings(target) => LinkRoute::Ui(DeepLinkUi::Settings(*target)),
         InternalLink::AuthenticationCode { .. } => LinkRoute::Message(
-            "This is a sign-in code link. Codes are only used while signing in, and you are \
-             already signed in."
+            tr(keys::Q_CHAT_SIGN_IN_CODE_ALREADY)
                 .into(),
         ),
         InternalLink::Invoice { name } => match crate::payment_invoice::invoice_link_invoice(name) {
             Some(_) => LinkRoute::Ui(DeepLinkUi::Invoice {
                 name: name.trim().to_string(),
             }),
-            None => LinkRoute::Message("This invoice link is broken.".into()),
+            None => LinkRoute::Message(tr(keys::Q_CHAT_LINK_INVOICE_BROKEN).into()),
         },
         InternalLink::ChatBoost { url } => {
             if url.is_empty() {
-                LinkRoute::Message("This boost link is broken.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_BOOST_BROKEN).into())
             } else {
                 LinkRoute::Resolve(A::BoostLink { url: url.clone() })
             }
@@ -676,14 +674,14 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
         // The box checks the code and applies it only on a click.
         InternalLink::PremiumGiftCode { code } => {
             if code.is_empty() {
-                LinkRoute::Message("This gift code link is broken.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_GIFT_BROKEN).into())
             } else {
                 LinkRoute::Ui(DeepLinkUi::GiftCode { code: code.clone() })
             }
         }
         InternalLink::GiftAuction { auction_id } => {
             if auction_id.is_empty() {
-                LinkRoute::Message("This auction link is broken.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_AUCTION_BROKEN).into())
             } else {
                 LinkRoute::Ui(DeepLinkUi::GiftAuction {
                     auction_id: auction_id.clone(),
@@ -692,7 +690,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
         }
         InternalLink::LanguagePack { id } => {
             if id.is_empty() {
-                LinkRoute::Message("This language link is broken.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_LANGUAGE_BROKEN).into())
             } else {
                 LinkRoute::Ui(DeepLinkUi::LanguagePack { id: id.clone() })
             }
@@ -710,9 +708,9 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
             live_stream: *live_stream,
         }),
         InternalLink::VideoChat { live_stream, .. } => LinkRoute::Message(if *live_stream {
-            "This live stream link is broken.".into()
+            tr(keys::Q_CHAT_LINK_LIVE_STREAM_BROKEN).into()
         } else {
-            "This video chat link is broken.".into()
+            tr(keys::Q_CHAT_LINK_VIDEO_CHAT_BROKEN).into()
         }),
         // tdesktop asks before joining a conference call by its link.
         InternalLink::GroupCall { invite_link } if !invite_link.is_empty() => {
@@ -721,11 +719,11 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
             })
         }
         InternalLink::GroupCall { .. } => {
-            LinkRoute::Message("This call link is broken or has expired.".into())
+            LinkRoute::Message(tr(keys::Q_CHAT_LINK_CALL_BROKEN).into())
         }
         InternalLink::ChatFolderInvite { invite_link } => {
             if invite_link.is_empty() {
-                LinkRoute::Message("This folder link is broken or has expired.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_FOLDER_BROKEN).into())
             } else {
                 LinkRoute::Ui(DeepLinkUi::FolderInvite {
                     link: invite_link.clone(),
@@ -734,14 +732,14 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
         }
         InternalLink::Background { name } => {
             if name.is_empty() {
-                LinkRoute::Message("This wallpaper link is broken.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_WALLPAPER_BROKEN).into())
             } else {
                 LinkRoute::Ui(DeepLinkUi::Background { name: name.clone() })
             }
         }
         InternalLink::TextCompositionStyle { name } => {
             if name.is_empty() {
-                LinkRoute::Message("This style was deleted or the link is invalid.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_STYLE_INVALID).into())
             } else {
                 LinkRoute::Ui(DeepLinkUi::TextCompositionStyle { name: name.clone() })
             }
@@ -754,7 +752,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
         InternalLink::UserPhoneNumber { phone, draft_text } => {
             let phone: String = phone.chars().filter(char::is_ascii_digit).collect();
             if phone.is_empty() {
-                LinkRoute::Message("This phone number link is broken.".into())
+                LinkRoute::Message(tr(keys::Q_CHAT_LINK_PHONE_BROKEN).into())
             } else {
                 LinkRoute::Resolve(A::UserPhone {
                     phone,
@@ -783,7 +781,7 @@ pub fn route(link: &InternalLink, original: &str) -> LinkRoute {
         }
         // A sign-in token for another device: its web page is no use.
         InternalLink::Other(kind) if kind == "QrCodeAuthentication" => {
-            LinkRoute::Message(format!("This link {NOT_SUPPORTED}"))
+            LinkRoute::Message(tr(keys::Q_CHAT_LINK_NOT_SUPPORTED).to_string())
         }
         InternalLink::Other(_) => unsupported(original),
     }
@@ -797,7 +795,7 @@ pub fn unsupported(original: &str) -> LinkRoute {
             url: original.to_string(),
         })
     } else {
-        LinkRoute::Message(format!("This link {NOT_SUPPORTED}"))
+        LinkRoute::Message(tr(keys::Q_CHAT_LINK_NOT_SUPPORTED).to_string())
     }
 }
 

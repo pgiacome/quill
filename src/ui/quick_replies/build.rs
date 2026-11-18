@@ -17,9 +17,6 @@ use quill::quick_replies::{self as qr, NAME_MAX};
 use std::cell::Cell;
 use std::rc::Rc;
 
-const ABOUT: &str = "Set up shortcuts with rich text and media to respond to messages faster. \
-You can access Quick Replies in any chat with a person by typing /.";
-
 impl QuillApp {
     fn quick_replies_list_body(&mut self, premium: bool, cx: &mut Context<Self>) -> Div {
         let muted = cx.theme().muted_foreground;
@@ -39,11 +36,16 @@ impl QuillApp {
             s.settings.quick_replies.shortcut_limit()
         });
         let full = rows.len() >= limit;
-        let mut body = div()
-            .flex()
-            .flex_col()
-            .gap_2()
-            .child(div().text_sm().text_color(muted).child(ABOUT));
+        let mut body =
+            div()
+                .flex()
+                .flex_col()
+                .gap_2()
+                .child(div().text_sm().text_color(muted).child(format!(
+                    "{} {}",
+                    tr(keys::BUSINESS_ABOUT_QUICK_REPLIES),
+                    tr(keys::Q_OPS_QUICK_REPLIES_TYPING_HINT)
+                )));
         if !premium {
             body = body.child(
                 div()

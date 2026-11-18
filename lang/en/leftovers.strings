@@ -17,6 +17,8 @@
 "lng_chat_intro_about" = "You can customize the message people see before they start a chat with you.";
 "lng_chat_link_copied" = "Chat link copied to clipboard.";
 "lng_chat_link_name_about" = "Add a name for this link that only you will see.";
+"lng_chat_link_description" = "Add a message that will be entered in the message field for anyone who starts a chat with you using this link.";
+"lng_chat_links_about" = "Give your customers short links that start a chat with you – and suggest the first message from them to you.";
 "lng_close" = "Close";
 "lng_confcall_link_or" = "or";
 "lng_context_edit_msg" = "Edit";
@@ -114,7 +116,6 @@
 "qll_leftovers_network_usage_since" = "Network usage since {date}";
 "qll_leftovers_no_older_messages_to_load" = "No older messages to load";
 "qll_leftovers_only_my_messages_in" = "Only my messages in {section}";
-"qll_leftovers_pinned" = "Pinned";
 "qll_leftovers_price_up_to_stars" = "The price can be up to {count} Stars.";
 "qll_leftovers_push_to_talk_release_delay" = "Push-to-talk release delay";
 "qll_leftovers_quick_action_react" = "React with the quick reaction";

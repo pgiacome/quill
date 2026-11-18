@@ -1,5 +1,7 @@
 //! The words of the "About this giveaway" box (tdesktop
 //! `boxes/gift_premium_box.cpp` `GiveawayInfoBox`, strings `lng_prizes_*`).
+use crate::lang::format::unmarked;
+use crate::lang::{keys, tr, tr_with, trn, trn_with};
 use crate::telegram::envelope::{
     GiveawayInfoData, GiveawayParticipantStatus, GiveawayPrize, GiveawaySummary,
 };
@@ -26,27 +28,10 @@ pub struct AboutText {
     pub result: Option<String>,
     /// Whether `result` announces a win.
     pub won: bool,
+    /// tdesktop marked text: `**bold**` runs (`lang::format::split_bold`).
     pub paragraphs: Vec<String>,
     /// Shown in a box of its own when the prizes were refunded.
     pub refund_notice: Option<String>,
-}
-
-fn count_of(n: i64, one: &str, many: &str) -> String {
-    if n == 1 {
-        format!("1 {one}")
-    } else {
-        format!("{n} {many}")
-    }
-}
-
-fn stars(n: i64) -> String {
-    count_of(n, "Star", "Stars")
-}
-
-fn months_phrase(months: i32) -> String {
-    // This box is English-only, so it keeps its own English plural instead
-    // of mixing a localized gift duration into an English frame.
-    format!("for {}", count_of(i64::from(months), "month", "months"))
 }
 
 /// The text for `summary` (the giveaway card) and `info` (the answer to
@@ -74,7 +59,7 @@ pub fn about_text(
         ),
         GiveawayInfoData::Ongoing { .. } => (false, 0, 0, false, 0),
     };
-    let ch = &ctx.first_channel;
+    let ch = &unmarked(&ctx.first_channel);
     let group = ctx.group;
     let many = summary.additional_chat_count > 0;
     let quantity = i64::from(summary.quantity());
@@ -86,105 +71,112 @@ pub fn about_text(
 
     let (result, won) = if gift_code {
         (
-            Some("You won a prize in this giveaway \u{1F3C6}".to_string()),
+            Some(tr_with(keys::PRIZES_YOU_WON, &[("cup", "\u{1F3C6}")])),
             true,
         )
     } else if won_stars > 0 {
+        let amount = trn(keys::PRIZES_YOU_WON_CREDITS_AMOUNT, won_stars);
         (
-            Some(format!(
-                "You won {} in this giveaway \u{1F3C6}",
-                stars(won_stars)
+            Some(tr_with(
+                keys::PRIZES_YOU_WON_CREDITS,
+                &[("amount", &amount), ("cup", "\u{1F3C6}")],
             )),
             true,
         )
     } else if matches!(info, GiveawayInfoData::Completed { .. }) && !refunded {
-        (
-            Some("You didn't win a prize in this giveaway.".to_string()),
-            false,
-        )
+        (Some(tr(keys::PRIZES_YOU_DIDNT).to_string()), false)
     } else {
         (None, false)
     };
 
-    let audience = if group {
-        "its members"
-    } else {
-        "its followers"
-    };
     let admins = match summary.prize {
         GiveawayPrize::Stars { star_count } => {
-            format!(
-                "the admins of {ch}, who acquired {} for {audience}",
-                stars(star_count)
-            )
-        }
-        GiveawayPrize::Premium { month_count } => format!(
-            "the admins of {ch}, who acquired {} {} {} for {audience}",
-            count_of(quantity, "Telegram Premium", "Telegram Premium"),
-            if quantity == 1 {
-                "subscription"
+            let amount = trn(keys::PRIZES_CREDITS_ADMINS_AMOUNT, star_count);
+            let key = if group {
+                keys::PRIZES_CREDITS_ADMINS_GROUP
             } else {
-                "subscriptions"
-            },
-            months_phrase(month_count),
-        ),
+                keys::PRIZES_CREDITS_ADMINS
+            };
+            tr_with(key, &[("channel", ch), ("amount", &amount)])
+        }
+        GiveawayPrize::Premium { month_count } => {
+            let duration = trn(keys::PREMIUM_GIFT_DURATION_MONTHS, month_count);
+            let key = if group {
+                keys::PRIZES_ADMINS_GROUP
+            } else {
+                keys::PRIZES_ADMINS
+            };
+            trn_with(key, quantity, &[("channel", ch), ("duration", &duration)])
+        }
     };
-    let mut intro = if finished {
-        format!("This giveaway was sponsored by {admins}.")
-    } else {
-        format!("This giveaway is sponsored by {admins}.")
-    };
+    let mut intro = tr_with(
+        if finished {
+            keys::PRIZES_END_TEXT
+        } else {
+            keys::PRIZES_HOW_TEXT
+        },
+        &[("admins", &admins)],
+    );
 
-    let who = if group { "member" } else { "subscriber" };
-    let also = if many {
-        " and other listed groups and channels"
-    } else {
-        ""
-    };
     let winners = if summary.only_new_members {
         let start = (ctx.date_time)(match info {
             GiveawayInfoData::Ongoing { creation_date, .. }
             | GiveawayInfoData::Completed { creation_date, .. } => *creation_date,
         });
-        format!(
-            "{} that joined {ch}{also} after {start}",
-            count_of(count, "random user", "random users")
-        )
+        let key = if many {
+            keys::PRIZES_WINNERS_NEW_OF_MANY
+        } else {
+            keys::PRIZES_WINNERS_NEW_OF_ONE
+        };
+        trn_with(key, count, &[("channel", ch), ("start_date", &start)])
+    } else if many {
+        let key = if group {
+            keys::PRIZES_WINNERS_ALL_OF_MANY_GROUP
+        } else {
+            keys::PRIZES_WINNERS_ALL_OF_MANY
+        };
+        trn_with(key, count, &[("channel", ch)])
     } else {
-        format!(
-            "{} of {ch}{also}",
-            count_of(count, &format!("random {who}"), &format!("random {who}s"))
-        )
+        let key = if group {
+            keys::PRIZES_WINNERS_ALL_OF_ONE_GROUP
+        } else {
+            keys::PRIZES_WINNERS_ALL_OF_ONE
+        };
+        trn_with(key, count, &[("channel", ch)])
     };
 
     let mut paragraphs = Vec::new();
     if !summary.prize_description.is_empty() {
-        let plural = count != 1;
-        intro.push_str(&format!(
-            "\n\n{ch} also included {count} {} in the {}. Admins of the {} are responsible for delivering {} {}.",
-            summary.prize_description,
-            if plural { "prizes" } else { "prize" },
-            if group { "group" } else { "channel" },
-            if plural { "these" } else { "this" },
-            if plural { "prizes" } else { "prize" },
-        ));
+        let key = if group {
+            keys::PRIZES_ADDITIONAL_ADDED_GROUP
+        } else {
+            keys::PRIZES_ADDITIONAL_ADDED
+        };
+        let line = trn_with(
+            key,
+            count,
+            &[
+                ("channel", ch),
+                ("prize", &unmarked(&summary.prize_description)),
+            ],
+        );
+        intro.push_str("\n\n");
+        intro.push_str(&line);
     }
     let until = (ctx.day)(summary.selection_date);
-    intro.push_str(&format!(
-        "\n\nOn {until}, Telegram {} {winners}.",
+    let line = tr_with(
         if finished {
-            "automatically selected"
+            keys::PRIZES_END_WHEN_FINISH
         } else {
-            "will automatically select"
-        }
-    ));
+            keys::PRIZES_HOW_WHEN_FINISH
+        },
+        &[("date", &until), ("winners", &winners)],
+    );
+    intro.push_str("\n\n");
+    intro.push_str(&line);
     if activated > 0 {
         intro.push(' ');
-        intro.push_str(&if activated == 1 {
-            "1 winner already used their gift link.".to_string()
-        } else {
-            format!("{activated} of the winners already used their gift links.")
-        });
+        intro.push_str(&trn(keys::PRIZES_END_ACTIVATED, activated));
     }
     paragraphs.push(intro);
 
@@ -197,57 +189,67 @@ pub fn about_text(
         {
             let line = match status {
                 GiveawayParticipantStatus::Administrator { chat_id } => {
-                    let name = (ctx.chat_title)(*chat_id);
-                    if group {
-                        format!("You are not eligible to participate in this giveaway because you are an admin of a participating group ({name}).")
-                    } else {
-                        format!("You are not eligible to participate in this giveaway because you are an admin of a participating channel ({name}).")
-                    }
+                    let name = unmarked(&(ctx.chat_title)(*chat_id));
+                    tr_with(
+                        if group {
+                            keys::PRIZES_HOW_NO_ADMIN_GROUP
+                        } else {
+                            keys::PRIZES_HOW_NO_ADMIN
+                        },
+                        &[("channel", &name)],
+                    )
                 }
                 GiveawayParticipantStatus::AlreadyWasMember { joined_chat_date } => {
                     let date = (ctx.date_time)(*joined_chat_date);
-                    format!(
-                        "You are not eligible to participate in this giveaway because you joined this {} on {date}, which is before the giveaway started.",
-                        if group { "group" } else { "channel" }
+                    tr_with(
+                        if group {
+                            keys::PRIZES_HOW_NO_JOINED_GROUP
+                        } else {
+                            keys::PRIZES_HOW_NO_JOINED
+                        },
+                        &[("date", &date)],
                     )
                 }
                 GiveawayParticipantStatus::DisallowedCountry { .. } => {
-                    "You are not eligible to participate in this giveaway because your country is not included in the terms of the giveaway.".to_string()
+                    tr(keys::PRIZES_HOW_NO_COUNTRY).to_string()
                 }
-                GiveawayParticipantStatus::Participating => {
+                GiveawayParticipantStatus::Participating => tr_with(
                     if many {
-                        format!("You are participating in this giveaway because you joined the channel {ch} (and other listed groups and channels).")
+                        keys::PRIZES_HOW_YES_JOINED_MANY
                     } else {
-                        format!("You are participating in this giveaway because you joined the channel {ch}.")
-                    }
-                }
-                GiveawayParticipantStatus::Eligible => {
+                        keys::PRIZES_HOW_YES_JOINED_ONE
+                    },
+                    &[("channel", ch)],
+                ),
+                GiveawayParticipantStatus::Eligible => tr_with(
                     if many {
-                        format!("To take part in this giveaway please join channel {ch} and other listed groups and channels before {until}.")
+                        keys::PRIZES_HOW_PARTICIPATE_MANY
                     } else {
-                        format!("To take part in this giveaway please join the channel {ch} before {until}.")
-                    }
-                }
+                        keys::PRIZES_HOW_PARTICIPATE_ONE
+                    },
+                    &[("channel", ch), ("date", &until)],
+                ),
             };
             paragraphs.push(line);
         }
     }
 
     AboutText {
-        title: if finished {
-            "Giveaway ended"
+        title: tr(if finished {
+            keys::PRIZES_END_TITLE
         } else {
-            "About this giveaway"
-        },
+            keys::PRIZES_HOW_TITLE
+        }),
         result,
         won,
         paragraphs,
         refund_notice: refunded.then(|| {
-            if group {
-                "The group canceled the prizes by refunding the payment for them.".to_string()
+            tr(if group {
+                keys::PRIZES_CANCELLED_GROUP
             } else {
-                "The channel canceled the prizes by refunding the payment for them.".to_string()
-            }
+                keys::PRIZES_CANCELLED
+            })
+            .to_string()
         }),
     }
 }

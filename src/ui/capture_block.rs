@@ -100,11 +100,6 @@ fn apply_native_sharing(_window: &Window, _blocked: bool) -> bool {
 pub(super) const CAPTURE_BLOCK_SUPPORTED: bool =
     cfg!(any(target_os = "macos", target_os = "windows"));
 
-/// Shown in secret chats where capture can't be blocked (Linux).
-pub(super) const CAPTURE_BLOCK_UNSUPPORTED_NOTE: &str = "Screenshots can't be blocked here. \
-     Linux desktops don't let apps hide a window from screen capture, so anything in this \
-     secret chat can be captured on this computer.";
-
 impl QuillApp {
     /// Whether the window whose state is in place shows a secret chat, or
     /// secret media in its viewer. A chat window applies it to itself
@@ -151,7 +146,11 @@ impl QuillApp {
                 .bg(cx.theme().secondary)
                 .text_xs()
                 .text_color(cx.theme().muted_foreground)
-                .child(div().flex_1().child(CAPTURE_BLOCK_UNSUPPORTED_NOTE))
+                .child(
+                    div()
+                        .flex_1()
+                        .child(tr(keys::Q_CHAT_CAPTURE_BLOCK_UNSUPPORTED)),
+                )
                 .child(
                     gpui_kit::component::button::Button::new("capture-block-notice-dismiss")
                         .label(tr(keys::Q_REST_GOT_IT))

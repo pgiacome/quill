@@ -41,7 +41,7 @@ wording!(
     giveaway_started_in_channel,
     IN_CHANNEL,
     r#"{"@type":"messageGiveawayCreated","star_count":0}"#,
-    "Someone just started a giveaway of Telegram Premium subscriptions to its followers."
+    "Someone just started a giveaway of Telegram Premium subscriptions for its followers."
 );
 wording!(
     stars_giveaway_started,

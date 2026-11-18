@@ -10,7 +10,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::RequestId;
-use crate::lang::{keys, tr, tr_with};
+use crate::lang::{keys, tr, tr_with, trn};
 use std::collections::BTreeSet;
 
 pub const ACTION_BIRTHDATE: &str = "suggestedActionSetBirthdate";
@@ -197,36 +197,38 @@ pub fn pick(
 pub fn copy(suggestion: &Suggestion, names: &[String], phone: &str) -> (String, String) {
     match suggestion {
         Suggestion::Birthdays(ids) if ids.len() == 1 => (
-            format!(
-                "It’s {}'s birthday today! 🎂",
-                names.first().map_or("a contact", String::as_str)
+            tr_with(
+                keys::Q_CHATLIST_BIRTHDAY_ONE,
+                &[("name", names.first().map_or("a contact", String::as_str))],
             ),
-            "Send them a Gift.".into(),
+            tr(keys::Q_CHATLIST_SEND_GIFT).into(),
         ),
         Suggestion::Birthdays(ids) => (
-            format!("{} contacts have birthdays today! 🎂", ids.len()),
-            "Send them a Gift.".into(),
+            trn(keys::Q_CHATLIST_BIRTHDAY_MANY, ids.len()),
+            tr(keys::Q_CHATLIST_SEND_GIFT).into(),
         ),
         Suggestion::SetBirthdate => (
-            "Add your birthday! 🎂".into(),
-            "Let your contacts know when you’re celebrating.".into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_BIRTHDAY_TITLE).into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_BIRTHDAY_ABOUT).into(),
         ),
         Suggestion::SetProfilePhoto => (
-            "Add your photo! 📸".into(),
-            "Help your friends spot you easily.".into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_PHOTO_TITLE).into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_PHOTO_ABOUT).into(),
         ),
         Suggestion::CheckPhone => (
-            format!("Is +{} still your number?", phone.trim_start_matches('+')),
-            "Keep your number up to date to ensure you can always log into Telegram.".into(),
+            tr_with(
+                keys::Q_CHATLIST_SUGGESTION_PHONE_TITLE,
+                &[("phone", phone.trim_start_matches('+'))],
+            ),
+            tr(keys::Q_CHATLIST_SUGGESTION_PHONE_ABOUT).into(),
         ),
         Suggestion::CheckPassword => (
-            "Your password".into(),
-            "Your account is protected by 2-Step Verification. Do you still remember your password?"
-                .into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_PASSWORD_TITLE).into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_PASSWORD_ABOUT).into(),
         ),
         Suggestion::UpgradePremium => (
-            "Upgrade to Telegram Premium".into(),
-            "Switch from monthly to annual payments for Telegram Premium.".into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_PREMIUM_TITLE).into(),
+            tr(keys::Q_CHATLIST_SUGGESTION_PREMIUM_ABOUT).into(),
         ),
     }
 }

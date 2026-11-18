@@ -11,7 +11,8 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::FileId;
-use crate::lang::{keys, tr, tr_with};
+use crate::lang::format::{split_bold, unmarked};
+use crate::lang::{keys, tr, tr_with, trn};
 use crate::local_time::{CivilTime, day_label, hhmm};
 use crate::telegram::envelope::{MessageContent, MessageReadDate};
 
@@ -335,19 +336,22 @@ pub fn seen_kind(content: &MessageContent) -> SeenKind {
 /// "3 Seen", "1 Listened", "Nobody Viewed" ... (`lng_context_seen_*`).
 pub fn seen_label(kind: SeenKind, count: usize) -> String {
     match (kind, count) {
-        (SeenKind::Seen, 0) => "Nobody Viewed".into(),
-        (SeenKind::Seen, n) => format!("{n} Seen"),
+        (SeenKind::Seen, 0) => tr(keys::CONTEXT_SEEN_TEXT_NONE).to_owned(),
+        (SeenKind::Seen, n) => trn(keys::CONTEXT_SEEN_TEXT, n),
+        (SeenKind::Listened, 0) => tr(keys::CONTEXT_SEEN_LISTENED_NONE).to_owned(),
+        (SeenKind::Listened, n) => trn(keys::CONTEXT_SEEN_LISTENED, n),
         // Telegram Desktop words the round-video row "Listened" too.
-        (SeenKind::Listened | SeenKind::Watched, 0) => "Nobody Listened".into(),
-        (SeenKind::Listened | SeenKind::Watched, n) => format!("{n} Listened"),
+        (SeenKind::Watched, 0) => tr(keys::CONTEXT_SEEN_WATCHED_NONE).to_owned(),
+        (SeenKind::Watched, n) => trn(keys::CONTEXT_SEEN_WATCHED, n),
     }
 }
 
 /// "3 Reacted", "Nobody Reacted" (`lng_context_seen_reacted*`).
 pub fn reacted_label(count: usize) -> String {
-    match count {
-        0 => "Nobody Reacted".into(),
-        n => format!("{n} Reacted"),
+    if count == 0 {
+        tr(keys::CONTEXT_SEEN_REACTED_NONE).to_owned()
+    } else {
+        trn(keys::CONTEXT_SEEN_REACTED, count)
     }
 }
 
@@ -363,12 +367,15 @@ pub fn read_status_label(read: MessageReadDate, now: &CivilTime) -> String {
     match read {
         MessageReadDate::Read(unix) => {
             let date = crate::local_time::civil_local(i64::from(unix));
-            format!("Seen {}", read_date_label(&date, now))
+            tr_with(
+                keys::Q_CHAT_SEEN_AT,
+                &[("date", &read_date_label(&date, now))],
+            )
         }
-        MessageReadDate::Unread => "Not seen yet".into(),
-        MessageReadDate::TooOld => "Seen a long time ago".into(),
+        MessageReadDate::Unread => tr(keys::Q_CHAT_NOT_SEEN_YET).to_owned(),
+        MessageReadDate::TooOld => tr(keys::Q_CHAT_SEEN_A_LONG_TIME_AGO).to_owned(),
         MessageReadDate::UserPrivacyRestricted | MessageReadDate::MyPrivacyRestricted => {
-            "Seen time hidden".into()
+            tr(keys::Q_CHAT_SEEN_TIME_HIDDEN).to_owned()
         }
     }
 }
@@ -378,13 +385,22 @@ pub fn read_status_label(read: MessageReadDate, now: &CivilTime) -> String {
 /// the bold part, the text after. One known pack is named; otherwise the
 /// packs are counted. `None` when the message uses no pack.
 pub fn emoji_pack_footer(packs: usize, name: Option<&str>) -> Option<(String, String, String)> {
-    let before = "This message contains emoji from ".to_string();
-    match (packs, name.filter(|name| !name.is_empty())) {
-        (0, _) => None,
-        (1, Some(name)) => Some((before, format!("{name} pack"), ".".into())),
-        (1, None) => Some((before, "1 pack".into(), ".".into())),
-        (count, _) => Some((before, format!("{count} packs"), ".".into())),
+    if packs == 0 {
+        return None;
     }
+    let text = match (packs, name.filter(|name| !name.is_empty())) {
+        (1, Some(name)) => tr_with(keys::CONTEXT_ANIMATED_EMOJI, &[("name", &unmarked(name))]),
+        (count, _) => trn(keys::CONTEXT_ANIMATED_EMOJI_MANY, count),
+    };
+    // A translation without a bold run still shows, all plain.
+    let (plain, bold) = split_bold(&text);
+    let bold = bold.first().cloned().unwrap_or(plain.len()..plain.len());
+    let part = |range: std::ops::Range<usize>| plain.get(range).unwrap_or_default().to_owned();
+    Some((
+        part(0..bold.start),
+        part(bold.clone()),
+        part(bold.end..plain.len()),
+    ))
 }
 
 /// "Sent today at 12:34" (`lng_context_sent_today` and its siblings).
@@ -479,9 +495,9 @@ pub fn timecode_insertion(before_cursor: &str, timecode: &str) -> String {
 /// (`lng_channel_public_link_copied` / `lng_context_about_private_link`).
 pub fn link_copied_note(public: bool) -> &'static str {
     if public {
-        "Link copied to clipboard."
+        tr(keys::CHANNEL_PUBLIC_LINK_COPIED)
     } else {
-        "This link will only work for members of this chat."
+        tr(keys::CONTEXT_ABOUT_PRIVATE_LINK)
     }
 }
 
@@ -489,15 +505,15 @@ pub fn link_copied_note(public: bool) -> &'static str {
 /// (`lng_context_noforwards_info_*`).
 pub fn noforwards_info(is_channel: bool, is_group: bool, is_bot: bool, mine: bool) -> &'static str {
     if is_channel {
-        "Copying and forwarding is not allowed in this channel."
+        tr(keys::CONTEXT_NOFORWARDS_INFO_CHANNEL)
     } else if is_group {
-        "Copying and forwarding is not allowed in this group."
+        tr(keys::CONTEXT_NOFORWARDS_INFO_GROUP)
     } else if is_bot {
-        "Copying and forwarding is not allowed from this bot."
+        tr(keys::CONTEXT_NOFORWARDS_INFO_BOT)
     } else if mine {
-        "You disabled copying and forwarding in this chat."
+        tr(keys::CONTEXT_NOFORWARDS_INFO_MINE)
     } else {
-        "Copying and forwarding is not allowed in this chat."
+        tr(keys::Q_CHAT_NOFORWARDS_INFO_CHAT)
     }
 }
 
@@ -512,7 +528,7 @@ pub fn noforwards_text(
 ) -> String {
     match peer {
         Some(name) if !is_channel && !is_group && !is_bot && !mine => {
-            format!("{name} disabled copying and forwarding in this chat.")
+            tr_with(keys::CONTEXT_NOFORWARDS_INFO_HIS, &[("user", name)])
         }
         _ => noforwards_info(is_channel, is_group, is_bot, mine).to_string(),
     }

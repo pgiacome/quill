@@ -135,7 +135,7 @@ fn local_joined_notice_and_thread_divider_use_tdesktop_wording() {
             },
             BY_DANA
         ),
-        "No comments here yet..."
+        "No comments here yet…"
     );
 }
 
@@ -150,6 +150,7 @@ macro_rules! wording {
 
 mod chats;
 mod content;
+mod language;
 mod payments;
 
 #[test]

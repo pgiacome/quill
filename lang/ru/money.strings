@@ -11,7 +11,6 @@
 "qll_money_1_star" = "1 звезда";
 "qll_money_1_user_have_opened_through" = "1 пользователь открыл {app} по этой ссылке.";
 "qll_money_a_channel" = "канал";
-"qll_money_about_this_giveaway" = "Об этом розыгрыше";
 "qll_money_accept" = "Принять";
 "qll_money_accept_terms" = "Принять условия";
 "qll_money_accept_this_post" = "принять этот пост";
@@ -372,7 +371,6 @@
 "qll_money_reactions_per_post" = "Реакции на пост";
 "qll_money_reactions_per_story" = "Реакции на историю";
 "qll_money_receive" = "Получить";
-"qll_money_received" = "Получено";
 "qll_money_recent_posts" = "Последние посты";
 "qll_money_recipient" = "Получатель";
 "qll_money_record" = "Записать";
@@ -413,7 +411,6 @@
 "qll_money_sending" = "Отправка…";
 "qll_money_sending_2" = "Отправка…";
 "qll_money_sending_the_offer" = "Отправляем предложение…";
-"qll_money_sent" = "Отправлено";
 "qll_money_server_error" = "Внутренняя ошибка сервера. Повторите попытку позже.";
 "qll_money_set_password" = "Задать пароль";
 "qll_money_share_this_link_with_your" = "Поделитесь этой ссылкой со своей {audience}, чтобы получать комиссию {commission_per_mille} с их трат в {app_name} {month_count}.";
@@ -531,7 +528,6 @@
 "qll_money_view_receipt" = "Посмотреть чек";
 "qll_money_view_statistics" = "Посмотреть статистику";
 "qll_money_viewing_members" = "Смотрят сейчас";
-"qll_money_views" = "Просмотры";
 "qll_money_views_per_post" = "Просмотров на пост";
 "qll_money_views_per_story" = "Просмотров на историю";
 "qll_money_wallet_address" = "Адрес кошелька: {address}";
@@ -867,10 +863,6 @@
 "qll_money_auction_your_bid_will_be" = "Ваша ставка будет";
 "qll_money_auction_winning" = "Вы побеждаете";
 "qll_money_auction_outbid_short" = "Вас перебили";
-"qll_money_tx_stars#one" = "{count} звезда";
-"qll_money_tx_stars#few" = "{count} звезды";
-"qll_money_tx_stars#many" = "{count} звёзд";
-"qll_money_tx_stars#other" = "{count} звезды";
 "qll_money_tx_requests#one" = "{count} запрос";
 "qll_money_tx_requests#few" = "{count} запроса";
 "qll_money_tx_requests#many" = "{count} запросов";

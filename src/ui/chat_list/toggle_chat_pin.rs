@@ -90,7 +90,7 @@ impl QuillApp {
             self.set_note(if pinned {
                 StatusNote::silent(tr(keys::Q_LEFTOVERS_UNPINNED))
             } else {
-                StatusNote::silent(tr(keys::Q_LEFTOVERS_PINNED))
+                StatusNote::silent(tr(keys::SR_CHAT_PINNED))
             });
             cx.notify();
         }

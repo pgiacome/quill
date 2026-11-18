@@ -102,19 +102,19 @@ impl SharedMediaTab {
     /// TGX empty-state title (`NoMediaToShow`, `NoDocumentsToShow`, … —
     /// `~/workspace/telegram-x/app/src/main/res/values/strings.xml:1601-1609`).
     pub fn empty_title(self) -> &'static str {
-        match self {
-            SharedMediaTab::Media => "No media to show",
-            SharedMediaTab::Photos => "No photos to show",
-            SharedMediaTab::Videos => "No videos to show",
-            SharedMediaTab::Files => "No documents to show",
-            SharedMediaTab::Music => "No music to show",
-            SharedMediaTab::Links => "No links to show",
-            SharedMediaTab::Polls => "No polls to show",
-            SharedMediaTab::Voice => "No voice messages to show",
-            SharedMediaTab::Gifs => "No GIFs to show",
-            SharedMediaTab::Stories => "No stories to show",
-            SharedMediaTab::Gifts => "No gifts to show",
-        }
+        tr(match self {
+            SharedMediaTab::Media => keys::Q_MEDIA_EMPTY_MEDIA_TITLE,
+            SharedMediaTab::Photos => keys::Q_MEDIA_EMPTY_PHOTOS_TITLE,
+            SharedMediaTab::Videos => keys::Q_MEDIA_EMPTY_VIDEOS_TITLE,
+            SharedMediaTab::Files => keys::Q_MEDIA_EMPTY_FILES_TITLE,
+            SharedMediaTab::Music => keys::Q_MEDIA_EMPTY_MUSIC_TITLE,
+            SharedMediaTab::Links => keys::Q_MEDIA_EMPTY_LINKS_TITLE,
+            SharedMediaTab::Polls => keys::Q_MEDIA_EMPTY_POLLS_TITLE,
+            SharedMediaTab::Voice => keys::Q_MEDIA_EMPTY_VOICE_TITLE,
+            SharedMediaTab::Gifs => keys::Q_MEDIA_EMPTY_GIFS_TITLE,
+            SharedMediaTab::Stories => keys::Q_MEDIA_EMPTY_STORIES_TITLE,
+            SharedMediaTab::Gifts => keys::Q_MEDIA_EMPTY_GIFTS_TITLE,
+        })
     }
 
     /// TGX empty-state description (`No*ToShowInChat` / `No*ToShowInChannel`,
@@ -122,51 +122,33 @@ impl SharedMediaTab {
     /// exactly as `EmptySmartView.setMode(mode, isChannel, …)` does.
     pub fn empty_hint(self, is_channel: bool) -> &'static str {
         if is_channel {
-            return match self {
-                SharedMediaTab::Media => "Published photos and videos\nwill be shown here.",
-                SharedMediaTab::Photos => "Published photos will be shown here.",
-                SharedMediaTab::Videos => "Published videos will be shown here.",
-                SharedMediaTab::Files => "Published documents and files\nwill be shown here.",
-                SharedMediaTab::Music => "Published music and audio files\nwill be shown here.",
-                SharedMediaTab::Links => "Published links and articles\nwill be shown here.",
-                SharedMediaTab::Polls => "Published polls will be shown here.",
-                SharedMediaTab::Voice => "Published voice messages\nwill be shown here.",
-                SharedMediaTab::Gifs => "Published GIFs will be shown here.",
-                SharedMediaTab::Stories => {
-                    "Stories posted to this channel's page\nwill be shown here."
-                }
-                SharedMediaTab::Gifts => "Gifts this channel received\nwill be shown here.",
-            };
+            return tr(match self {
+                SharedMediaTab::Media => keys::Q_MEDIA_EMPTY_MEDIA_CHANNEL,
+                SharedMediaTab::Photos => keys::Q_MEDIA_EMPTY_PHOTOS_CHANNEL,
+                SharedMediaTab::Videos => keys::Q_MEDIA_EMPTY_VIDEOS_CHANNEL,
+                SharedMediaTab::Files => keys::Q_MEDIA_EMPTY_FILES_CHANNEL,
+                SharedMediaTab::Music => keys::Q_MEDIA_EMPTY_MUSIC_CHANNEL,
+                SharedMediaTab::Links => keys::Q_MEDIA_EMPTY_LINKS_CHANNEL,
+                SharedMediaTab::Polls => keys::Q_MEDIA_EMPTY_POLLS_CHANNEL,
+                SharedMediaTab::Voice => keys::Q_MEDIA_EMPTY_VOICE_CHANNEL,
+                SharedMediaTab::Gifs => keys::Q_MEDIA_EMPTY_GIFS_CHANNEL,
+                SharedMediaTab::Stories => keys::Q_MEDIA_EMPTY_STORIES_CHANNEL,
+                SharedMediaTab::Gifts => keys::Q_MEDIA_EMPTY_GIFTS_CHANNEL,
+            });
         }
-        match self {
-            SharedMediaTab::Media => {
-                "Share photos and videos in this chat and\naccess them on any of your devices."
-            }
-            SharedMediaTab::Photos => {
-                "Share photos in this chat and\naccess them on any of your devices."
-            }
-            SharedMediaTab::Videos => {
-                "Share videos in this chat and\naccess them on any of your devices."
-            }
-            SharedMediaTab::Files => {
-                "Share files and documents in this chat and\naccess them on any of your devices."
-            }
-            SharedMediaTab::Music => {
-                "Share music and audio files in this chat and\naccess them on any device you have."
-            }
-            SharedMediaTab::Links => {
-                "Share links in this chat and\naccess them on any device you have."
-            }
-            SharedMediaTab::Polls => "Polls sent in this chat\nwill be shown here.",
-            SharedMediaTab::Voice => {
-                "Share voice messages in this chat and\naccess them on any device you have."
-            }
-            SharedMediaTab::Gifs => {
-                "Share GIFs in this chat and\naccess them on any device you have."
-            }
-            SharedMediaTab::Stories => "Stories posted to the profile\nwill be shown here.",
-            SharedMediaTab::Gifts => "Gifts shown on the profile\nwill be listed here.",
-        }
+        tr(match self {
+            SharedMediaTab::Media => keys::Q_MEDIA_EMPTY_MEDIA_CHAT,
+            SharedMediaTab::Photos => keys::Q_MEDIA_EMPTY_PHOTOS_CHAT,
+            SharedMediaTab::Videos => keys::Q_MEDIA_EMPTY_VIDEOS_CHAT,
+            SharedMediaTab::Files => keys::Q_MEDIA_EMPTY_FILES_CHAT,
+            SharedMediaTab::Music => keys::Q_MEDIA_EMPTY_MUSIC_CHAT,
+            SharedMediaTab::Links => keys::Q_MEDIA_EMPTY_LINKS_CHAT,
+            SharedMediaTab::Polls => keys::Q_MEDIA_EMPTY_POLLS_CHAT,
+            SharedMediaTab::Voice => keys::Q_MEDIA_EMPTY_VOICE_CHAT,
+            SharedMediaTab::Gifs => keys::Q_MEDIA_EMPTY_GIFS_CHAT,
+            SharedMediaTab::Stories => keys::Q_MEDIA_EMPTY_STORIES_CHAT,
+            SharedMediaTab::Gifts => keys::Q_MEDIA_EMPTY_GIFTS_CHAT,
+        })
     }
 }
 

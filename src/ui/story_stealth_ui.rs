@@ -241,7 +241,7 @@ impl QuillApp {
             .stealth_toast
             .as_ref()
             .filter(|shown| shown.until > Instant::now())?;
-        let (text, bold) = super::screen_chooser::split_bold(&shown.toast.text);
+        let (text, bold) = quill::lang::format::split_bold(&shown.toast.text);
         let style = HighlightStyle {
             font_weight: Some(FontWeight::SEMIBOLD),
             ..Default::default()

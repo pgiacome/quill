@@ -156,7 +156,7 @@ fn rating_body(view: &RatingView, cx: &mut Context<QuillApp>) -> AnyElement {
     let shown = view.shown();
     let bar = shown.bar();
     let negative = shown.is_negative();
-    let name = view.name.as_deref().map(super::unmarked);
+    let name = view.name.as_deref().map(quill::lang::format::unmarked);
     let negative_text = match &name {
         None if shown.rating < 0 => trn_decimal(keys::STARS_RATING_NEGATIVE_YOUR, -shown.rating),
         _ => tr_with(

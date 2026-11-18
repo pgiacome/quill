@@ -15,10 +15,6 @@ use quill::business_chat_links::{ChatLink, plain_links};
 use quill::lang::{keys, tr};
 use quill::state::ChatLinkAnswer;
 
-const ABOUT: &str = "Give your customers short links that start a chat with you – and suggest \
-the first message from them to you.";
-const MESSAGE_ABOUT: &str = "Add a message that will be entered in the message field for anyone \
-who starts a chat with you using this link.";
 fn name_about() -> &'static str {
     tr(keys::CHAT_LINK_NAME_ABOUT)
 }
@@ -317,11 +313,12 @@ impl QuillApp {
         let full = links
             .as_ref()
             .is_some_and(|l| l.len() >= self.business_links_max());
-        let mut body = div()
-            .flex()
-            .flex_col()
-            .gap_2()
-            .child(div().text_sm().text_color(muted).child(ABOUT));
+        let mut body = div().flex().flex_col().gap_2().child(
+            div()
+                .text_sm()
+                .text_color(muted)
+                .child(tr(keys::CHAT_LINKS_ABOUT)),
+        );
         if !full {
             body = body.child(
                 crate::ui::pressable::action_row(
@@ -465,7 +462,12 @@ impl QuillApp {
             .flex()
             .flex_col()
             .gap_2()
-            .child(div().text_xs().text_color(muted).child(MESSAGE_ABOUT))
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(muted)
+                    .child(tr(keys::CHAT_LINK_DESCRIPTION)),
+            )
             .child(Textarea::new(&text).aria_label(tr(keys::Q_OPS_PRESET_MESSAGE)))
             .child(Input::new(&name).aria_label(tr(keys::Q_OPS_LINK_NAME)))
             .child(div().text_xs().text_color(muted).child(name_about()))

@@ -93,7 +93,7 @@ fn a_thread_without_replies_says_no_comments_yet() {
     assert_eq!(rows.len(), 2);
     assert_eq!(
         session.service_text(&rows[1]).map(|text| text.plain()),
-        Some("No comments here yet...".to_string())
+        Some("No comments here yet…".to_string())
     );
 }
 
@@ -823,4 +823,40 @@ fn an_earlier_resolve_answer_does_not_resolve_a_reopened_thread() {
     let thread = session.threads.thread.as_ref().unwrap();
     assert_eq!(thread.thread_id, 501);
     assert_ne!(thread.status, ThreadStatus::Resolving { request: second });
+}
+
+#[test]
+fn the_replies_chat_is_named_in_the_interface_language_and_follows_a_switch() {
+    use crate::lang::{PackValue, Snapshot, install, isolate_thread};
+    isolate_thread();
+    let (mut session, sink) = session();
+    let seq = AtomicU64::new(0);
+    // The chat loads before the option that says it is the Replies chat.
+    apply_json(
+        &mut session,
+        &seq,
+        &sink,
+        r#"{"@type":"updateNewChat","chat":{"id":1271266957,"title":"Replies","type":{"@type":"chatTypePrivate","user_id":1271266957},"unread_count":0}}"#,
+    );
+    apply_json(
+        &mut session,
+        &seq,
+        &sink,
+        r#"{"@type":"updateOption","name":"replies_bot_chat_id","value":{"@type":"optionValueInteger","value":"1271266957"}}"#,
+    );
+    let title = |session: &Session| session.chats.get(&1271266957).map(|c| c.title.clone());
+    assert_eq!(title(&session).as_deref(), Some("Replies"));
+
+    let mut pack = Snapshot::new("ru", "ru", false);
+    pack.layer([(
+        "lng_replies_messages",
+        &PackValue::Ordinary("Ответы".into()),
+    )]);
+    install(Some(pack));
+    session.localize_titles();
+    assert_eq!(title(&session).as_deref(), Some("Ответы"));
+
+    install(None);
+    session.localize_titles();
+    assert_eq!(title(&session).as_deref(), Some("Replies"));
 }

@@ -9,6 +9,7 @@
 //! `message.self_destruct_in` is that timer.
 
 use super::MediaViewerKind;
+use crate::lang::{keys, tr, tr_with, trn};
 use crate::telegram::envelope::{MessageSelfDestruct, SelfDestructClock, SelfDestructKind};
 
 /// A running timer of a timed photo or video.
@@ -65,21 +66,21 @@ impl ViewerTtl {
     /// The date line's suffix, `lng_mediaview_ttl_in` with `lng_seconds_tiny`.
     pub fn date_suffix(&self) -> Option<String> {
         self.seconds_left()
-            .map(|left| format!("Disappears in {}", seconds_tiny(left)))
+            .map(|left| tr_with(keys::MEDIAVIEW_TTL_IN, &[("time", &seconds_tiny(left))]))
     }
 }
 
 /// `lng_seconds_tiny`: "5s".
 pub fn seconds_tiny(seconds: i64) -> String {
-    format!("{seconds}s")
+    trn(keys::SECONDS_TINY, seconds)
 }
 
 /// The header of timed media (`lng_mediaview_disappearing_photo` and
 /// `_video`).
 pub fn disappearing_label(kind: MediaViewerKind) -> &'static str {
     match kind {
-        MediaViewerKind::Video => "Disappearing Video",
-        _ => "Disappearing Photo",
+        MediaViewerKind::Video => tr(keys::MEDIAVIEW_DISAPPEARING_VIDEO),
+        _ => tr(keys::MEDIAVIEW_DISAPPEARING_PHOTO),
     }
 }
 

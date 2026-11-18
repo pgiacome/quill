@@ -903,7 +903,11 @@
 "qll_ops_clear_calls_about" = "Вы уверены, что хотите полностью очистить журнал звонков?";
 "qll_ops_could_not_clear_the_call_history" = "не удалось очистить журнал звонков (ошибка {code})";
 "qll_ops_active_calls" = "Активные звонки";
+"qll_ops_live_stream" = "Трансляция";
+"qll_ops_video_chat" = "Видеочат";
+"qll_ops_voice_chat" = "Голосовой чат";
 "qll_ops_call_participants#one" = "{count} участник";
 "qll_ops_call_participants#few" = "{count} участника";
 "qll_ops_call_participants#many" = "{count} участников";
 "qll_ops_call_participants#other" = "{count} участника";
+"qll_ops_quick_replies_typing_hint" = "Быстрые ответы доступны в любом личном чате: введите /.";

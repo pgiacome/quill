@@ -17,7 +17,7 @@ wording!(
     checklist_tasks_added,
     BY_DANA,
     r#"{"@type":"messageChecklistTasksAdded","checklist_message_id":5,"tasks":[{"@type":"checklistTask","id":3,"text":{"text":"Buy milk","entities":[]}},{"@type":"checklistTask","id":4,"text":{"text":"Pack bags","entities":[]}}]}"#,
-    "Dana Cole added Buy milk and Pack bags to the list."
+    "Dana Cole added \"Buy milk\" and \"Pack bags\" to the list."
 );
 wording!(
     poll_option_added,
