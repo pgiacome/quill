@@ -699,9 +699,9 @@ fn a_picture_is_taken_for_the_moment_it_reaches_the_screen() {
     let progress = player.progress();
     progress.wait_until(|| player.take_frame().is_some());
     player.play();
-    // The queue holds 0.04, 0.08 and 0.12. Asked for a frame that shows
+    // The queue fills to 0.04, 0.08 and 0.12. Asked for a frame that shows
     // 100 ms from now, the picture due then comes, not the one due now.
-    progress.wait_until(|| player.next_due(progress.now()).is_some());
+    progress.wait_until(|| lock(&player.shared.state).video.len() >= 3);
     let present = progress.now() + Duration::from_millis(100);
     let picked = player.take_frame_at(present).map(|frame| frame.pts);
     assert!(
