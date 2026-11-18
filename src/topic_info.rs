@@ -51,7 +51,7 @@ pub fn topic_info_rows(
         status.push(tr(keys::COMMUNITY_HIDDEN_STATUS));
     }
     if !status.is_empty() {
-        rows.push(row(tr(keys::PROXY_BOX_STATUS), status.join(", ")));
+        rows.push(row(tr(keys::Q_PEOPLE_TOPIC_INFO_STATUS), status.join(", ")));
     }
     if topic.unread_count > 0 {
         rows.push(row(

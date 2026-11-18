@@ -683,6 +683,7 @@
 "qll_media_edited" = "изменено";
 "qll_media_a11y_via_bot" = "через @{bot}";
 "qll_media_a11y_at_time" = "в {time}";
+"qll_media_a11y_downloaded" = "Загружено";
 "qll_media_a11y_views#one" = "{count} просмотр";
 "qll_media_a11y_views#few" = "{count} просмотра";
 "qll_media_a11y_views#many" = "{count} просмотров";

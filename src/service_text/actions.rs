@@ -646,7 +646,7 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             BotAccessReason::AttachMenu => say(keys::ACTION_ATTACH_MENU_BOT_ALLOWED),
             BotAccessReason::WebApp { title } => {
                 let app = if title.is_empty() {
-                    tr(keys::STATUS_BOT_APP)
+                    tr(keys::Q_SERVICE_WEB_APP)
                 } else {
                     title.as_str()
                 };

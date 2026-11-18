@@ -563,6 +563,7 @@
 "qll_people_topic_info_created_by" = "Создал(а)";
 "qll_people_topic_info_created" = "Создана";
 "qll_people_topic_info_mentions" = "Упоминания";
+"qll_people_topic_info_status" = "Статус";
 "qll_people_topic_info_mentions_count#one" = "{count} упоминание";
 "qll_people_topic_info_mentions_count#few" = "{count} упоминания";
 "qll_people_topic_info_mentions_count#many" = "{count} упоминаний";

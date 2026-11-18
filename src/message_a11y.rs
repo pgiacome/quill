@@ -190,7 +190,7 @@ fn file_parts(id: FileId, file: &dyn Fn(FileId) -> Option<ParsedFile>) -> (Strin
     let parsed = file(id);
     let state = match &parsed {
         Some(parsed) if parsed.local.is_downloading_active() => tr(keys::SR_MESSAGE_DOWNLOADING),
-        Some(parsed) if parsed.usable_path().is_some() => tr(keys::EMOJI_SET_READY),
+        Some(parsed) if parsed.usable_path().is_some() => tr(keys::Q_MEDIA_A11Y_DOWNLOADED),
         _ => tr(keys::SR_MESSAGE_NOT_DOWNLOADED),
     };
     let size = parsed
@@ -300,7 +300,7 @@ fn media_parts(
         }
         MessageContent::Animation(animation) => {
             parts = document(
-                tr(keys::MEDIA_TYPE_GIFS),
+                tr(keys::Q_MEDIA_GIF),
                 animation.file_id,
                 None,
                 None,

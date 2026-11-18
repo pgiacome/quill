@@ -4,6 +4,7 @@
 "qll_service_topic_icon_changed" = "{from} изменил(а) значок темы";
 "qll_service_topic_edited" = "Тема изменена";
 "qll_service_users_shared" = "Вы поделились {users} с {chat}";
+"qll_service_web_app" = "Приложение";
 "qll_service_suggested_birthday_me" = "Вы предлагаете {user} указать дату рождения: {date}";
 "qll_service_suggested_birthday" = "{user} предлагает вам указать дату рождения: {date}";
 "qll_service_passport_received" = "Данные Telegram Passport получены";

@@ -219,6 +219,7 @@
 "qll_service_topic_icon_changed" = "{from} changed the topic icon";
 "qll_service_topic_edited" = "Topic edited";
 "qll_service_users_shared" = "You shared {users} with {chat}";
+"qll_service_web_app" = "App";
 "qll_service_suggested_birthday_me" = "You suggest {user} add a date of birth: {date}";
 "qll_service_suggested_birthday" = "{user} suggests you add your date of birth: {date}";
 "qll_service_passport_received" = "Telegram Passport data received";

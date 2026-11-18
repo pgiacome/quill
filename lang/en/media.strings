@@ -855,10 +855,8 @@
 "lng_sr_message_played" = "Played";
 "lng_sr_message_not_played" = "Not played";
 "lng_sr_message_spoiler" = "Hidden media";
-"lng_emoji_set_ready" = "Downloaded";
 "lng_stats_overview_message_views" = "Views";
 "lng_in_dlg_audio_file" = "Audio file";
-"lng_media_type_gifs" = "GIFs";
 "lng_live_location" = "Live Location";
 "lng_sr_message_column_location" = "Location";
 "lng_polls_public_quiz" = "Quiz";
@@ -867,6 +865,7 @@
 "lng_polls_votes_count#other" = "{count} votes";
 "qll_media_a11y_via_bot" = "via @{bot}";
 "qll_media_a11y_at_time" = "at {time}";
+"qll_media_a11y_downloaded" = "Downloaded";
 "qll_media_a11y_views#one" = "{count} Views";
 "qll_media_a11y_views#other" = "{count} Views";
 "qll_media_empty_media_title" = "No media to show";
