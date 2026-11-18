@@ -9,7 +9,7 @@ use super::super::{
     BgraPool, Demuxer, Item, MediaInfo, OpenOptions, PixelOutput, Pixels, Player, VideoFrame,
     YuvColor, YuvMatrix, nv12_len, nv12_to_bgra, pack_nv12,
 };
-use super::{Scripted, decoder, fixture, wait_until};
+use super::{STEP, Scripted, decoder, fixture};
 use std::path::Path;
 use std::sync::atomic::AtomicUsize;
 use std::sync::{Arc, Mutex};
@@ -270,8 +270,9 @@ fn the_player_passes_the_asked_layout_to_its_decoder() {
         ..OpenOptions::inline(64)
     };
     let mut player = Player::with_demuxer(Box::new(demuxer), options).expect("spawn");
+    let progress = player.progress();
     // Asked once, before the first picture.
-    assert!(wait_until(|| player.take_frame().is_some()));
+    progress.wait_until(|| player.take_frame().is_some());
     assert_eq!(recorded(), [PixelOutput::Nv12]);
     assert_eq!(player.output(), PixelOutput::Nv12);
     // Back to BGRA (the renderer stopped drawing NV12): passed on before
@@ -279,14 +280,14 @@ fn the_player_passes_the_asked_layout_to_its_decoder() {
     player.set_output(PixelOutput::Bgra);
     assert_eq!(player.output(), PixelOutput::Bgra);
     player.play();
-    assert!(wait_until(|| {
+    progress.play_until(STEP, || {
         let _ = player.take_frame();
         recorded().len() == 2
-    }));
+    });
     assert_eq!(recorded(), [PixelOutput::Nv12, PixelOutput::Bgra]);
     // Asking for the layout it already has changes nothing.
     player.set_output(PixelOutput::Bgra);
-    assert!(wait_until(|| player.take_frame().is_some()));
+    progress.play_until(STEP, || player.take_frame().is_some());
     assert_eq!(recorded().len(), 2);
 }
 

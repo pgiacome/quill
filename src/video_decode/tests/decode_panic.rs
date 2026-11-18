@@ -1,6 +1,6 @@
 //! A panic on the decode thread must end in the player's error state.
 
-use super::{Scripted, wait_until};
+use super::Scripted;
 use crate::video_decode::{Demuxer, Item, MediaInfo, OpenOptions, PixelOutput, Player, lock};
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
@@ -50,7 +50,8 @@ fn panicking_player(after: usize, audio: bool) -> Player {
 #[test]
 fn a_decode_panic_puts_the_player_in_its_error_state() {
     let mut player = panicking_player(3, true);
-    assert!(wait_until(|| player.error().is_some()));
+    let progress = player.progress();
+    progress.wait_until(|| player.error().is_some());
     // The queue and the sound end are released with the thread.
     assert!(player.take_audio_tap().is_none());
     assert!(player.take_frame().is_none());

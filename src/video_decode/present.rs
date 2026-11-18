@@ -16,14 +16,14 @@ const MAX_DUE_AHEAD: Duration = Duration::from_millis(250);
 impl Player {
     /// The picture to show now, when it changed since the last call.
     pub fn take_frame(&mut self) -> Option<VideoFrame> {
-        self.take_frame_at(Instant::now())
+        self.take_frame_at(self.shared.now())
     }
 
     /// The picture due on screen at `present` (the predicted present time
     /// of the frame being drawn), when it changed since the last call.
     /// Older due pictures are dropped: they would be late.
     pub fn take_frame_at(&mut self, present: Instant) -> Option<VideoFrame> {
-        self.take_frame_for(present, Instant::now())
+        self.take_frame_for(present, self.shared.now())
     }
 
     pub(super) fn take_frame_for(&mut self, present: Instant, now: Instant) -> Option<VideoFrame> {
@@ -101,7 +101,7 @@ impl Player {
         let frame = lock(&self.shared.state).video.pop_front()?;
         self.note_handed_out(&frame);
         self.shared.wake.notify_all();
-        let now = Instant::now();
+        let now = self.shared.now();
         self.with_clock(|clock| {
             clock.follow(frame.pts, now);
             clock.pause(now);

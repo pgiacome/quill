@@ -85,15 +85,17 @@ pub(super) struct Decoder {
 pub(super) fn run(demuxer: Box<dyn Demuxer>, shared: Arc<Shared>, want_audio: bool) {
     let mut decoder = Decoder::start(demuxer, &shared, want_audio);
     loop {
-        match decoder.turn(&shared, Instant::now()) {
+        match decoder.turn(&shared, shared.now()) {
             Turn::Stop => return,
-            Turn::Worked => {}
-            Turn::Idle(state, wait) => {
-                let (guard, _) = shared
-                    .wake
-                    .wait_timeout(state, wait)
-                    .unwrap_or_else(|poisoned| poisoned.into_inner());
-                drop(guard);
+            Turn::Worked => {
+                #[cfg(test)]
+                shared.count_turn(&mut lock(&shared.state));
+            }
+            #[cfg_attr(not(test), allow(unused_mut))]
+            Turn::Idle(mut state, wait) => {
+                #[cfg(test)]
+                shared.count_turn(&mut state);
+                drop(shared.idle(state, wait));
             }
         }
     }

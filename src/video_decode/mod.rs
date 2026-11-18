@@ -30,6 +30,8 @@ mod ffi;
 mod nv12;
 mod present;
 mod reattach;
+#[cfg(test)]
+mod test_clock;
 
 pub use bgra::{BGRA_KEPT, BgraPool, rotate_bgra};
 pub use clock::Clock;
@@ -626,6 +628,10 @@ struct Shared {
     /// Notified when the open ends, a picture is queued or decoding fails:
     /// what [`Player::wait_open`] and [`Player::wait_frame`] sleep on.
     progress: Condvar,
+    /// Tests: the time, moved by hand (`test_clock`); the wall clock while
+    /// `None`.
+    #[cfg(test)]
+    manual_now: Mutex<Option<Instant>>,
 }
 
 #[derive(Default)]
@@ -649,6 +655,9 @@ struct State {
     clock: Clock,
     /// Bumped by every seek: items decoded for an older one are dropped.
     epoch: u64,
+    /// Tests: the decode thread's turns so far, and whether it ended.
+    #[cfg(test)]
+    turns: test_clock::Turns,
 }
 
 /// One clip: a decode thread plus the clock and the picture queue.
@@ -669,6 +678,14 @@ struct ExitReport(Arc<Shared>);
 
 impl Drop for ExitReport {
     fn drop(&mut self) {
+        self.report();
+        #[cfg(test)]
+        self.0.mark_exited();
+    }
+}
+
+impl ExitReport {
+    fn report(&self) {
         let (tap, audio) = {
             let mut state = lock(&self.0.state);
             if state.decoding.is_stopped() {
@@ -721,15 +738,7 @@ impl Player {
         options: OpenOptions,
         bgra: BgraPool,
     ) -> Result<Self, String> {
-        let shared = Arc::new(Shared {
-            state: Mutex::new(State {
-                video_cap: options.video_frames.max(1),
-                output: options.output,
-                ..State::default()
-            }),
-            wake: Condvar::new(),
-            progress: Condvar::new(),
-        });
+        let shared = Arc::new(Shared::new(options.video_frames, options.output));
         let thread_shared = shared.clone();
         let want_audio = options.want_audio;
         #[cfg_attr(not(test), allow(unused_variables))]
@@ -834,11 +843,11 @@ impl Player {
         if self.presenting.is_ended() {
             self.seek(0.0);
         }
-        self.with_clock(|clock| clock.play(Instant::now()));
+        self.with_clock(|clock| clock.play(self.shared.now()));
     }
 
     pub fn pause(&mut self) {
-        let now = Instant::now();
+        let now = self.shared.now();
         if !self.clock().is_held() {
             let position = self.position_at(now);
             self.with_clock(|clock| clock.follow(position, now));
@@ -848,18 +857,18 @@ impl Player {
 
     /// Playing, and not run out.
     pub fn is_playing(&mut self) -> bool {
-        self.update_ended(Instant::now());
+        self.update_ended(self.shared.now());
         self.clock().is_playing() && !self.presenting.is_ended()
     }
 
     /// Ran out at the end (until the next seek).
     pub fn ended(&mut self) -> bool {
-        self.update_ended(Instant::now());
+        self.update_ended(self.shared.now());
         self.presenting.is_ended()
     }
 
     pub fn set_rate(&mut self, rate: f64) {
-        self.with_clock(|clock| clock.set_rate(rate, Instant::now()));
+        self.with_clock(|clock| clock.set_rate(rate, self.shared.now()));
     }
 
     /// Show `secs` next: pictures and sound restart there.
@@ -880,7 +889,7 @@ impl Player {
             }
         }
         self.shared.wake.notify_all();
-        self.with_clock(|clock| clock.seek(secs, Instant::now()));
+        self.with_clock(|clock| clock.seek(secs, self.shared.now()));
         self.presenting = Presenting::AwaitingFirst;
     }
 
@@ -908,7 +917,7 @@ impl Player {
 
     /// The playback position in seconds.
     pub fn position(&self) -> f64 {
-        self.position_at(Instant::now())
+        self.position_at(self.shared.now())
     }
 
     fn update_ended(&mut self, now: Instant) {
