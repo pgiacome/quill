@@ -1,5 +1,7 @@
 //! Widgets stay off, and no widget code runs, until the warning is accepted
-//! with its box ticked; turning them off stops every runtime.
+//! with its box ticked; turning them off stops every widget. No test here
+//! draws a widget that may run: its runtime thread would wake the test's
+//! executor from outside it.
 
 use crate::ui::app::QuillApp;
 use crate::ui::keybindings::bind_keys;
@@ -59,16 +61,6 @@ fn noted(app: &Entity<QuillApp>, vcx: &mut VisualTestContext) -> usize {
     app.read_with(&*vcx, |app, _| app.widgets.entries.len())
 }
 
-fn live(app: &Entity<QuillApp>, vcx: &mut VisualTestContext) -> usize {
-    app.read_with(&*vcx, |app, _| {
-        app.widgets
-            .entries
-            .values()
-            .filter(|entry| entry.lifecycle.is_live())
-            .count()
-    })
-}
-
 #[gpui_kit::test]
 fn widgets_run_only_after_the_warning_is_accepted(cx: &mut TestAppContext) {
     let _prefs = crate::ui::appearance::own_appearance_prefs("widget-consent-accept");
@@ -98,18 +90,22 @@ fn widgets_run_only_after_the_warning_is_accepted(cx: &mut TestAppContext) {
         app.read_with(&vcx, |app, _| app.widgets.consent),
         Consent::Understood
     );
-    click(&mut vcx, "widget-consent-confirm");
+    // Confirmed without a frame after it: a frame would start the shown
+    // widgets' runtimes, whose threads a GPUI test may not have.
+    app.update(&mut vcx, |app, cx| app.allow_widgets(cx));
     assert!(app.read_with(&vcx, |app, _| app.widgets_allowed()));
-    assert_eq!(dialog(&shell, &mut vcx), None);
-    assert!(!find(&mut vcx, "widgets-off-card"));
-    assert!(noted(&app, &mut vcx) > 0, "the shown widgets start");
     assert_eq!(
-        app.read_with(&vcx, |app, _| app.chat_prefs.message_widgets),
+        app.read_with(&vcx, |app, _| app.widgets.consent),
+        Consent::Closed,
+        "the confirm closes the box"
+    );
+    let saved = quill::settings::load_chat_prefs(&QuillApp::appearance_paths());
+    assert_eq!(
+        saved.message_widgets,
         Permission::On,
         "the choice is saved with the app's prefs"
     );
-    let saved = quill::settings::load_chat_prefs(&QuillApp::appearance_paths());
-    assert_eq!(saved.message_widgets, Permission::On);
+    app.update(&mut vcx, |app, cx| app.turn_off_widgets(cx));
 }
 
 #[gpui_kit::test]
@@ -133,21 +129,37 @@ fn cancel_leaves_widgets_off(cx: &mut TestAppContext) {
 }
 
 #[gpui_kit::test]
-fn turning_widgets_off_stops_every_runtime(cx: &mut TestAppContext) {
+fn turning_widgets_off_stops_every_widget(cx: &mut TestAppContext) {
+    use crate::ui::widgets_state::{Poll, Showing, WidgetEntry};
+    use quill::ids::{ChatId, MessageId};
+    use quill::message_widget::{Lifecycle, WidgetKey, storage::Stored};
     let _prefs = crate::ui::appearance::own_appearance_prefs("widget-consent-off");
-    let (app, _shell, mut vcx) = new_app(cx, "ready-widgets");
-    frames(&mut vcx);
-    assert!(live(&app, &mut vcx) > 0, "the demo's widgets run");
-    app.update(&mut vcx, |app, cx| app.turn_off_widgets(cx));
-    frames(&mut vcx);
-    assert_eq!(live(&app, &mut vcx), 0);
-    assert!(app.read_with(&vcx, |app, _| {
-        app.widgets
-            .entries
-            .values()
-            .all(|entry| entry.frame.is_none())
-    }));
-    assert!(find(&mut vcx, "widgets-off-card"));
+    let (app, _shell, mut vcx) = new_app(cx, "ready-chats");
+    let key = WidgetKey {
+        chat_id: ChatId(11),
+        message_id: MessageId(5),
+    };
+    app.update(&mut vcx, |app, cx| {
+        app.set_chat_prefs(cx, |prefs| prefs.message_widgets = Permission::On);
+        let mut entry = WidgetEntry::new(Stored::default(), 120.);
+        entry.presence.show(
+            None,
+            Showing {
+                width: 300.,
+                view: None,
+            },
+        );
+        entry.lifecycle = Lifecycle::Due { streak: 0 };
+        entry.poll = Poll::Due(std::time::Instant::now());
+        app.widgets.entries.insert(key, entry);
+        app.turn_off_widgets(cx);
+        let entry = &app.widgets.entries[&key];
+        assert!(!app.widgets_allowed());
+        assert!(matches!(entry.lifecycle, Lifecycle::Idle));
+        assert!(entry.frame.is_none());
+        assert!(!entry.presence.is_shown(), "it no longer counts as shown");
+        assert_eq!(entry.poll, Poll::Off, "nothing polls for it");
+    });
     let saved = quill::settings::load_chat_prefs(&QuillApp::appearance_paths());
     assert_eq!(saved.message_widgets, Permission::Off);
 }
