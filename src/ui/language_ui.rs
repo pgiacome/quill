@@ -140,6 +140,8 @@ pub(super) fn install_pack(snapshot: Option<quill::lang::Snapshot>, cx: &mut Con
     cx.defer(move |cx| {
         let _ = app.update(cx, |this, cx| {
             this.menu_bar.update(cx, |bar, cx| bar.reload(cx));
+            this.localize_session_titles();
+            cx.notify();
         });
     });
     let current = quill::lang::current();
@@ -147,6 +149,21 @@ pub(super) fn install_pack(snapshot: Option<quill::lang::Snapshot>, cx: &mut Con
         .as_deref()
         .map_or(("en", "en"), |s| (s.pack_id(), s.plural_code()));
     gpui_kit::component::set_locale(kit_locale(pack, language));
+}
+
+impl QuillApp {
+    /// Every signed-in account's stored titles follow the new pack (the
+    /// Replies chat's name).
+    fn localize_session_titles(&mut self) {
+        if let Some(session) = self.session_mut() {
+            session.localize_titles();
+        }
+        for client in self.background.clients_mut().iter_mut() {
+            if let Some(live) = client.live_mut() {
+                live.driver.session.localize_titles();
+            }
+        }
+    }
 }
 
 /// The kit's locale for a pack and its language. Telegram has no official

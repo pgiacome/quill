@@ -235,7 +235,7 @@ fn rating_pill(user_id: i64, rating: StarsRating, cx: &mut Context<QuillApp>) ->
 
 /// `text` with its `**bold**` runs in semibold (tdesktop marked text).
 fn bold_marked(text: &str) -> AnyElement {
-    let (plain, bold) = super::screen_chooser::split_bold(text);
+    let (plain, bold) = quill::lang::format::split_bold(text);
     let style = HighlightStyle {
         font_weight: Some(FontWeight::SEMIBOLD),
         ..Default::default()
@@ -243,11 +243,6 @@ fn bold_marked(text: &str) -> AnyElement {
     StyledText::new(plain)
         .with_highlights(bold.into_iter().map(|range| (range, style)))
         .into_any_element()
-}
-
-/// A name put into a marked string: its own `**` cannot open a bold run.
-fn unmarked(name: &str) -> String {
-    name.replace("**", "*\u{2060}*")
 }
 
 crate::ui::shell::register_dialogs! {

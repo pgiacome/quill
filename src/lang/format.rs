@@ -51,6 +51,26 @@ pub(crate) fn substitute(template: &str, tags: &[(&str, &str)]) -> String {
     out
 }
 
+/// `text` without its `**` marks (tdesktop marked text), and the byte
+/// ranges they enclosed.
+pub fn split_bold(text: &str) -> (String, Vec<std::ops::Range<usize>>) {
+    let mut plain = String::with_capacity(text.len());
+    let mut bold = Vec::new();
+    for (index, part) in text.split("**").enumerate() {
+        let start = plain.len();
+        plain.push_str(part);
+        if index % 2 == 1 && !part.is_empty() {
+            bold.push(start..plain.len());
+        }
+    }
+    (plain, bold)
+}
+
+/// A name put into a marked string: its own `**` cannot open a bold run.
+pub fn unmarked(name: &str) -> String {
+    name.replace("**", "*\u{2060}*")
+}
+
 /// `1234567` → `1,234,567`.
 pub(crate) fn group_digits(count: i64) -> String {
     let digits = count.unsigned_abs().to_string();

@@ -11,6 +11,7 @@
 #![deny(clippy::indexing_slicing)]
 
 use crate::ids::FileId;
+use crate::lang::format::{split_bold, unmarked};
 use crate::lang::{keys, tr, tr_with, trn};
 use crate::local_time::{CivilTime, day_label, hhmm};
 use crate::telegram::envelope::{MessageContent, MessageReadDate};
@@ -388,12 +389,18 @@ pub fn emoji_pack_footer(packs: usize, name: Option<&str>) -> Option<(String, St
         return None;
     }
     let text = match (packs, name.filter(|name| !name.is_empty())) {
-        (1, Some(name)) => tr_with(keys::CONTEXT_ANIMATED_EMOJI, &[("name", name)]),
+        (1, Some(name)) => tr_with(keys::CONTEXT_ANIMATED_EMOJI, &[("name", &unmarked(name))]),
         (count, _) => trn(keys::CONTEXT_ANIMATED_EMOJI_MANY, count),
     };
-    let (before, rest) = text.split_once("**")?;
-    let (bold, after) = rest.split_once("**")?;
-    Some((before.to_owned(), bold.to_owned(), after.to_owned()))
+    // A translation without a bold run still shows, all plain.
+    let (plain, bold) = split_bold(&text);
+    let bold = bold.first().cloned().unwrap_or(plain.len()..plain.len());
+    let part = |range: std::ops::Range<usize>| plain.get(range).unwrap_or_default().to_owned();
+    Some((
+        part(0..bold.start),
+        part(bold.clone()),
+        part(bold.end..plain.len()),
+    ))
 }
 
 /// "Sent today at 12:34" (`lng_context_sent_today` and its siblings).

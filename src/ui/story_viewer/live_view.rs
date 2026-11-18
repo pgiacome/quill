@@ -14,7 +14,6 @@ use super::*;
 use crate::ui::calls::stream_view::frame_expands;
 use crate::ui::calls::stream_volume::VolumeHost;
 use crate::ui::message_text::kit_avatar_element;
-use crate::ui::screen_chooser::split_bold;
 use crate::ui::video_player::controls::{
     LiveActions, LiveFacts, LiveInput, LiveOverlayParts, PictureOverlay, PictureState,
     VideoController, VolumeHoverHandler,
@@ -23,6 +22,7 @@ use crate::ui::video_player::{VideoPlayer, follow_live_slot, video_frame};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::slider::SliderState;
 use quill::calls::live_video::LiveSink;
+use quill::lang::format::split_bold;
 use quill::lang::{trn, trn_with};
 use quill::premium_hub::group_digits;
 use quill::state::ActiveGroupCall;

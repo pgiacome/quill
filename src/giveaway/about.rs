@@ -1,5 +1,6 @@
 //! The words of the "About this giveaway" box (tdesktop
 //! `boxes/gift_premium_box.cpp` `GiveawayInfoBox`, strings `lng_prizes_*`).
+use crate::lang::format::unmarked;
 use crate::lang::{keys, tr, tr_with, trn, trn_with};
 use crate::telegram::envelope::{
     GiveawayInfoData, GiveawayParticipantStatus, GiveawayPrize, GiveawaySummary,
@@ -27,6 +28,7 @@ pub struct AboutText {
     pub result: Option<String>,
     /// Whether `result` announces a win.
     pub won: bool,
+    /// tdesktop marked text: `**bold**` runs (`lang::format::split_bold`).
     pub paragraphs: Vec<String>,
     /// Shown in a box of its own when the prizes were refunded.
     pub refund_notice: Option<String>,
@@ -57,7 +59,7 @@ pub fn about_text(
         ),
         GiveawayInfoData::Ongoing { .. } => (false, 0, 0, false, 0),
     };
-    let ch = &ctx.first_channel;
+    let ch = &unmarked(&ctx.first_channel);
     let group = ctx.group;
     let many = summary.additional_chat_count > 0;
     let quantity = i64::from(summary.quantity());
@@ -153,7 +155,10 @@ pub fn about_text(
         let line = trn_with(
             key,
             count,
-            &[("channel", ch), ("prize", &summary.prize_description)],
+            &[
+                ("channel", ch),
+                ("prize", &unmarked(&summary.prize_description)),
+            ],
         );
         intro.push_str("\n\n");
         intro.push_str(&line);
@@ -184,7 +189,7 @@ pub fn about_text(
         {
             let line = match status {
                 GiveawayParticipantStatus::Administrator { chat_id } => {
-                    let name = (ctx.chat_title)(*chat_id);
+                    let name = unmarked(&(ctx.chat_title)(*chat_id));
                     tr_with(
                         if group {
                             keys::PRIZES_HOW_NO_ADMIN_GROUP

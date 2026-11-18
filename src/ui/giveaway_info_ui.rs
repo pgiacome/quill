@@ -208,10 +208,8 @@ impl QuillApp {
             .enumerate()
         {
             body = body.child(
-                div()
-                    .id(("giveaway-paragraph", index as u64))
-                    .text_sm()
-                    .child(paragraph.to_string()),
+                super::screen_chooser::bold_marked(paragraph)
+                    .id(("giveaway-paragraph", index as u64)),
             );
         }
         if let Some(notice) = text.refund_notice.clone() {

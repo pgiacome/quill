@@ -1,7 +1,7 @@
 //! The screen source chooser and privacy box over the demo session (no
 //! live connection, a made-up backend; needs the `demo-capture` feature
 //! for gpui-kit's test support).
-use super::{initial_selection, shows_stop, split_bold};
+use super::{initial_selection, shows_stop};
 use crate::ui::app::QuillApp;
 use crate::ui::keybindings::bind_keys;
 use crate::ui::screen_chooser_demo::DemoScreens;
@@ -13,6 +13,7 @@ use gpui_kit::{AppContext, Entity, TestAppContext, VisualTestContext, px, size};
 use quill::calls::capture::screen::{
     SYSTEM_PICKER_SOURCE, ScreenAccess, ScreenSource, SourceId, SourceKind,
 };
+use quill::lang::format::split_bold;
 use quill::lang::{keys, tr};
 use quill::state::ActiveGroupCall;
 use std::sync::Arc;

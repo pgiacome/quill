@@ -48,11 +48,8 @@ impl Session {
                 self.chat_list.archive_mute.apply_option(&name, &value);
                 self.apply_privacy_option(&name, &value);
                 self.users_state.apply_option(&name, &value);
-                if name == "replies_bot_chat_id"
-                    && let Some(id) = self.users_state.replies_bot_chat_id
-                {
-                    self.localize_replies_bot_title(id);
-                }
+                // `replies_bot_chat_id` can name a chat that already loaded.
+                self.localize_titles();
                 self.communities.apply_option(&name, &value);
                 self.apply_quick_replies_option(&name, &value);
                 self.apply_business_option(&name, &value);

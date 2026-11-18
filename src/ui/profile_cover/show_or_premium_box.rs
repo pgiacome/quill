@@ -224,7 +224,7 @@ impl QuillApp {
             let open = app.profile_cover.show_or_premium;
             let name = open
                 .and_then(|open| app.session()?.user(open.user_id))
-                .map(|user| super::unmarked(&user.first_name))
+                .map(|user| quill::lang::format::unmarked(&user.first_name))
                 .unwrap_or_default();
             (open, name)
         };

@@ -59,13 +59,13 @@ pub(in crate::ui) fn marked_link(template: &str, tag: &str, link: &str) -> Marke
         Some((before, after)) => (before, after, true),
         None => (template, "", false),
     };
-    let (mut text, mut bold) = super::screen_chooser::split_bold(before);
+    let (mut text, mut bold) = quill::lang::format::split_bold(before);
     let link = found.then(|| {
         let start = text.len();
         text.push_str(link);
         start..text.len()
     });
-    let (rest, rest_bold) = super::screen_chooser::split_bold(after);
+    let (rest, rest_bold) = quill::lang::format::split_bold(after);
     let offset = text.len();
     text.push_str(&rest);
     bold.extend(

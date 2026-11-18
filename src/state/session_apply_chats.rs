@@ -3,8 +3,8 @@ use super::*;
 
 impl Session {
     /// The title a chat shows. The Replies bot's chat has a fixed server
-    /// title ("Replies"); tdesktop shows it in the interface language, so
-    /// use its translated `lng_replies_messages` for that chat.
+    /// title ("Replies"); tdesktop shows it in the interface language
+    /// (`lng_replies_messages`).
     pub(crate) fn localized_chat_title(&self, chat_id: ChatId, title: String) -> String {
         if self.users_state.replies_bot_chat_id == Some(chat_id.0) {
             crate::lang::tr(crate::lang::keys::REPLIES_MESSAGES).to_string()
@@ -13,10 +13,14 @@ impl Session {
         }
     }
 
-    /// Refresh the Replies bot's row after `replies_bot_chat_id` arrived
-    /// (the chat may have loaded before the option).
-    pub(crate) fn localize_replies_bot_title(&mut self, chat_id: i64) {
-        if let Some(chat) = self.chats.get_mut(&chat_id) {
+    /// Words the stored titles that follow the interface language again:
+    /// after `replies_bot_chat_id` arrives (the chat may have loaded
+    /// first) and after a language pack is installed.
+    pub fn localize_titles(&mut self) {
+        let Some(id) = self.users_state.replies_bot_chat_id else {
+            return;
+        };
+        if let Some(chat) = self.chats.get_mut(&id) {
             chat.title = crate::lang::tr(crate::lang::keys::REPLIES_MESSAGES).to_string();
         }
     }

@@ -201,8 +201,8 @@ fn ongoing_giveaway_says_how_to_take_part() {
     assert_eq!(text.title, "About this giveaway");
     assert!(text.result.is_none());
     assert_eq!(
-        text.paragraphs[0],
-        "This giveaway is sponsored by the admins of News, who acquired **5 Telegram Premium** \
+        plain(&text.paragraphs[0]),
+        "This giveaway is sponsored by the admins of News, who acquired 5 Telegram Premium \
          subscriptions for 3 months for its followers.\n\nOn October 6, Telegram will \
          automatically select 5 random subscribers of News."
     );
@@ -277,6 +277,7 @@ fn ended_giveaways_report_the_users_result() {
     );
     assert!(won.paragraphs[0].contains("Telegram automatically selected 4 random subscribers"));
     assert!(won.paragraphs[0].contains("**2** of the winners already used their gift links."));
+    assert!(plain(&won.paragraphs[0]).contains("2 of the winners already used their gift links."));
     assert_eq!(won.paragraphs.len(), 1);
     let stars = about_text(&s, &completed("", 250, true, false), &ctx);
     assert_eq!(
@@ -327,10 +328,10 @@ fn new_members_prizes_and_groups_change_the_wording() {
         is_ended: false,
     };
     let text = about_text(&s, &info, &ctx);
-    let body = &text.paragraphs[0];
-    assert!(body.contains("**1 Telegram Premium** subscription for 1 month for its members"));
+    let body = &plain(&text.paragraphs[0]);
+    assert!(body.contains("1 Telegram Premium subscription for 1 month for its members"));
     assert!(body.contains(
-        "News also included **1 a mug** in the prize. Admins of the group are responsible for delivering this prize."
+        "News also included 1 a mug in the prize. Admins of the group are responsible for delivering this prize."
     ));
     assert!(body.contains(
         "1 random user that joined News and other listed groups and channels after October 1 at 10:00"
@@ -499,4 +500,35 @@ fn the_members_list_pages_and_drops_older_searches() {
     list.restart(-100, "");
     list.fail_unsent("no".into());
     assert!(list.error().is_some() && list.can_load_more());
+}
+
+/// A paragraph as the box shows it: the `**` marks become bold runs.
+fn plain(paragraph: &str) -> String {
+    crate::lang::format::split_bold(paragraph).0
+}
+
+#[test]
+fn the_box_marks_the_prize_bold_and_keeps_a_starred_channel_name_plain() {
+    let title = |_: i64| "Other".to_string();
+    let day = |_: i32| "October 6".to_string();
+    let date_time = |_: i32| "October 1 at 10:00".to_string();
+    let mut ctx = ctx(&title, &day, &date_time);
+    ctx.first_channel = "**News**".into();
+    let eligible = GiveawayInfoData::Ongoing {
+        creation_date: 1,
+        status: GiveawayParticipantStatus::Eligible,
+        is_ended: false,
+    };
+    let text = about_text(
+        &summary(GiveawayPrize::Premium { month_count: 3 }),
+        &eligible,
+        &ctx,
+    );
+    let (shown, bold) = crate::lang::format::split_bold(&text.paragraphs[0]);
+    let bold: Vec<&str> = bold
+        .iter()
+        .filter_map(|range| shown.get(range.clone()))
+        .collect();
+    assert_eq!(bold, ["5 Telegram Premium"]);
+    assert!(shown.contains("the admins of *\u{2060}*News*\u{2060}*,"));
 }
