@@ -22,7 +22,7 @@ use gpui_kit::component::*;
 use gpui_kit::*;
 use quill::lang::{keys, tr};
 use quill::message_widget::Permission;
-use std::cell::RefCell;
+use std::cell::Cell;
 use std::rc::Rc;
 
 impl QuillApp {
@@ -33,7 +33,7 @@ impl QuillApp {
 
     /// Open the warning that turns widgets on.
     pub(in crate::ui) fn ask_to_allow_widgets(&mut self, cx: &mut Context<Self>) {
-        self.widgets.consent = Consent::Asking;
+        self.widgets.consent = Consent::Open;
         self.open_box(DialogKind::WidgetConsent);
         cx.notify();
     }
@@ -52,7 +52,7 @@ impl QuillApp {
         self.widgets.consent = if understood {
             Consent::Understood
         } else {
-            Consent::Asking
+            Consent::Open
         };
         cx.notify();
     }
@@ -287,15 +287,12 @@ impl QuillApp {
                                 })),
                         ),
                 );
-            let body = Rc::new(RefCell::new(Some(body)));
+            let body = Rc::new(Cell::new(Some(body)));
             dialog
                 .overlay(true)
                 .content(crate::ui::shell::scrollable_dialog_content(
                     move |content, _, _| {
-                        let body = body
-                            .borrow_mut()
-                            .take()
-                            .unwrap_or_else(|| div().into_any_element());
+                        let body = body.take().unwrap_or_else(|| div().into_any_element());
                         content.child(body)
                     },
                 ))

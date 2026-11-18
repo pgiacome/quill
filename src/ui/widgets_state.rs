@@ -420,7 +420,7 @@ pub(super) enum Consent {
     #[default]
     Closed,
     /// Open, its "I understand" box clear: the confirm button is off.
-    Asking,
+    Open,
     /// Open, the box ticked: the confirm button turns widgets on.
     Understood,
 }

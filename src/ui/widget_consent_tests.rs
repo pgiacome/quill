@@ -128,7 +128,7 @@ fn cancel_leaves_widgets_off(cx: &mut TestAppContext) {
     click(&mut vcx, "widgets-off-turn-on");
     assert_eq!(
         app.read_with(&vcx, |app, _| app.widgets.consent),
-        Consent::Asking
+        Consent::Open
     );
 }
 

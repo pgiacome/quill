@@ -203,7 +203,7 @@ such switch: this is Quill's own.
 - While off, the bubble draws a notice ("Widgets are off") with a button to
   the warning, and never notes the widget, so no entry, runtime, poll or
   storage read exists for it. `start_widget` refuses too, as a second gate.
-- The warning (`ui/widget_consent.rs`, `Consent`: closed, asking,
+- The warning (`ui/widget_consent.rs`, `Consent`: closed, open,
   understood) says what a widget can do if the sandbox fails. Its confirm
   stays disabled until "I understand" is ticked. Cancel, Escape and closing
   the box leave widgets off.
