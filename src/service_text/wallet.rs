@@ -101,3 +101,30 @@ fn gram_amount(nanos: i64) -> String {
         &[("amount", &shown.text)],
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::gram_amount;
+    use crate::lang::{PackValue, Snapshot, install, isolate_thread};
+
+    /// The plural form follows the amount, not a parse of "1,000".
+    #[test]
+    fn gram_amounts_take_the_form_of_their_number() {
+        isolate_thread();
+        let mut pack = Snapshot::new("ru", "ru", false);
+        let forms = PackValue::Pluralized([
+            String::new(),
+            "{amount} грам".into(),
+            String::new(),
+            "{amount} грама".into(),
+            "{amount} грамов".into(),
+            "{amount} грама".into(),
+        ]);
+        pack.layer([("lng_action_gram_transfer_amount", &forms)]);
+        install(Some(pack));
+        assert_eq!(gram_amount(1_000_000_000), "1 грам");
+        assert_eq!(gram_amount(1_000 * 1_000_000_000), "1,000 грамов");
+        assert_eq!(gram_amount(2_500_000_000), "2.5 грама");
+        install(None);
+    }
+}
