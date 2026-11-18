@@ -398,8 +398,9 @@ impl QuillApp {
     }
 
     fn start_widget(&mut self, key: WidgetKey, cx: &mut Context<Self>) {
-        // A logged-out account's widgets wait for the screen to go.
-        if self.widgets.storage == WidgetStorage::Forgotten {
+        // A logged-out account's widgets wait for the screen to go, and
+        // no widget runs while widgets are off.
+        if self.widgets.storage == WidgetStorage::Forgotten || !self.widgets_allowed() {
             return;
         }
         let Some((content, outgoing)) = self.widget_message(key) else {

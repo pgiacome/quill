@@ -134,6 +134,9 @@ pub(super) const ENTRIES: &[Entry] = &[
     )
     .section(keys::Q_PREFS_SECURITY_AND_CONTENT)
     .keywords(&["extensions", "ip reveal", "whitelist"]),
+    Entry::new("privacy.message_widgets", P, keys::Q_CHAT_WIDGETS_SETTING)
+        .section(keys::Q_PREFS_SECURITY_AND_CONTENT)
+        .keywords(&["widget", "bots", "html", "sandbox"]),
     Entry::new(
         "privacy.clear_payment",
         P,

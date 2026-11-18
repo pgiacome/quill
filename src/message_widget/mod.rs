@@ -19,6 +19,19 @@ pub struct WidgetKey {
     pub message_id: MessageId,
 }
 
+/// Whether message widgets run at all, for the whole app. A widget is a
+/// program a bot sends: it runs inside Quill, so a flaw in the widget
+/// engine is a way into Quill and the computer. Widgets are off until the
+/// user turns them on past the warning (`ui/widget_consent.rs`); while off,
+/// no widget's code is ever loaded and the bubble shows a notice instead.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Permission {
+    #[default]
+    Off,
+    On,
+}
+
 /// Live sandboxes at once, as in Telegram Desktop (`kMaxAlive`): more widgets
 /// on screen than this each still get one; off screen the oldest hidden one
 /// is released first.

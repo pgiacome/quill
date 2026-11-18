@@ -114,6 +114,7 @@ fn chat_prefs_roundtrip_and_missing_file() {
         rich_paste_toast_hidden: true,
         highlight_emoji_words: true,
         emoji_word_blocklist: vec!["ok".into()],
+        message_widgets: quill::message_widget::Permission::On,
     };
     save_chat_prefs(&paths, &prefs);
     assert_eq!(load_chat_prefs(&paths), prefs);
