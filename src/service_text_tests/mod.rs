@@ -150,6 +150,7 @@ macro_rules! wording {
 
 mod chats;
 mod content;
+mod language;
 mod payments;
 
 #[test]
