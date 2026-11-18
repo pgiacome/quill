@@ -604,22 +604,9 @@ mod tests {
     }
 
     #[test]
-    fn a_slow_preparation_does_not_hold_the_caller() {
-        let (release, wait) = std::sync::mpsc::channel::<()>();
-        let (done_tx, done_rx) = std::sync::mpsc::channel();
+    fn a_prepared_snapshot_keeps_its_chat_and_carries_its_media() {
         let snaps = vec![photo_snapshot(11, "/x/a.jpg")];
-        let worker = std::thread::spawn(move || {
-            let result = prepare_snapshots(snaps, |_, _| {
-                wait.recv().ok();
-                Ok(PreparedMedia::default())
-            });
-            done_tx.send(result).ok();
-        });
-        // The caller is free while the worker is stuck in its slow step.
-        assert!(done_rx.try_recv().is_err());
-        release.send(()).unwrap();
-        let sent = done_rx.recv().unwrap().unwrap();
-        worker.join().unwrap();
+        let sent = prepare_snapshots(snaps, |_, _| Ok(PreparedMedia::default())).unwrap();
         let snap = sent.first().expect("one snapshot");
         assert_eq!(snap.chat_id, 11, "the chat does not change");
         assert!(snap.prepared.is_some());

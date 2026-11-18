@@ -894,6 +894,7 @@ fn missing_tdjson_message_is_actionable() {
     let msg = ConnectBlocker::MissingTdjson.user_message();
     assert!(msg.contains("QUILL_TDJSON_PATH"));
     assert!(msg.contains("never searched"));
+    assert!(msg.contains("native-bundle"));
 }
 
 /// Sweep r2-19 (05-017): a `logOut` refused while auth is not Ready leaves

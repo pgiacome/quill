@@ -40,16 +40,6 @@ fn gate_blocks_without_tdjson_when_credentials_present() {
         unsafe { std::env::set_var("QUILL_TDJSON_PATH", v) };
     }
     assert_eq!(gate, ConnectGate::Blocked(ConnectBlocker::MissingTdjson));
-    assert!(
-        ConnectBlocker::MissingTdjson
-            .user_message()
-            .contains("QUILL_TDJSON_PATH")
-    );
-    assert!(
-        ConnectBlocker::MissingTdjson
-            .user_message()
-            .contains("native-bundle")
-    );
 }
 
 #[test]

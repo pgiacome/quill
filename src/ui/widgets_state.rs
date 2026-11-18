@@ -410,6 +410,19 @@ pub(crate) struct WidgetsUi {
     pub(super) scales: HashMap<Option<ChatId>, f32>,
     /// Whether this screen's account still has a widget folder.
     pub(super) storage: WidgetStorage,
+    /// The warning before widgets turn on (`ui/widget_consent.rs`).
+    pub(super) consent: Consent,
+}
+
+/// The warning shown before message widgets turn on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(super) enum Consent {
+    #[default]
+    Closed,
+    /// Open, its "I understand" box clear: the confirm button is off.
+    Open,
+    /// Open, the box ticked: the confirm button turns widgets on.
+    Understood,
 }
 
 /// The loop that lands the runtimes' frames: not started, or its task.

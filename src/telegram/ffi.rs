@@ -374,8 +374,16 @@ mod tests {
         let request =
             format!(r#"{{"@type":"getTextEntities","text":"{LOG_CANARY}","@extra":"canary"}}"#);
         let _ = api.send(client_id, &request);
-        // td_send is async; give TDLib's logging a moment to reach stderr.
-        std::thread::sleep(std::time::Duration::from_secs(2));
-        std::process::exit(0);
+        // TDLib logs a request before it answers it, so once the answer
+        // is here the log line (if any) has reached stderr. Each receive
+        // blocks until TDLib has something; the loop ends on the answer.
+        loop {
+            if api
+                .receive(60.0)
+                .is_some_and(|json| json.contains(r#""@extra":"canary""#))
+            {
+                std::process::exit(0);
+            }
+        }
     }
 }

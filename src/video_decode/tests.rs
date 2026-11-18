@@ -15,40 +15,12 @@ mod hardware;
 mod nv12;
 mod stream_shapes;
 
+/// How far a test moves the player's clock at a time: under a 25 fps
+/// picture's 40 ms, so none is skipped.
+const STEP: Duration = Duration::from_millis(10);
+
 fn frame(pts: f64) -> VideoFrame {
     VideoFrame::bgra(pts, 1, 1, vec![0; 4])
-}
-
-/// Give the decode thread the processor until `done` holds. No clock: the
-/// bound is a count of turns, far more than any scripted run needs.
-fn wait_until(mut done: impl FnMut() -> bool) -> bool {
-    for _ in 0..TURNS {
-        if done() {
-            return true;
-        }
-        std::thread::yield_now();
-    }
-    done()
-}
-
-const TURNS: u32 = 20_000_000;
-
-/// Pull samples until `count` of them were decoded sound (not underrun
-/// silence), handing the processor to the decode thread between misses.
-fn pull_sound(tap: &mut super::AudioTap, count: usize) -> bool {
-    let mut pulled = 0;
-    for _ in 0..TURNS {
-        tap.next_sample();
-        if tap.sounding() {
-            pulled += 1;
-            if pulled == count {
-                return true;
-            }
-        } else {
-            std::thread::yield_now();
-        }
-    }
-    false
 }
 
 #[test]
@@ -352,25 +324,26 @@ fn scripted_player(frames: Option<usize>, audio: bool, queue: usize) -> (Player,
 #[test]
 fn the_first_picture_shows_at_once_then_follows_the_clock() {
     let (mut player, calls) = scripted_player(None, false, 3);
-    assert!(wait_until(|| player.info().is_some()));
+    let progress = player.progress();
+    progress.wait_until(|| player.info().is_some());
     let mut first = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         first = player.take_frame();
         first.is_some()
-    }));
+    });
     assert_eq!(first.map(|f| f.pts), Some(0.0));
     // Paused: the clock doesn't run, no newer picture is due, though the
     // queue behind the first one is full.
-    assert!(wait_until(|| calls.load(Ordering::SeqCst) >= 3));
+    progress.wait_until(|| calls.load(Ordering::SeqCst) >= 3);
     assert!(player.take_frame().is_none());
     player.play();
     let mut shown = None;
-    assert!(wait_until(|| {
+    progress.play_until(STEP, || {
         if let Some(frame) = player.take_frame() {
             shown = Some(frame.pts);
         }
         shown.is_some_and(|pts| pts >= 0.08)
-    }));
+    });
     let position = player.position();
     assert!(position >= 0.08 - 0.01, "{position}");
 }
@@ -378,13 +351,14 @@ fn the_first_picture_shows_at_once_then_follows_the_clock() {
 #[test]
 fn a_seek_drops_stale_pictures_and_restarts_there() {
     let (mut player, _) = scripted_player(Some(250), false, 3);
-    assert!(wait_until(|| player.take_frame().is_some()));
+    let progress = player.progress();
+    progress.wait_until(|| player.take_frame().is_some());
     player.seek(4.0);
     let mut after = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         after = player.take_frame();
         after.is_some()
-    }));
+    });
     let pts = after.map(|f| f.pts).unwrap_or_default();
     assert!(
         (4.0 - 0.04..=4.0).contains(&pts),
@@ -396,11 +370,12 @@ fn a_seek_drops_stale_pictures_and_restarts_there() {
 #[test]
 fn a_clip_ends_and_play_starts_it_over() {
     let (mut player, _) = scripted_player(Some(5), false, 3);
+    let progress = player.progress();
     player.play();
-    assert!(wait_until(|| {
+    progress.play_until(STEP, || {
         player.take_frame();
         !player.is_playing()
-    }));
+    });
     assert!(
         (player.position() - 0.2).abs() < 1e-9,
         "{}",
@@ -409,27 +384,28 @@ fn a_clip_ends_and_play_starts_it_over() {
     player.play();
     assert!(player.is_playing());
     let mut first = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         first = player.take_frame();
         first.is_some()
-    }));
+    });
     assert_eq!(first.map(|f| f.pts), Some(0.0));
 }
 
 #[test]
 fn sound_is_the_clock() {
     let (mut player, _) = scripted_player(None, true, 3);
+    let progress = player.progress();
     let mut tap = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         tap = player.take_audio_tap();
         tap.is_some()
-    }));
+    });
     let mut tap = tap.expect("tap");
     assert_eq!((tap.sample_rate(), tap.channels()), (RATE, 1));
-    assert!(wait_until(|| player.take_frame().is_some()));
+    progress.wait_until(|| player.take_frame().is_some());
     player.play();
     // Pull exactly half a second of sound (the output would at 1x).
-    assert!(pull_sound(&mut tap, (RATE / 2) as usize));
+    progress.pull_sound(&mut tap, (RATE / 2) as usize);
     let position = player.position();
     let expected = 0.5 - AUDIO_OUTPUT_LATENCY;
     assert!(
@@ -441,11 +417,12 @@ fn sound_is_the_clock() {
 #[test]
 fn a_seek_restarts_the_sound_at_the_target() {
     let (mut player, _) = scripted_player(Some(500), true, 3);
+    let progress = player.progress();
     let mut tap = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         tap = player.take_audio_tap();
         tap.is_some()
-    }));
+    });
     let mut tap = tap.expect("tap");
     player.play();
     for _ in 0..300 {
@@ -454,7 +431,7 @@ fn a_seek_restarts_the_sound_at_the_target() {
     player.seek(10.0);
     // Until new sound plays, the clock reads the target.
     assert!((player.position() - 10.0).abs() < 1e-9);
-    assert!(pull_sound(&mut tap, 100));
+    progress.pull_sound(&mut tap, 100);
     let position = player.position();
     assert!(
         (10.0..10.2).contains(&position),
@@ -465,17 +442,18 @@ fn a_seek_restarts_the_sound_at_the_target() {
 #[test]
 fn dropping_the_sound_falls_back_to_a_wall_clock_without_stalling() {
     let (mut player, calls) = scripted_player(None, true, 3);
-    assert!(wait_until(|| player.info().is_some()));
+    let progress = player.progress();
+    progress.wait_until(|| player.info().is_some());
     drop(player.take_audio_tap());
     assert!(!player.has_sound());
     player.play();
     let mut latest = 0.0;
-    assert!(wait_until(|| {
+    progress.play_until(STEP, || {
         if let Some(frame) = player.take_frame() {
             latest = frame.pts;
         }
         latest >= 0.2
-    }));
+    });
     // Pictures kept coming although nobody drains the sound.
     assert!(calls.load(Ordering::SeqCst) > 5);
 }
@@ -483,16 +461,17 @@ fn dropping_the_sound_falls_back_to_a_wall_clock_without_stalling() {
 #[test]
 fn the_sound_buffer_is_bounded() {
     let (mut player, calls) = scripted_player(None, true, 1000);
+    let progress = player.progress();
     let mut tap = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         tap = player.take_audio_tap();
         tap.is_some()
-    }));
+    });
     // Nobody pulls: the sound queue fills up to its cap, and the pictures
     // between the chunks are bounded with it (`decoding_stops_at_the_queue_bounds`
     // is why the thread then stops).
     let shared = tap.as_ref().map(|tap| tap.shared.clone()).expect("tap");
-    assert!(wait_until(|| shared.buffered_secs() >= AUDIO_HIGH_SECS));
+    progress.wait_until(|| shared.buffered_secs() >= AUDIO_HIGH_SECS);
     let settled = calls.load(Ordering::SeqCst);
     // AUDIO_HIGH_SECS of 20 ms chunks plus the pictures between them.
     let chunks = (AUDIO_HIGH_SECS / 0.02) as usize;
@@ -686,16 +665,17 @@ fn ffmpeg_player_plays_a_clip_to_the_end() {
     }
     let mut player =
         Player::open(&fixture("clip-h264-aac.mp4"), OpenOptions::inline(96)).expect("open");
+    let progress = player.progress();
     player.play();
     let mut shown = 0;
-    assert!(wait_until(|| {
+    progress.play_until(STEP, || {
         if player.take_frame().is_some() {
             shown += 1;
         }
         !player.is_playing()
-    }));
+    });
     assert!(player.error().is_none());
-    // At 10 fps over ~1 s, polled every 2 ms: every picture shows.
+    // At 10 fps over ~1 s, looked at every 10 ms: every picture shows.
     assert_eq!(shown, 10);
     assert!(player.position() >= 0.99);
 }
@@ -716,12 +696,13 @@ fn pictures_pace_on_the_wall_clock_until_the_sound_drifts_away() {
 #[test]
 fn a_picture_is_taken_for_the_moment_it_reaches_the_screen() {
     let (mut player, _) = scripted_player(None, false, 4);
-    assert!(wait_until(|| player.take_frame().is_some()));
+    let progress = player.progress();
+    progress.wait_until(|| player.take_frame().is_some());
     player.play();
-    // The queue holds 0.04, 0.08 and 0.12. Asked for a frame that shows
+    // The queue fills to 0.04, 0.08 and 0.12. Asked for a frame that shows
     // 100 ms from now, the picture due then comes, not the one due now.
-    assert!(wait_until(|| player.next_due(Instant::now()).is_some()));
-    let present = Instant::now() + Duration::from_millis(100);
+    progress.wait_until(|| lock(&player.shared.state).video.len() >= 3);
+    let present = progress.now() + Duration::from_millis(100);
     let picked = player.take_frame_at(present).map(|frame| frame.pts);
     assert!(
         picked.is_some_and(|pts| pts >= 0.08 - 1e-9),
@@ -732,16 +713,17 @@ fn a_picture_is_taken_for_the_moment_it_reaches_the_screen() {
 #[test]
 fn the_next_picture_is_due_one_frame_later_and_never_while_paused() {
     let (mut player, _) = scripted_player(None, false, 4);
-    assert!(wait_until(|| player.take_frame().is_some()));
+    let progress = player.progress();
+    progress.wait_until(|| player.take_frame().is_some());
     // Paused: no due time.
-    assert!(player.next_due(Instant::now()).is_none());
+    assert!(player.next_due(progress.now()).is_none());
     player.play();
     let mut due = None;
-    assert!(wait_until(|| {
-        due = player.next_due(Instant::now());
+    progress.wait_until(|| {
+        due = player.next_due(progress.now());
         due.is_some()
-    }));
-    let now = Instant::now();
+    });
+    let now = progress.now();
     let ahead = due.map(|due| due.saturating_duration_since(now));
     // The 0.04 picture, minus the decoder's slack: at most one 25 fps
     // frame away (and never past the 250 ms cap).
@@ -750,18 +732,19 @@ fn the_next_picture_is_due_one_frame_later_and_never_while_paused() {
         "{ahead:?}"
     );
     player.pause();
-    assert!(player.next_due(Instant::now()).is_none());
+    assert!(player.next_due(progress.now()).is_none());
 }
 
 #[test]
 fn frame_steps_move_one_picture_while_paused() {
     let (mut player, _) = scripted_player(Some(250), false, 4);
-    assert!(wait_until(|| player.take_frame().is_some()));
+    let progress = player.progress();
+    progress.wait_until(|| player.take_frame().is_some());
     let mut stepped = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         stepped = player.step_forward();
         stepped.is_some()
-    }));
+    });
     assert_eq!(stepped.map(|frame| frame.pts), Some(0.04));
     assert!(
         (player.position() - 0.04).abs() < 1e-9,
@@ -771,10 +754,10 @@ fn frame_steps_move_one_picture_while_paused() {
     // Back from 0.04: a seek to just before it, so 0.0 shows next.
     player.step_back();
     let mut back = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         back = player.take_frame();
         back.is_some()
-    }));
+    });
     assert_eq!(back.map(|frame| frame.pts), Some(0.0));
     // Playing: steps do nothing.
     player.play();
@@ -805,11 +788,12 @@ fn ffmpeg_opens_a_path_that_is_not_utf8() {
 #[test]
 fn a_let_go_soundtrack_is_tapped_again() {
     let (mut player, _) = scripted_player(None, true, 3);
+    let progress = player.progress();
     let mut tap = None;
-    assert!(wait_until(|| {
+    progress.wait_until(|| {
         tap = player.take_audio_tap();
         tap.is_some()
-    }));
+    });
     assert!(
         player.reattach_audio_tap().is_none(),
         "no second tap while the first is held"
@@ -831,7 +815,8 @@ fn a_let_go_soundtrack_is_tapped_again() {
 #[test]
 fn a_silent_clip_has_no_detached_sound() {
     let (mut player, calls) = scripted_player(None, false, 3);
-    assert!(wait_until(|| calls.load(Ordering::SeqCst) >= 1));
+    let progress = player.progress();
+    progress.wait_until(|| calls.load(Ordering::SeqCst) >= 1);
     assert!(player.take_audio_tap().is_none());
     assert!(!player.sound_detached());
 }
@@ -839,11 +824,12 @@ fn a_silent_clip_has_no_detached_sound() {
 #[test]
 fn a_wake_registered_before_the_open_runs_when_the_file_opens() {
     let (player, _calls) = scripted_player(None, false, 3);
+    let progress = player.progress();
     let (opened, heard) = std::sync::mpsc::channel();
     player.on_open(move || {
         let _ = opened.send(());
     });
-    assert!(wait_until(|| heard.try_recv().is_ok()));
+    progress.wait_until(|| heard.try_recv().is_ok());
     // After the open it runs at once, on the caller's thread.
     let (late, heard_late) = std::sync::mpsc::channel();
     player.on_open(move || {

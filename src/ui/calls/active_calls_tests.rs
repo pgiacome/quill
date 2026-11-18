@@ -3,7 +3,6 @@
 //! demo app has no call driver; the offer itself is tested at the driver
 //! (`connect::tests::group_calls::unjoined`).
 use crate::ui::app::QuillApp;
-use crate::ui::call_link_ui::offered_call_intent;
 use crate::ui::chat_list_state::SidebarTab;
 use crate::ui::group_call_stream_layout::StreamJoinIntent;
 use crate::ui::keybindings::bind_keys;
@@ -254,20 +253,6 @@ fn the_row_status_shows_no_kind_or_count_it_does_not_know() {
         super::active_calls::status_line(&with(GroupCallKind::VoiceChat, 0)),
         tr(keys::Q_OPS_VOICE_CHAT),
         "the kind alone, no count at zero"
-    );
-}
-
-/// A confirmed Calls-tab offer joins whatever the call's kind; a link's
-/// offer keeps the call screen's Join for a non-stream call.
-#[test]
-fn an_offer_joins_only_for_the_calls_tab() {
-    assert_eq!(
-        offered_call_intent(61, OfferMode::Join),
-        StreamJoinIntent::Join(61)
-    );
-    assert_eq!(
-        offered_call_intent(61, OfferMode::OpenScreen),
-        StreamJoinIntent::Call(61)
     );
 }
 

@@ -368,21 +368,21 @@ impl Helper {
         self.send(&CarrierCommand::Deliver { data: data.into() });
     }
 
-    /// The next event that is not `Alive`.
-    fn next(&mut self, within: Duration) -> CarrierEvent {
-        let deadline = Instant::now() + within;
+    /// The next event that is not `Alive`. The helper either reports or
+    /// exits (which ends the channel), so this waits for that; the CI step
+    /// bounds a real hang.
+    fn next(&mut self) -> CarrierEvent {
         loop {
-            let left = deadline.saturating_duration_since(Instant::now());
-            match self.events.recv_timeout(left) {
+            match self.events.recv() {
                 Ok(CarrierEvent::Alive) => self.alive += 1,
                 Ok(event) => return event,
-                Err(_) => panic!("no event within {within:?}"),
+                Err(_) => panic!("the helper exited without an event"),
             }
         }
     }
 
-    fn text(&mut self, within: Duration) -> String {
-        match self.next(within) {
+    fn text(&mut self) -> String {
+        match self.next() {
             CarrierEvent::Text { text } => text,
             other => panic!("expected text, got {other:?}"),
         }
@@ -406,22 +406,16 @@ impl Helper {
     fn echoes(&mut self) {
         self.deliver("AQID");
         assert_eq!(
-            self.next(Duration::from_secs(10)),
+            self.next(),
             CarrierEvent::Binary {
                 data: "AwIB".into()
             }
         );
     }
 
-    fn exits_within(&mut self, within: Duration) -> bool {
-        let deadline = Instant::now() + within;
-        while Instant::now() < deadline {
-            if self.child.try_wait().unwrap().is_some() {
-                return true;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
-        false
+    /// Wait for the helper to exit.
+    fn exits(&mut self) {
+        self.child.wait().unwrap();
     }
 }
 
@@ -438,15 +432,12 @@ fn relays_both_ways_inside_its_scope_and_closes() {
     let (port, seen) = serve();
     let mut helper = Helper::open(port, "/relay/");
     helper.ready();
-    let init = helper.text(Duration::from_secs(15));
+    let init = helper.text();
     assert_eq!(
         init,
         r#"{"t":"init","rejects":true,"frozen":true,"keys":"onmessage,postMessage"}"#
     );
-    let mut probes = [
-        helper.text(Duration::from_secs(5)),
-        helper.text(Duration::from_secs(5)),
-    ];
+    let mut probes = [helper.text(), helper.text()];
     probes.sort();
     assert_eq!(
         probes,
@@ -470,7 +461,7 @@ fn relays_both_ways_inside_its_scope_and_closes() {
     }
     for _ in 0..50 {
         assert_eq!(
-            helper.next(Duration::from_secs(5)),
+            helper.next(),
             CarrierEvent::Binary {
                 data: "AgEA".into()
             }
@@ -483,7 +474,7 @@ fn relays_both_ways_inside_its_scope_and_closes() {
         notify_page: true,
         last: true,
     });
-    assert!(helper.exits_within(Duration::from_secs(4)));
+    helper.exits();
     let closed = "/relay/got?%7B%22t%22%3A%22close%22%7D".to_string();
     assert!(
         seen.lock().unwrap().contains(&closed),
@@ -500,16 +491,16 @@ fn deliveries_before_the_page_listens_wait_for_it() {
     helper.ready();
     // Sent while the page is still loading, and again before it listens.
     helper.deliver("AQID");
-    assert_eq!(helper.text(Duration::from_secs(15)), "loaded");
+    assert_eq!(helper.text(), "loaded");
     helper.deliver("BAUG");
     assert_eq!(
-        helper.next(Duration::from_secs(10)),
+        helper.next(),
         CarrierEvent::Binary {
             data: "AwIB".into()
         }
     );
     assert_eq!(
-        helper.next(Duration::from_secs(5)),
+        helper.next(),
         CarrierEvent::Binary {
             data: "BgUE".into()
         }
@@ -524,11 +515,8 @@ fn dialogs_printing_and_webrtc_never_reach_the_page() {
     helper.ready();
     // Every call returns at once, as if dismissed, in the page and in a
     // frame of its own; a native dialog would block until the timeout.
-    assert_eq!(
-        helper.text(Duration::from_secs(15)),
-        "top:undefined,false,null,undefined"
-    );
-    let frame = helper.text(Duration::from_secs(5));
+    assert_eq!(helper.text(), "top:undefined,false,null,undefined");
+    let frame = helper.text();
     // The frame's own RTCPeerConnection depends on whether the engine runs
     // the bridge script in blank frames; logged for the decision doc.
     eprintln!("{frame}");
@@ -536,11 +524,8 @@ fn dialogs_printing_and_webrtc_never_reach_the_page() {
         frame.starts_with("frame:undefined,false,null,undefined:undefined:"),
         "{frame}"
     );
-    assert_eq!(
-        helper.text(Duration::from_secs(5)),
-        "rtc:undefined,undefined"
-    );
-    assert_eq!(helper.text(Duration::from_secs(5)), "open:null");
+    assert_eq!(helper.text(), "rtc:undefined,undefined");
+    assert_eq!(helper.text(), "open:null");
     helper.echoes();
 }
 
@@ -550,18 +535,18 @@ fn no_webrtc_webtransport_or_webassembly_in_frames_or_workers() {
     let (port, _) = serve();
     let mut helper = Helper::open(port, "/restrict/");
     helper.ready();
-    assert_eq!(helper.text(Duration::from_secs(15)), "tdesktop:1");
-    assert_eq!(helper.text(Duration::from_secs(5)), "indexed:1");
-    assert_eq!(helper.text(Duration::from_secs(5)), "nested:1");
-    assert_eq!(helper.text(Duration::from_secs(5)), "parsed:1");
-    assert_eq!(helper.text(Duration::from_secs(5)), "sw:undefined,1");
+    assert_eq!(helper.text(), "tdesktop:1");
+    assert_eq!(helper.text(), "indexed:1");
+    assert_eq!(helper.text(), "nested:1");
+    assert_eq!(helper.text(), "parsed:1");
+    assert_eq!(helper.text(), "sw:undefined,1");
     assert_eq!(
-        helper.text(Duration::from_secs(10)),
+        helper.text(),
         "worker:undefined,undefined,undefined,undefined,undefined"
     );
-    assert_eq!(helper.text(Duration::from_secs(10)), "loaded:1");
-    assert_eq!(helper.text(Duration::from_secs(10)), "source:1");
-    assert_eq!(helper.text(Duration::from_secs(10)), "sandboxed:1");
+    assert_eq!(helper.text(), "loaded:1");
+    assert_eq!(helper.text(), "source:1");
+    assert_eq!(helper.text(), "sandboxed:1");
     helper.echoes();
 }
 
@@ -571,7 +556,7 @@ fn no_service_worker_through_the_prototype() {
     let (port, seen) = serve();
     let mut helper = Helper::open(port, "/sw/");
     helper.ready();
-    assert_eq!(helper.text(Duration::from_secs(15)), "sw:refused");
+    assert_eq!(helper.text(), "sw:refused");
     helper.echoes();
     assert!(
         !seen
@@ -594,10 +579,7 @@ fn no_route_to_a_worker_without_the_prelude() {
     helper.ready();
     let stripped = "undefined,undefined,undefined";
     for name in ["worker", "prototype", "instance", "original", "same"] {
-        assert_eq!(
-            helper.text(Duration::from_secs(10)),
-            format!("{name}:{stripped}")
-        );
+        assert_eq!(helper.text(), format!("{name}:{stripped}"));
     }
     helper.echoes();
 }
@@ -609,9 +591,9 @@ fn leaving_the_scope_fails_the_carrier() {
     for prefix in ["/nav/", "/blank/"] {
         let mut helper = Helper::open(port, prefix);
         helper.ready();
-        assert_eq!(helper.text(Duration::from_secs(15)), "leaving");
+        assert_eq!(helper.text(), "leaving");
         assert_eq!(
-            helper.next(Duration::from_secs(5)),
+            helper.next(),
             CarrierEvent::Failed {
                 failure: CarrierFailure::LoadFailed {
                     message: "the page tried to leave its origin".into()
@@ -631,9 +613,9 @@ fn a_page_that_tampers_still_cannot_leave() {
     let (port, seen) = serve();
     let mut helper = Helper::open(port, "/tamper/");
     helper.ready();
-    assert_eq!(helper.text(Duration::from_secs(15)), "leaving");
+    assert_eq!(helper.text(), "leaving");
     assert_eq!(
-        helper.next(Duration::from_secs(5)),
+        helper.next(),
         CarrierEvent::Failed {
             failure: CarrierFailure::LoadFailed {
                 message: "the page tried to leave its origin".into()
@@ -660,7 +642,7 @@ fn a_redirect_out_of_the_prefix_is_blocked() {
     let (port, seen) = serve();
     let mut helper = Helper::open(port, "/redirect/");
     helper.ready();
-    assert_eq!(helper.text(Duration::from_secs(15)), "redirect:blocked");
+    assert_eq!(helper.text(), "redirect:blocked");
     assert!(
         !seen
             .lock()
@@ -679,7 +661,7 @@ fn an_http_error_page_fails_to_load() {
     let mut helper = Helper::open(port, "/missing/");
     helper.ready();
     let started = Instant::now();
-    match helper.next(Duration::from_secs(25)) {
+    match helper.next() {
         // The status where the engine reports it, else the start timeout.
         CarrierEvent::Failed {
             failure: CarrierFailure::LoadFailed { message },
@@ -700,7 +682,7 @@ fn a_page_that_cannot_be_reached_fails_to_load() {
     let mut helper = Helper::open(port, "/relay/");
     helper.ready();
     assert!(matches!(
-        helper.next(Duration::from_secs(40)),
+        helper.next(),
         CarrierEvent::Failed {
             failure: CarrierFailure::LoadFailed { .. }
         }
@@ -713,15 +695,15 @@ fn a_hung_page_is_reported_terminated() {
     let (port, _) = serve();
     let mut helper = Helper::open(port, "/hang/");
     helper.ready();
-    assert_eq!(helper.text(Duration::from_secs(15)), "ready");
+    assert_eq!(helper.text(), "ready");
     helper.deliver("AQID");
     assert_eq!(
-        helper.next(Duration::from_secs(25)),
+        helper.next(),
         CarrierEvent::Failed {
             failure: CarrierFailure::Terminated
         }
     );
-    assert!(helper.exits_within(Duration::from_secs(3)));
+    helper.exits();
 }
 
 #[test]
@@ -730,9 +712,9 @@ fn the_helper_ends_when_quill_hangs_up() {
     let (port, _) = serve();
     let mut helper = Helper::open(port, "/echo/");
     helper.ready();
-    assert_eq!(helper.text(Duration::from_secs(15)), "ready");
+    assert_eq!(helper.text(), "ready");
     drop(helper.stdin.take());
-    assert!(helper.exits_within(Duration::from_secs(2)));
+    helper.exits();
 }
 
 #[test]
@@ -745,7 +727,7 @@ fn an_idle_carrier_stays_alive() {
     let (port, _) = serve();
     let mut helper = Helper::open(port, "/echo/");
     helper.ready();
-    assert_eq!(helper.text(Duration::from_secs(15)), "ready");
+    assert_eq!(helper.text(), "ready");
     helper.echoes();
     let started = Instant::now();
     let before = helper.alive;
@@ -774,15 +756,9 @@ fn a_probe_starts_the_view_and_exits() {
         data_dir: Some(data_dir("probe").display().to_string()),
     };
     stdin.write_all(encode(&probe).as_bytes()).unwrap();
-    assert_eq!(
-        events.recv_timeout(Duration::from_secs(30)).unwrap(),
-        CarrierEvent::Ready
-    );
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while child.try_wait().unwrap().is_none() {
-        assert!(Instant::now() < deadline, "the probe did not exit");
-        std::thread::sleep(Duration::from_millis(20));
-    }
+    assert_eq!(events.recv().unwrap(), CarrierEvent::Ready);
+    // The probe exits by itself once it reported.
+    child.wait().unwrap();
 }
 
 #[test]

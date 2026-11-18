@@ -141,16 +141,18 @@ fn the_panel_leads_with_the_archive_and_an_unpinned_saved_messages() {
 
 #[test]
 fn slots_follow_tdesktop_geometry() {
+    // Each slot is a 30 pt picture and a 30 pt gap, 15 pt in from the left.
     assert_eq!(pin_x(0), 15.);
-    assert_eq!(pin_x(2), 15. + 2. * (CIRCLE_DIAMETER + PINNED_SPACE));
+    assert_eq!(pin_x(1), 75.);
+    assert_eq!(pin_x(2), 135.);
     assert_eq!(panel_width(0), 0.);
-    assert_eq!(panel_width(3), pin_x(3) - PINNED_SPACE);
+    assert_eq!(panel_width(3), 165.);
     assert_eq!(index_at(16., 3), Some(0));
     // The gap between pictures belongs half to each side.
-    assert_eq!(index_at(pin_x(1) - 14., 3), Some(1));
-    assert_eq!(index_at(pin_x(1) - 16., 3), Some(0));
+    assert_eq!(index_at(61., 3), Some(1));
+    assert_eq!(index_at(59., 3), Some(0));
     assert_eq!(index_at(-20., 3), None);
-    assert_eq!(index_at(pin_x(3) + 5., 3), None);
+    assert_eq!(index_at(200., 3), None);
 }
 
 #[test]

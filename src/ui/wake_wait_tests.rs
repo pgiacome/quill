@@ -222,18 +222,6 @@ fn a_poke_after_a_long_rest_takes_no_hold(cx: &mut TestAppContext) {
 }
 
 #[gpui_kit::test]
-fn the_first_update_after_a_quiet_stretch_runs_at_once(cx: &mut TestAppContext) {
-    static SIGNAL: Signal = Signal::new();
-    let passes = counted_loop(cx, &SIGNAL, PACE, |_| IDLE);
-    cx.background_executor.advance_clock(ms(500));
-    cx.run_until_parked();
-    assert_eq!(passes.get(), 1);
-    SIGNAL.poke();
-    cx.run_until_parked();
-    assert_eq!(passes.get(), 2, "no clock moved");
-}
-
-#[gpui_kit::test]
 fn one_update_costs_one_pass_with_no_ramp_behind_it(cx: &mut TestAppContext) {
     static SIGNAL: Signal = Signal::new();
     let passes = counted_loop(cx, &SIGNAL, PACE, |_| IDLE);

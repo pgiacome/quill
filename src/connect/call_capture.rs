@@ -145,6 +145,15 @@ impl CallCapture {
         self.active().is_some_and(|active| active.run.is_opening())
     }
 
+    /// Block until the microphone's open has answered (tests); the next
+    /// pump then takes the answer.
+    #[cfg(test)]
+    pub fn wait_opened(&self) {
+        if let Some(active) = self.active() {
+            let _ = active.run.wait_opened();
+        }
+    }
+
     /// The level written by the running capture.
     pub fn level(&self) -> Arc<LevelCell> {
         self.level.clone()

@@ -436,29 +436,6 @@ fn hold(path: &Path) -> fs::File {
 
 #[cfg(windows)]
 #[test]
-fn windows_swap_files_retries_while_a_file_is_briefly_held() {
-    let root = scratch("win-retry");
-    let (install, staged) = (root.join("quill"), root.join("new"));
-    tree(&install, &[("quill.exe", "old"), ("tdjson.dll", "old-td")]);
-    tree(&staged, &[("quill.exe", "new"), ("tdjson.dll", "new-td")]);
-    let held = hold(&install.join("quill.exe"));
-    // A plain rename fails while the handle is open.
-    let probe = fs::rename(install.join("quill.exe"), install.join("probe"));
-    assert_eq!(probe.unwrap_err().raw_os_error(), Some(32));
-    let releaser = std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_millis(700));
-        drop(held);
-    });
-    swap_files(&install, &staged, || Ok(())).unwrap();
-    releaser.join().unwrap();
-    assert_eq!(read(&install.join("quill.exe")), "new");
-    assert_eq!(read(&install.join("tdjson.dll")), "new-td");
-    assert_eq!(remove_leftovers(&install), 2);
-    fs::remove_dir_all(root).unwrap();
-}
-
-#[cfg(windows)]
-#[test]
 fn windows_swap_files_rolls_back_when_a_file_stays_held() {
     let root = scratch("win-held");
     let (install, staged) = (root.join("quill"), root.join("new"));

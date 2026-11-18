@@ -477,7 +477,6 @@ mod tests {
         // adds 12 + 12 + 2 around its content.
         assert_eq!(content_for_outer(268, false), px(242.));
         assert_eq!(content_for_outer(268, true), px(268.));
-        assert_eq!(file_row_bounds(PADDED), (px(242.), px(404.)));
         assert_eq!(poll_min_width(PLAIN), px(268.));
     }
 

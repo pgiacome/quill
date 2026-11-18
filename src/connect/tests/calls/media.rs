@@ -670,21 +670,9 @@ fn engine_reports_apply_without_a_telegram_update() {
     assert!(call.remote_audio_muted);
     // The peer's feed is open before any window asks for it, so the
     // first frame is kept.
-    handle.emit_live_frame(call_key(false, false), first_frame());
+    handle.emit_live_frame(call_key(false, false), planes());
     let peer = driver.live_sink(call_key(false, false)).expect("peer feed");
     assert!(peer.latest().is_some());
     assert!(!driver.request_tick(Instant::now()), "drained");
     let _ = std::fs::remove_dir_all(&dir);
-}
-
-fn first_frame() -> crate::calls::live_video::LiveFrame {
-    crate::calls::live_video::LiveFrame::new(
-        0,
-        2,
-        2,
-        crate::calls::live_video::LiveRotation::None,
-        vec![0; 6],
-        Instant::now(),
-    )
-    .expect("frame")
 }

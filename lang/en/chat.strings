@@ -438,6 +438,17 @@
 "qll_chat_public_chats" = "Public chats";
 "qll_chat_put_the_cursor_inside_a" = "Put the cursor inside a code block first.";
 "qll_chat_widget_failed" = "This widget couldn't start.";
+"qll_chat_widgets_off_title" = "Widgets are off";
+"qll_chat_widgets_off_text" = "This message has a widget, a small program from the bot. Quill doesn't run widgets unless you turn them on.";
+"qll_chat_widgets_turn_on" = "Turn On Widgets…";
+"qll_chat_widgets_warning_title" = "Run widgets from bots?";
+"qll_chat_widgets_warning_what" = "A widget is a program written by whoever runs the bot. Turning widgets on lets every widget in every chat run inside Quill, on this computer, for all your accounts.";
+"qll_chat_widgets_warning_risk" = "Quill keeps widgets in a sandbox, but sandboxes have flaws. Flaws that let a widget break out and run its own code have already been found and fixed. One more would let a widget read your chats, take over your Telegram account, steal your files or install malware, just because you scrolled past it.";
+"qll_chat_widgets_warning_advice" = "Leave widgets off unless you trust every bot and every person who can message you. You can turn them off again in Settings › Privacy and Security.";
+"qll_chat_widgets_warning_understand" = "I understand that a widget could take over this computer and my accounts";
+"qll_chat_widgets_warning_confirm" = "Turn On Widgets";
+"qll_chat_widgets_setting" = "Run message widgets";
+"qll_chat_widgets_setting_about" = "Widgets are small programs bots put in messages. They run code on this computer, so they stay off unless you turn them on.";
 "lng_tgw_stopped" = "Widget stopped";
 "lng_tgw_copied" = "Copied: {text}";
 "qll_chat_quality" = "Quality";

@@ -36,7 +36,6 @@ mod tests {
             data: vec![1, 2, 3].into(),
         };
         // `Image` sources land in GPUI's never-evicting asset cache.
-        assert!(!matches!(mini_image(&mini), ImageSource::Image(_)));
         assert!(matches!(mini_image(&mini), ImageSource::Custom(_)));
     }
 }

@@ -585,7 +585,6 @@ fn a_download_resumed_on_a_low_disk_is_paused_again_and_said_so() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-// REVIEW-ONLY throwaway tests, never committed.
 fn avatar_driver() -> (
     ConnectDriver<Arc<RecordingSender>>,
     Arc<RecordingSender>,

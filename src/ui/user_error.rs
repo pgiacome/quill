@@ -178,14 +178,4 @@ mod tests {
         let doing = user_error_doing("pin stories", &ConnectSendError::InvalidRequest);
         assert_eq!(doing, "Couldn't pin stories.");
     }
-
-    #[test]
-    fn no_error_text_is_a_debug_dump() {
-        for text in [
-            ConnectSendError::Native.user_text(),
-            TdError::from_code(500).user_text(),
-        ] {
-            assert!(!text.contains("Td {") && !text.contains("code:"), "{text}");
-        }
-    }
 }

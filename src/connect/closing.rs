@@ -138,7 +138,8 @@ pub(crate) enum Drained {
 }
 
 /// Ingest what `recv` hands back until Closed, `recv` runs dry or `budget`
-/// is spent.
+/// is spent. At least one waiting envelope is applied whatever the budget,
+/// so every drain makes progress.
 pub(crate) fn drain_until_closed<S: JsonSender>(
     driver: &mut ConnectDriver<S>,
     mut recv: impl FnMut() -> Option<OwnedEnvelope>,
@@ -149,13 +150,14 @@ pub(crate) fn drain_until_closed<S: JsonSender>(
         if matches!(driver.session.auth, AuthorizationState::Closed) {
             return Drained::Closed;
         }
-        if started.elapsed() >= budget {
-            return Drained::Budget;
-        }
         let Some(owned) = recv() else {
             return Drained::Dry;
         };
         let _ = driver.ingest(owned);
+        if !matches!(driver.session.auth, AuthorizationState::Closed) && started.elapsed() >= budget
+        {
+            return Drained::Budget;
+        }
     }
 }
 
@@ -428,9 +430,14 @@ impl ClosingSet {
     /// `deadline`, however many clients there are. Returns how many
     /// finished without a confirmed Closed. The only place the set waits.
     pub fn close_all_within(&mut self, deadline: Instant) -> usize {
+        self.close_all_on(deadline, &mut SystemClock)
+    }
+
+    /// [`Self::close_all_within`] on `clock`.
+    pub(crate) fn close_all_on(&mut self, deadline: Instant, clock: &mut impl QuitClock) -> usize {
         let mut unconfirmed = 0;
         loop {
-            let now = Instant::now();
+            let now = clock.now();
             unconfirmed += self
                 .poll(now)
                 .iter()
@@ -443,8 +450,29 @@ impl ClosingSet {
                 return unconfirmed + self.abandon_closing();
             }
             let left = deadline.saturating_duration_since(now);
-            std::thread::sleep(left.min(Duration::from_millis(5)));
+            clock.sleep(left.min(QUIT_POLL));
         }
+    }
+}
+
+/// How often a quit checks the closing clients again.
+const QUIT_POLL: Duration = Duration::from_millis(5);
+
+/// Where a quit's wait reads the time and sleeps between polls, so a test
+/// can run the shared deadline on a manual clock.
+pub(crate) trait QuitClock {
+    fn now(&self) -> Instant;
+    fn sleep(&mut self, step: Duration);
+}
+
+struct SystemClock;
+
+impl QuitClock for SystemClock {
+    fn now(&self) -> Instant {
+        Instant::now()
+    }
+    fn sleep(&mut self, step: Duration) {
+        std::thread::sleep(step);
     }
 }
 

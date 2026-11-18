@@ -90,6 +90,7 @@ mod free_heap;
 pub mod link_inbox;
 mod wake_wait;
 mod widget_bubble;
+mod widget_consent;
 mod widget_runtime;
 mod widgets_state;
 mod widgets_ui;

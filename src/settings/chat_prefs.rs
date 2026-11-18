@@ -90,6 +90,11 @@ pub struct ChatPrefs {
     /// `rich_paste_toast_hidden`): it never shows again.
     #[serde(default)]
     pub rich_paste_toast_hidden: bool,
+    /// Message widgets run (Quill's own, default off): a widget is code a
+    /// bot sends, so it runs only once the user accepted the warning. A
+    /// file written before the switch existed reads as off.
+    #[serde(default)]
+    pub message_widgets: crate::message_widget::Permission,
 }
 
 impl Default for ChatPrefs {
@@ -106,6 +111,7 @@ impl Default for ChatPrefs {
             profile_media_tabs_expanded: false,
             disable_sharing_box_shown: 0,
             rich_paste_toast_hidden: false,
+            message_widgets: crate::message_widget::Permission::Off,
         }
     }
 }
@@ -312,6 +318,22 @@ pub fn save_translate_prefs(paths: &AccountPaths, prefs: &crate::translate::Tran
 mod tests {
     use super::*;
     use std::fs;
+
+    /// Every install starts with widgets off, an older prefs file too:
+    /// a file written before the switch existed has no key for it.
+    #[test]
+    fn message_widgets_start_off() {
+        assert_eq!(
+            ChatPrefs::default().message_widgets,
+            crate::message_widget::Permission::Off
+        );
+        let old: ChatPrefs =
+            serde_json::from_str(r#"{"send_key_mode":"Enter","spellcheck_enabled":true}"#)
+                .expect("an older file reads");
+        assert_eq!(old.message_widgets, crate::message_widget::Permission::Off);
+        let on: ChatPrefs = serde_json::from_str(r#"{"message_widgets":"on"}"#).expect("reads");
+        assert_eq!(on.message_widgets, crate::message_widget::Permission::On);
+    }
 
     #[test]
     fn contact_prefs_roundtrip_and_missing_file() {

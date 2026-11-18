@@ -7,8 +7,7 @@ use crate::diagnostics::DiagnosticSink;
 use crate::diagnostics::MemorySink;
 use crate::ids::RequestId;
 use crate::platform::MemorySecretStore;
-use crate::state::AuthPurpose;
-use crate::state::{LoginReview, PasswordOp, RequestPurpose, TwofaNotice};
+use crate::state::{LoginReview, PasswordOp, TwofaNotice};
 use crate::telegram::client::copy_and_parse;
 use serde_json::Value;
 use std::sync::Arc;
@@ -804,9 +803,6 @@ fn password_ops_carry_distinct_error_lines() {
     ] {
         assert!(op.action_label().contains(expect));
     }
-    let _ = RequestPurpose::Auth(AuthPurpose::PasswordStateOp {
-        op: PasswordOp::ResetPassword,
-    });
 }
 
 #[test]

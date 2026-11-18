@@ -1,7 +1,7 @@
 //! Connect-driver tests: the shared screen Quill captures and feeds into
 //! the engine's external screen source (`connect::call_screen`).
 use super::super::*;
-use super::support::{pump_until_mic_answers, pump_until_screen_answers, until};
+use super::support::{Latch, pump_until_mic_answers, pump_until_screen_answers};
 use super::*;
 use crate::calls::capture::screen::{PreviewSlot, ScreenCapture, SourceId};
 use crate::calls::capture::system_audio::{SystemAudioCapture, SystemAudioMix};
@@ -16,7 +16,7 @@ use crate::telegram::envelope::parse_group_call_participant;
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// What the fake screen capture was started with, and its sink.
 #[derive(Default)]
@@ -24,15 +24,24 @@ struct FakeScreens {
     started: Mutex<Vec<String>>,
     sink: Mutex<Option<FrameSink<VideoFrame>>>,
     preview: Mutex<Option<Arc<PreviewSlot>>>,
-    stopped: Arc<AtomicBool>,
+    /// Raised when the capture started last is stopped.
+    stopped: Mutex<Arc<Latch>>,
     fail: AtomicBool,
 }
 
-struct FakeScreen(Arc<AtomicBool>);
+impl FakeScreens {
+    /// Block until the capture started last is stopped (on its thread).
+    fn wait_stopped(&self) {
+        let latch = self.stopped.lock().unwrap().clone();
+        latch.wait();
+    }
+}
+
+struct FakeScreen(Arc<Latch>);
 
 impl ScreenCapture for FakeScreen {
     fn stop(&mut self) {
-        self.0.store(true, Ordering::SeqCst);
+        self.0.raise();
     }
 }
 
@@ -46,8 +55,9 @@ fn install_fake_screen(driver: &mut ConnectDriver<Arc<RecordingSender>>) -> Arc<
         handle.started.lock().unwrap().push(source.0.clone());
         *handle.sink.lock().unwrap() = Some(sink);
         *handle.preview.lock().unwrap() = Some(preview);
-        handle.stopped.store(false, Ordering::SeqCst);
-        Ok(Box::new(FakeScreen(handle.stopped.clone())))
+        let stopped = Arc::new(Latch::default());
+        *handle.stopped.lock().unwrap() = stopped.clone();
+        Ok(Box::new(FakeScreen(stopped)))
     }));
     screens
 }
@@ -68,14 +78,6 @@ fn sink_of(screens: &FakeScreens) -> FrameSink<VideoFrame> {
         .unwrap()
         .clone()
         .expect("capture started")
-}
-
-fn wait_for(mut done: impl FnMut() -> bool) {
-    let start = Instant::now();
-    while !done() {
-        assert!(start.elapsed() < Duration::from_secs(5), "timed out");
-        std::thread::sleep(Duration::from_millis(2));
-    }
 }
 
 fn sent_of(driver: &ConnectDriver<Arc<RecordingSender>>, kind: &str) -> Vec<Value> {
@@ -135,8 +137,7 @@ fn the_chosen_window_feeds_the_group_presentation() {
     let sink = sink_of(&screens);
     sink.push(frame(1));
     sink.push(frame(2));
-    wait_for(|| engine.external_frames().len() == 2);
-    assert!(engine.external_frames().iter().all(|f| {
+    assert!(engine.wait_external_frames(2).iter().all(|f| {
         f.device == ExternalDevice::Screen
             && (f.meta.width, f.meta.height) == (320, 240)
             && f.bytes.len() == 320 * 240 * 3 / 2
@@ -162,7 +163,7 @@ fn the_chosen_window_feeds_the_group_presentation() {
         .screen_share
         .stop();
     pump_until_screen_answers(&mut driver);
-    until(|| screens.stopped.load(Ordering::SeqCst));
+    screens.wait_stopped();
     assert_eq!(driver.call_screen().target(), None);
     assert!(driver.call_screen().chosen().is_none());
     std::fs::remove_dir_all(dir).ok();
@@ -193,10 +194,9 @@ fn a_hidden_window_pauses_once_per_edge() {
             .screen_share
             .is_paused()
     );
-    // Frames while paused are dropped, not sent.
-    sink.push(frame(3));
-    std::thread::sleep(Duration::from_millis(50));
-    assert!(engine.external_frames().is_empty());
+    // Frames while paused are dropped, not sent (the feeder's own tests
+    // cover the dropping).
+    assert_eq!(driver.call_screen().forwarding(), Some(false));
 
     // A second Paused (and a Paused/Resumed/Paused burst) is no new edge.
     sink.push_event(CaptureEvent::Paused);
@@ -215,8 +215,9 @@ fn a_hidden_window_pauses_once_per_edge() {
     assert_eq!(toggles.len(), 2);
     assert_eq!(toggles[1]["is_paused"], false);
     assert!(!driver.call_screen().paused());
+    assert_eq!(driver.call_screen().forwarding(), Some(true));
     sink.push(frame(4));
-    wait_for(|| engine.external_frames().len() == 1);
+    assert_eq!(engine.wait_external_frames(1)[0].bytes[0], 4);
     std::fs::remove_dir_all(dir).ok();
 }
 
@@ -286,7 +287,7 @@ fn a_closed_window_ends_the_share() {
         driver.request_tick(Instant::now()),
         "no Telegram update needed"
     );
-    until(|| screens.stopped.load(Ordering::SeqCst));
+    screens.wait_stopped();
     assert_eq!(sent_of(&driver, "endGroupCallScreenSharing").len(), 1);
     let call = driver.session.calls.active_group_call.as_ref().unwrap();
     assert!(!call.screen_share.is_on() && !call.screen_share.is_paused());
@@ -393,14 +394,16 @@ fn a_private_call_shares_without_pause_requests() {
     );
     let sink = sink_of(&screens);
     sink.push(frame(5));
-    wait_for(|| handle.external_frames().len() == 1);
+    assert_eq!(handle.wait_external_frames(1).len(), 1);
     sink.push_event(CaptureEvent::Paused);
     pump_until_screen_answers(&mut driver);
     assert!(driver.call_screen().paused());
+    assert_eq!(
+        driver.call_screen().forwarding(),
+        Some(false),
+        "frames stop"
+    );
     assert!(sent_of(&driver, "toggleGroupCallScreenSharingIsPaused").is_empty());
-    sink.push(frame(6));
-    std::thread::sleep(Duration::from_millis(50));
-    assert_eq!(handle.external_frames().len(), 1);
     std::fs::remove_dir_all(dir).ok();
 }
 
@@ -408,15 +411,24 @@ fn a_private_call_shares_without_pause_requests() {
 #[derive(Default)]
 struct FakeLoopbacks {
     started: Mutex<Vec<Arc<SystemAudioMix>>>,
-    stopped: Arc<AtomicBool>,
+    /// Raised when the loopback started last is stopped.
+    stopped: Mutex<Arc<Latch>>,
     fail: AtomicBool,
 }
 
-struct FakeLoopback(Arc<AtomicBool>);
+impl FakeLoopbacks {
+    /// Block until the loopback started last is stopped (on its thread).
+    fn wait_stopped(&self) {
+        let latch = self.stopped.lock().unwrap().clone();
+        latch.wait();
+    }
+}
+
+struct FakeLoopback(Arc<Latch>);
 
 impl SystemAudioCapture for FakeLoopback {
     fn stop(&mut self) {
-        self.0.store(true, Ordering::SeqCst);
+        self.0.raise();
     }
 }
 
@@ -448,8 +460,9 @@ fn audio_driver() -> (
             return Err(CaptureError::Device("no speakers".into()));
         }
         handle.started.lock().unwrap().push(mix);
-        handle.stopped.store(false, Ordering::SeqCst);
-        Ok(Box::new(FakeLoopback(handle.stopped.clone())))
+        let stopped = Arc::new(Latch::default());
+        *handle.stopped.lock().unwrap() = stopped.clone();
+        Ok(Box::new(FakeLoopback(stopped)))
     }));
     let controls: KeptControls = Arc::new(Mutex::new(None));
     let kept = controls.clone();
@@ -506,7 +519,7 @@ fn shared_system_audio_reaches_the_microphone_while_the_share_runs() {
     // Picking the same screen without the box stops only the audio.
     driver.choose_call_screen_source(SourceId("display:1".into()), false);
     pump_until_screen_answers(&mut driver);
-    until(|| loopbacks.stopped.load(Ordering::SeqCst));
+    loopbacks.wait_stopped();
     assert!(!driver.call_screen().sharing_audio());
     assert!(driver.call_screen().target().is_some());
     assert!(mic_mix(&controls).is_none());
@@ -524,7 +537,7 @@ fn shared_system_audio_reaches_the_microphone_while_the_share_runs() {
         .screen_share
         .stop();
     pump_until_screen_answers(&mut driver);
-    until(|| loopbacks.stopped.load(Ordering::SeqCst));
+    loopbacks.wait_stopped();
     assert!(mic_mix(&controls).is_none());
     assert!(!driver.call_screen().with_audio());
     std::fs::remove_dir_all(dir).ok();
@@ -575,8 +588,7 @@ fn a_slow_screen_capture_does_not_hold_the_pump() {
     let (dir, mut driver, _engine, _screens) = group_driver();
     let (release, released) = std::sync::mpsc::channel::<()>();
     let released = Mutex::new(released);
-    let stopped = Arc::new(AtomicBool::new(false));
-    let flag = stopped.clone();
+    let flag = Arc::new(Latch::default());
     let pump_thread = std::thread::current().id();
     driver.inject_call_screen(Arc::new(move |_source, _options, _sink, _preview| {
         assert_ne!(std::thread::current().id(), pump_thread);
@@ -605,8 +617,7 @@ fn a_window_hidden_while_its_share_opens_stays_paused() {
     let (release, released) = std::sync::mpsc::channel::<()>();
     let released = Mutex::new(released);
     let (handed, sink) = std::sync::mpsc::channel::<FrameSink<VideoFrame>>();
-    let stopped = Arc::new(AtomicBool::new(false));
-    let flag = stopped.clone();
+    let flag = Arc::new(Latch::default());
     driver.inject_call_screen(Arc::new(move |_source, _options, sink, _preview| {
         let _ = handed.send(sink);
         let _ = released.lock().unwrap().recv();

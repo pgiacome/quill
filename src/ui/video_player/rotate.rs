@@ -258,7 +258,6 @@ mod tests {
         turn_plane(&src, (3, 2), 3, &mut once, 2, 1, false);
         // 3x2 turned clockwise: rows [3,0] and [4,1] and [5,2].
         assert_eq!(once, vec![3, 0, 4, 1, 5, 2]);
-        let mut back = src.clone();
         let mut cur = src.clone();
         let (mut w, mut h) = (3, 2);
         for _ in 0..4 {
@@ -268,8 +267,7 @@ mod tests {
             cur = next;
             (w, h) = (nw, nh);
         }
-        back.truncate(6);
-        assert_eq!(cur, back);
+        assert_eq!(cur, src);
     }
 
     #[test]

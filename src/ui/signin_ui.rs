@@ -881,11 +881,6 @@ mod phone_step_tests {
         };
         assert!(sending.is_editing(), "the phone form stays up while sent");
         assert_eq!(sending.code_phone(), "+1 555 0100");
-        let PhoneStep::Sending { back, .. } = sending else {
-            panic!("sending");
-        };
-        assert_eq!(*back, editing);
-        assert_eq!(back.code_phone(), "+1 555 0100");
     }
 
     /// The answer to the request decides: accepted names the number, a

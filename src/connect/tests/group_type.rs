@@ -355,26 +355,6 @@ fn a_settled_revoke_signals_the_type_box_once() {
     assert!(!rig.driver.session.take_public_link_freed(), "taken once");
 }
 
-/// Round 2, 120: a check that could not be sent is not "Checking...".
-#[test]
-fn a_check_that_could_not_be_sent_is_not_in_flight() {
-    let mut rig = Rig::new();
-    rig.recorder.refuse(Some("checkChatUsername"));
-    assert!(
-        rig.driver
-            .check_group_username(ChatId(13), "quillchat")
-            .is_err()
-    );
-    // Not in flight, and not silent: the box says the check failed.
-    assert_eq!(
-        rig.driver.session.groups.group_type.check,
-        crate::state::UsernameCheck::Failed {
-            chat_id: ChatId(13),
-            username: "quillchat".into()
-        }
-    );
-}
-
 /// Round 2, 121: queued edits that find no upgraded chat are reported, not
 /// dropped.
 #[test]

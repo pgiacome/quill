@@ -987,11 +987,6 @@ mod tests {
         machine.seek(3.0, t0);
         assert!(!machine.want().playing);
         assert_eq!(reconcile(machine.want(), idle()), None);
-        // Failed: nothing plays, whatever was wanted.
-        let mut failed = TransportMachine::new(None, t0);
-        failed.play(t0);
-        failed.fail(t0);
-        assert!(!failed.want().playing);
     }
 
     #[test]

@@ -3,13 +3,13 @@ use super::super::ffi::FfiDemuxer;
 use super::super::presenting::Presenting;
 use super::super::{
     AUDIO_LOW_SECS, AUDIO_OUTPUT_LATENCY, AudioChunk, AudioTap, Demuxer, Item, MediaInfo,
-    OpenOptions, Pixels, Player, SYNC_TOLERANCE, Shared, State, VideoFrame, lock,
+    OpenOptions, PixelOutput, Pixels, Player, SYNC_TOLERANCE, Shared, VideoFrame, lock,
 };
 use super::{decode_all, decoder, fixture, frame};
 use std::collections::VecDeque;
 use std::path::Path;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 const FPS: f64 = 25.0;
@@ -216,14 +216,9 @@ impl Rig {
     }
 
     fn over(demuxer: Box<dyn Demuxer>, want_audio: bool, counts: Arc<Counts>) -> Self {
-        let shared = Arc::new(Shared {
-            state: Mutex::new(State {
-                video_cap: QUEUE,
-                ..State::default()
-            }),
-            wake: Condvar::new(),
-            progress: Condvar::new(),
-        });
+        let shared = Arc::new(Shared::new(QUEUE, PixelOutput::Bgra));
+        // No thread runs here: the rig moves the clock itself.
+        *lock(&shared.manual_now) = Some(Instant::now());
         let decoder = Decoder::start(demuxer, &shared, want_audio);
         let mut player = Player {
             shared: shared.clone(),
@@ -249,7 +244,7 @@ impl Rig {
 
     /// Run turns until the thread would sleep; how long it would.
     fn settle_until_idle(&mut self) -> Duration {
-        self.settle_at(Instant::now())
+        self.settle_at(self.shared.now())
     }
 
     /// Run turns at `now` until the thread would sleep; how long it would.
@@ -323,7 +318,7 @@ impl Rig {
 
     fn start(&mut self) -> Instant {
         self.player.play();
-        let t0 = Instant::now();
+        let t0 = self.shared.now();
         assert!(
             self.player.take_frame_for(t0, t0).is_some(),
             "the first picture shows at once"
@@ -848,7 +843,7 @@ fn a_seek_to_the_end_before_any_picture_showed_is_not_a_failure() {
     rig.player.seek(1.0);
     rig.settle();
     assert!(rig.player.error().is_none());
-    rig.player.update_ended(Instant::now());
+    rig.player.update_ended(rig.shared.now());
     assert!(rig.player.presenting.is_ended());
 }
 

@@ -187,6 +187,33 @@ so a crash prints its native stack.
   (`widgets_window_closed`), unless another window's last pass showed them;
   they move to that window.
 
+## Off until the user turns them on
+
+The owner decided on 2026-11-17 that widgets are too risky to run by
+default. A widget is a program from whoever runs the bot, and it runs inside
+Quill. The sandbox has had flaws that let a widget run its own code, and
+fixing them one by one leaves users exposed until the next one is found. So
+widgets are off on every install, upgrades included. Telegram Desktop has no
+such switch: this is Quill's own.
+
+- The choice is the app's, for every account: `ChatPrefs::message_widgets`
+  (`Permission::Off` or `On`, key `message_widgets` in
+  `app/chat_prefs.json`). A file written before the key existed reads as
+  off.
+- While off, the bubble draws a notice ("Widgets are off") with a button to
+  the warning, and never notes the widget, so no entry, runtime, poll or
+  storage read exists for it. `start_widget` refuses too, as a second gate.
+- The warning (`ui/widget_consent.rs`, `Consent`: closed, open,
+  understood) says what a widget can do if the sandbox fails. Its confirm
+  stays disabled until "I understand" is ticked. Cancel, Escape and closing
+  the box leave widgets off.
+- Settings › Privacy and Security has the switch. Turning it on opens the
+  same warning; turning it off stops every runtime at once. What the
+  widgets stored is written first and kept, so a widget turned on again
+  starts from it.
+- Demos: `ready-widgets-off` shows the notice; `ready-widgets` and
+  `ready-widgets-showcase` turn widgets on for the demo only.
+
 ## Bounds against a hostile widget
 
 - Blur (CSS `filter`, box and drop shadows) stops at 200 device px

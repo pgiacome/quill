@@ -542,25 +542,45 @@ pub(crate) type SessionsDriverHarness = (
     AtomicU64,
 );
 
+/// Pump the microphone, and while an open is in flight block on its
+/// answer and pump again.
 pub(crate) fn pump_until_mic_answers(driver: &mut ConnectDriver<Arc<RecordingSender>>) {
     driver.pump_call_capture(std::time::Instant::now());
     while driver.call_capture().opening() {
-        std::thread::yield_now();
+        driver.call_capture().wait_opened();
         driver.pump_call_capture(std::time::Instant::now());
     }
 }
 
+/// [`pump_until_mic_answers`] for the shared screen.
 pub(crate) fn pump_until_screen_answers(driver: &mut ConnectDriver<Arc<RecordingSender>>) {
     driver.pump_call_screen(std::time::Instant::now());
     while driver.call_screen().opening() {
-        std::thread::yield_now();
+        driver.call_screen().wait_opened();
         driver.pump_call_screen(std::time::Instant::now());
     }
 }
 
-pub(crate) fn until(mut done: impl FnMut() -> bool) {
-    while !done() {
-        std::thread::yield_now();
+/// A one-way flag another thread raises; [`Latch::wait`] blocks until it is.
+#[derive(Default)]
+pub(crate) struct Latch {
+    set: std::sync::Mutex<bool>,
+    raised: std::sync::Condvar,
+}
+
+impl Latch {
+    pub(crate) fn raise(&self) {
+        *self.set.lock().unwrap() = true;
+        self.raised.notify_all();
+    }
+
+    pub(crate) fn is_raised(&self) -> bool {
+        *self.set.lock().unwrap()
+    }
+
+    pub(crate) fn wait(&self) {
+        let set = self.set.lock().unwrap();
+        drop(self.raised.wait_while(set, |set| !*set).unwrap());
     }
 }
 
