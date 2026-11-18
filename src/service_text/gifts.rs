@@ -43,7 +43,7 @@ pub(super) fn render_gift(
     let sent_by_me = me(&sender) || (sender.is_none() && ctx.actor_is_me());
     if stars == 0 {
         return if sent_by_me {
-            B::default().t(tr(keys::ACTION_GIFT_UNIQUE_SENT)).done()
+            say(keys::ACTION_GIFT_UNIQUE_SENT)
         } else {
             phrase(
                 keys::ACTION_GIFT_UNIQUE_RECEIVED,
@@ -54,7 +54,7 @@ pub(super) fn render_gift(
     }
     if prepaid_upgrade {
         return if sent_by_me {
-            let cost = B::default().t(cost);
+            let cost = B::from(cost);
             match receiver {
                 Some(r) if !me(&receiver) => phrase(
                     keys::Q_SERVICE_GIFT_UPGRADE_FOR,
@@ -66,7 +66,7 @@ pub(super) fn render_gift(
         } else {
             phrase(
                 keys::ACTION_GIFT_SENT_UPGRADE,
-                &[("from", ctx.peer_of_gift()), ("cost", B::default().t(cost))],
+                &[("from", ctx.peer_of_gift()), ("cost", B::from(cost))],
             )
             .done()
         };
@@ -96,7 +96,7 @@ pub(super) fn render_upgraded_gift(
     match origin {
         GiftOrigin::Upgrade | GiftOrigin::PrepaidUpgrade => {
             if actor_me && (me(&sender) || sender.is_none()) {
-                B::default().t(tr(keys::ACTION_GIFT_UPGRADED_SELF)).done()
+                say(keys::ACTION_GIFT_UPGRADED_SELF)
             } else if actor_me {
                 phrase(
                     keys::ACTION_GIFT_UPGRADED_MINE,
@@ -104,7 +104,7 @@ pub(super) fn render_upgraded_gift(
                         "user",
                         match sender {
                             Some(s) => ctx.peer(s),
-                            None => B::default().t(someone()),
+                            None => B::from(someone()),
                         },
                     )],
                 )
@@ -138,7 +138,7 @@ pub(super) fn render_upgraded_gift(
             } else {
                 phrase(
                     keys::ACTION_GIFT_RECEIVED_SOLD,
-                    &[("user", ctx.from()), ("cost", B::default().t(cost))],
+                    &[("user", ctx.from()), ("cost", B::from(cost))],
                 )
                 .done()
             }
@@ -155,13 +155,13 @@ pub(super) fn render_upgraded_gift(
                     keys::Q_SERVICE_GIFT_SOLD_NAMED_OTHER,
                     &[
                         ("user", ctx.from()),
-                        ("name", B::default().t(name)),
-                        ("cost", B::default().t(cost)),
+                        ("name", B::from(name)),
+                        ("cost", B::from(cost)),
                     ],
                 )
                 .done()
             }
         }
-        GiftOrigin::Craft => B::default().t(tr(keys::ACTION_GIFT_CRAFTED)).done(),
+        GiftOrigin::Craft => say(keys::ACTION_GIFT_CRAFTED),
     }
 }

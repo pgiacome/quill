@@ -131,8 +131,6 @@
 "lng_action_gift_offer_declined" = "{user} rejected your offer to buy {name} for {cost}.";
 "lng_action_suggested_photo_me" = "You suggested this photo for {user}'s Telegram profile.";
 "lng_action_suggested_photo" = "{user} suggests this photo for your Telegram profile.";
-"lng_action_suggested_birthday_me" = "You suggest {user} add a date of birth:";
-"lng_action_suggested_birthday" = "{user} suggests you add your date of birth:";
 "lng_action_attach_menu_bot_allowed" = "You allowed this bot to message you when you added it to your attachment menu.";
 "lng_action_webapp_bot_allowed" = "You allowed this bot to message you in its web-app.";
 "lng_action_set_wallpaper_me" = "You set a new wallpaper for this chat";
@@ -221,6 +219,8 @@
 "qll_service_topic_icon_changed" = "{from} changed the topic icon";
 "qll_service_topic_edited" = "Topic edited";
 "qll_service_users_shared" = "You shared {users} with {chat}";
+"qll_service_suggested_birthday_me" = "You suggest {user} add a date of birth: {date}";
+"qll_service_suggested_birthday" = "{user} suggests you add your date of birth: {date}";
 "qll_service_passport_received" = "Telegram Passport data received";
 "qll_service_webapp_data_received" = "Data from the \"{text}\" button was received.";
 "qll_service_paid_media" = "Paid media · {stars}";

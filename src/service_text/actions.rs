@@ -6,16 +6,16 @@ use crate::telegram::envelope::GiftOfferState;
 #[allow(clippy::too_many_lines)]
 pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceText {
     use ServiceAction as A;
-    let text = |s: &str| B::default().t(s).done();
+    let text = |s: &str| B::from(s).done();
     let from = || ctx.from();
     match action {
         A::ChatCreate { title, supergroup } => {
             if *supergroup && ctx.is_channel {
-                text(tr(keys::ACTION_CREATED_CHANNEL))
+                say(keys::ACTION_CREATED_CHANNEL)
             } else {
                 phrase(
                     keys::ACTION_CREATED_CHAT,
-                    &[("from", from()), ("title", B::default().t(title))],
+                    &[("from", from()), ("title", B::from(title))],
                 )
                 .done()
             }
@@ -26,21 +26,21 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             } else {
                 phrase(
                     keys::ACTION_CHANGED_TITLE,
-                    &[("from", from()), ("title", B::default().t(title))],
+                    &[("from", from()), ("title", B::from(title))],
                 )
                 .done()
             }
         }
         A::ChatPhoto { .. } => {
             if ctx.is_channel {
-                text(tr(keys::ACTION_CHANGED_PHOTO_CHANNEL))
+                say(keys::ACTION_CHANGED_PHOTO_CHANNEL)
             } else {
                 phrase(keys::ACTION_CHANGED_PHOTO, &[("from", from())]).done()
             }
         }
         A::ChatPhotoDeleted => {
             if ctx.is_channel {
-                text(tr(keys::ACTION_REMOVED_PHOTO_CHANNEL))
+                say(keys::ACTION_REMOVED_PHOTO_CHANNEL)
             } else {
                 phrase(keys::ACTION_REMOVED_PHOTO, &[("from", from())]).done()
             }
@@ -59,30 +59,38 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             enabled,
             was_enabled,
             ..
-        } => match (enabled == was_enabled, ctx.actor_is_me(), enabled) {
-            (true, ..) => text(tr(keys::ACTION_NO_FORWARDS_STILL_DISABLED)),
-            (false, true, true) => text(tr(keys::ACTION_NO_FORWARDS_YOU_DISABLED)),
-            (false, true, false) => text(tr(keys::ACTION_NO_FORWARDS_YOU_ENABLED)),
-            (false, false, true) => {
-                phrase(keys::ACTION_NO_FORWARDS_DISABLED, &[("from", from())]).done()
+        } => {
+            if enabled == was_enabled {
+                say(keys::ACTION_NO_FORWARDS_STILL_DISABLED)
+            } else if *enabled {
+                ctx.by_actor(
+                    keys::ACTION_NO_FORWARDS_YOU_DISABLED,
+                    keys::ACTION_NO_FORWARDS_DISABLED,
+                    &[],
+                )
+            } else {
+                ctx.by_actor(
+                    keys::ACTION_NO_FORWARDS_YOU_ENABLED,
+                    keys::ACTION_NO_FORWARDS_ENABLED,
+                    &[],
+                )
             }
-            (false, false, false) => {
-                phrase(keys::ACTION_NO_FORWARDS_ENABLED, &[("from", from())]).done()
-            }
-        },
+        }
         A::ProtectedDisableRequested { expired } => {
             if *expired {
-                text(tr(keys::ACTION_NO_FORWARDS_REQUEST_EXPIRED))
-            } else if ctx.actor_is_me() {
-                text(tr(keys::ACTION_NO_FORWARDS_REQUEST_YOU))
+                say(keys::ACTION_NO_FORWARDS_REQUEST_EXPIRED)
             } else {
-                phrase(keys::ACTION_NO_FORWARDS_REQUEST, &[("from", from())]).done()
+                ctx.by_actor(
+                    keys::ACTION_NO_FORWARDS_REQUEST_YOU,
+                    keys::ACTION_NO_FORWARDS_REQUEST,
+                    &[],
+                )
             }
         }
         A::AddMembers { users } => match users.as_slice() {
             [only] if matches!(ctx.actor, Some(MessageSender::User { user_id }) if user_id == *only) => {
                 if ctx.is_channel {
-                    text(tr(keys::ACTION_YOU_JOINED))
+                    say(keys::ACTION_YOU_JOINED)
                 } else {
                     phrase(keys::ACTION_USER_JOINED, &[("from", from())]).done()
                 }
@@ -120,26 +128,26 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         }
         A::JoinByLink => phrase(keys::ACTION_USER_JOINED_BY_LINK, &[("from", from())]).done(),
         // tdesktop `lng_action_you_joined`.
-        A::YouJoinedChannel => text(tr(keys::ACTION_YOU_JOINED)),
-        A::NewBotThread => text(crate::lang::tr(crate::lang::keys::BOT_NEW_THREAD_ABOUT)),
+        A::YouJoinedChannel => say(keys::ACTION_YOU_JOINED),
+        A::NewBotThread => say(keys::BOT_NEW_THREAD_ABOUT),
         // tdesktop `lng_replies_discussion_started` / `lng_replies_no_comments`.
         A::ThreadDivider { with_comments } => text(if *with_comments {
-            crate::lang::tr(crate::lang::keys::REPLIES_DISCUSSION_STARTED)
+            tr(keys::REPLIES_DISCUSSION_STARTED)
         } else {
-            crate::lang::tr(crate::lang::keys::REPLIES_NO_COMMENTS)
+            tr(keys::REPLIES_NO_COMMENTS)
         }),
         A::JoinByRequest => {
             if ctx.actor_is_me() {
-                text(tr(if ctx.is_channel {
+                say(if ctx.is_channel {
                     keys::ACTION_YOU_JOINED_BY_REQUEST_CHANNEL
                 } else {
                     keys::ACTION_YOU_JOINED_BY_REQUEST
-                }))
+                })
             } else {
                 phrase(keys::ACTION_USER_JOINED_BY_REQUEST, &[("from", from())]).done()
             }
         }
-        A::UpgradedTo => text(tr(keys::Q_SERVICE_UPGRADED_TO)),
+        A::UpgradedTo => say(keys::Q_SERVICE_UPGRADED_TO),
         A::UpgradedFrom { title } => line(keys::Q_SERVICE_UPGRADED_FROM, &[("title", title)]),
         A::Pin { message_id } => {
             let (excerpt, is_media) = pin_text(ctx.names.pinned(*message_id));
@@ -164,7 +172,7 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         A::Background { only_for_self } => {
             if ctx.actor_is_me() {
                 if *only_for_self {
-                    text(tr(keys::ACTION_SET_WALLPAPER_ME))
+                    say(keys::ACTION_SET_WALLPAPER_ME)
                 } else {
                     phrase(
                         keys::ACTION_SET_WALLPAPER_BOTH_ME,
@@ -177,39 +185,25 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             }
         }
         A::Theme { emoji, gift_name } => match (gift_name, emoji.is_empty()) {
-            (Some(name), _) => {
-                if ctx.actor_is_me() {
-                    line(keys::ACTION_YOU_GIFT_THEME_CHANGED, &[("name", name)])
-                } else {
-                    phrase(
-                        keys::ACTION_GIFT_THEME_CHANGED,
-                        &[("from", from()), ("name", B::default().t(name))],
-                    )
-                    .done()
-                }
-            }
-            (None, false) => {
-                if ctx.actor_is_me() {
-                    line(keys::ACTION_YOU_THEME_CHANGED, &[("emoji", emoji)])
-                } else {
-                    phrase(
-                        keys::ACTION_THEME_CHANGED,
-                        &[("from", from()), ("emoji", B::default().t(emoji))],
-                    )
-                    .done()
-                }
-            }
-            (None, true) => {
-                if ctx.actor_is_me() {
-                    text(tr(keys::ACTION_YOU_THEME_DISABLED))
-                } else {
-                    phrase(keys::ACTION_THEME_DISABLED, &[("from", from())]).done()
-                }
-            }
+            (Some(name), _) => ctx.by_actor(
+                keys::ACTION_YOU_GIFT_THEME_CHANGED,
+                keys::ACTION_GIFT_THEME_CHANGED,
+                &[("name", B::from(name))],
+            ),
+            (None, false) => ctx.by_actor(
+                keys::ACTION_YOU_THEME_CHANGED,
+                keys::ACTION_THEME_CHANGED,
+                &[("emoji", B::from(emoji))],
+            ),
+            (None, true) => ctx.by_actor(
+                keys::ACTION_YOU_THEME_DISABLED,
+                keys::ACTION_THEME_DISABLED,
+                &[],
+            ),
         },
         A::Boost { count } => {
             if ctx.actor_is_me() {
-                text(tr(keys::ACTION_BOOST_APPLY_ME))
+                say(keys::ACTION_BOOST_APPLY_ME)
             } else {
                 phrase_plural(
                     keys::ACTION_BOOST_APPLY,
@@ -226,14 +220,14 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             if name.is_empty() && *icon_edited {
                 phrase(keys::Q_SERVICE_TOPIC_ICON_CHANGED, &[("from", from())]).done()
             } else if name.is_empty() {
-                text(tr(keys::Q_SERVICE_TOPIC_EDITED))
+                say(keys::Q_SERVICE_TOPIC_EDITED)
             } else {
                 phrase(
                     keys::ACTION_TOPIC_RENAMED,
                     &[
                         ("from", from()),
-                        ("link", B::default().t(tr(keys::ACTION_TOPIC_PLACEHOLDER))),
-                        ("title", B::default().t(name)),
+                        ("link", B::from(tr(keys::ACTION_TOPIC_PLACEHOLDER))),
+                        ("title", B::from(name)),
                     ],
                 )
                 .done()
@@ -248,11 +242,11 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             &[("from", from())],
         )
         .done(),
-        A::TopicHidden { hidden } => text(tr(if *hidden {
+        A::TopicHidden { hidden } => say(if *hidden {
             keys::ACTION_TOPIC_HIDDEN_INSIDE
         } else {
             keys::ACTION_TOPIC_UNHIDDEN_INSIDE
-        })),
+        }),
         A::SuggestProfilePhoto { .. } => {
             if ctx.actor_is_me() {
                 phrase(
@@ -273,17 +267,12 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             } else {
                 format!("{day} {}", crate::local_time::month_name(*month as u8))
             };
-            let key = if ctx.actor_is_me() {
-                keys::ACTION_SUGGESTED_BIRTHDAY_ME
+            let (key, who) = if ctx.actor_is_me() {
+                (keys::Q_SERVICE_SUGGESTED_BIRTHDAY_ME, ctx.chat(ctx.chat_id))
             } else {
-                keys::ACTION_SUGGESTED_BIRTHDAY
+                (keys::Q_SERVICE_SUGGESTED_BIRTHDAY, from())
             };
-            let who = if ctx.actor_is_me() {
-                ctx.chat(ctx.chat_id)
-            } else {
-                from()
-            };
-            phrase(key, &[("user", who)]).t(format!(" {date}")).done()
+            phrase(key, &[("user", who), ("date", B::from(date))]).done()
         }
         A::Custom { text: custom } => text(custom),
         A::GameScore {
@@ -295,23 +284,19 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 .game_title(*game_message_id)
                 .map(|title| B::default().link(title, ServiceLink::Message(*game_message_id)));
             let score = i64::from(*score);
-            match (game, ctx.actor_is_me()) {
-                (Some(game), true) => {
-                    phrase_plural(keys::ACTION_GAME_YOU_SCORED, score, &[("game", game)]).done()
-                }
-                (Some(game), false) => phrase_plural(
+            match game {
+                Some(game) => ctx.by_actor_plural(
+                    keys::ACTION_GAME_YOU_SCORED,
                     keys::ACTION_GAME_SCORE,
                     score,
-                    &[("from", from()), ("game", game)],
-                )
-                .done(),
-                (None, true) => {
-                    phrase_plural(keys::ACTION_GAME_YOU_SCORED_NO_GAME, score, &[]).done()
-                }
-                (None, false) => {
-                    phrase_plural(keys::ACTION_GAME_SCORE_NO_GAME, score, &[("from", from())])
-                        .done()
-                }
+                    &[("game", game)],
+                ),
+                None => ctx.by_actor_plural(
+                    keys::ACTION_GAME_YOU_SCORED_NO_GAME,
+                    keys::ACTION_GAME_SCORE_NO_GAME,
+                    score,
+                    &[],
+                ),
             }
         }
         A::ManagedBotCreated { bot_user_id } => phrase(
@@ -322,11 +307,11 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         A::PaymentRefunded { owner, money } => {
             let who = match owner {
                 Some(owner) => ctx.peer(*owner),
-                None => B::default().t(someone()),
+                None => B::from(someone()),
             };
             phrase(
                 keys::ACTION_PAYMENT_REFUNDED,
-                &[("peer", who), ("amount", B::default().t(amount(money)))],
+                &[("peer", who), ("amount", B::from(amount(money)))],
             )
             .done()
         }
@@ -402,17 +387,14 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 phrase_plural(
                     keys::Q_SERVICE_GIVEAWAY_STARS,
                     winners,
-                    &[("amount", B::default().t(stars_cost(*stars)))],
+                    &[("amount", B::from(stars_cost(*stars)))],
                 )
                 .done()
             } else {
                 phrase_plural(
                     keys::Q_SERVICE_GIVEAWAY_PREMIUM,
                     winners,
-                    &[(
-                        "months",
-                        B::default().t(trn(keys::MONTHS, i64::from(*months))),
-                    )],
+                    &[("months", B::from(trn(keys::MONTHS, i64::from(*months))))],
                 )
                 .done()
             }
@@ -461,24 +443,21 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         A::WithCard { action, .. } => render_action(action, ctx),
         A::TonWalletTransfer(transfer) => super::wallet::transfer_line(transfer, ctx),
         A::TonConnectRequest(request) => text(&request.service_line()),
-        A::RefundedUpgradedGift { .. } => text(tr(keys::ACTION_GIFT_REFUNDED)),
+        A::RefundedUpgradedGift { .. } => say(keys::ACTION_GIFT_REFUNDED),
         A::GiftOffer { name, price, state } => match state {
-            GiftOfferState::Accepted => text(tr(keys::ACTION_GIFT_OFFER_STATE_ACCEPTED)),
-            GiftOfferState::Rejected => text(tr(keys::ACTION_GIFT_OFFER_STATE_REJECTED)),
+            GiftOfferState::Accepted => say(keys::ACTION_GIFT_OFFER_STATE_ACCEPTED),
+            GiftOfferState::Rejected => say(keys::ACTION_GIFT_OFFER_STATE_REJECTED),
             GiftOfferState::Pending | GiftOfferState::Unknown => {
                 if ctx.actor_is_me() {
                     phrase(
                         keys::ACTION_GIFT_OFFER_YOU,
-                        &[
-                            ("cost", B::default().t(cost(price))),
-                            ("name", B::default().t(name)),
-                        ],
+                        &[("cost", B::from(cost(price))), ("name", B::from(name))],
                     )
                     .done()
                 } else {
                     phrase(
                         keys::ACTION_GIFT_OFFER_INCOMING,
-                        &[("amount", B::default().t(cost(price)))],
+                        &[("amount", B::from(cost(price)))],
                     )
                     .done()
                 }
@@ -490,8 +469,8 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             expired,
         } => {
             let price = cost(price);
-            let name = B::default().t(name);
-            let price = B::default().t(price);
+            let name = B::from(name);
+            let price = B::from(price);
             match (*expired, ctx.actor_is_me()) {
                 (true, true) => phrase(
                     keys::ACTION_GIFT_OFFER_EXPIRED_YOUR,
@@ -534,22 +513,22 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         }
         A::PaidMessagePriceChanged { stars } => {
             if *stars == 0 {
-                text(tr(keys::ACTION_MESSAGE_PRICE_FREE))
+                say(keys::ACTION_MESSAGE_PRICE_FREE)
             } else {
                 phrase_plural(keys::ACTION_MESSAGE_PRICE_PAID, *stars, &[]).done()
             }
         }
         A::DirectMessagePriceChanged { enabled, stars } => {
             if !*enabled {
-                text(tr(keys::ACTION_DIRECT_MESSAGES_DISABLED))
+                say(keys::ACTION_DIRECT_MESSAGES_DISABLED)
             } else if *stars == 0 {
-                text(tr(keys::ACTION_DIRECT_MESSAGES_ENABLED))
+                say(keys::ACTION_DIRECT_MESSAGES_ENABLED)
             } else {
                 phrase_plural(keys::ACTION_DIRECT_MESSAGES_PAID, *stars, &[]).done()
             }
         }
         A::ChecklistDone { done, not_done, .. } => {
-            let tasks = |n: usize| B::default().t(trn(keys::ACTION_TODO_TASKS_FALLBACK, n as i64));
+            let tasks = |n: usize| B::from(trn(keys::ACTION_TODO_TASKS_FALLBACK, n as i64));
             let (key, self_key, parts) = if *done > 0 && *not_done == 0 {
                 (
                     keys::ACTION_TODO_MARKED_DONE,
@@ -569,53 +548,26 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                     vec![("done", tasks(*done)), ("not_done", tasks(*not_done))],
                 )
             };
-            if ctx.actor_is_me() {
-                phrase(self_key, &parts).done()
-            } else {
-                let mut all = vec![("from", from())];
-                all.extend(parts);
-                phrase(key, &all).done()
-            }
+            ctx.by_actor(self_key, key, &parts)
         }
-        A::ChecklistAdded { titles } => {
-            let list = task_list(titles);
-            if ctx.actor_is_me() {
-                phrase(keys::ACTION_TODO_ADDED_SELF, &[("tasks", list)]).done()
-            } else {
-                phrase(
-                    keys::ACTION_TODO_ADDED,
-                    &[("from", from()), ("tasks", list)],
-                )
-                .done()
-            }
-        }
-        A::PollOptionAdded { text: option } => {
-            let option = B::default().t(option.as_str());
-            if ctx.actor_is_me() {
-                phrase(keys::ACTION_POLL_ADDED_ANSWER_SELF, &[("option", option)]).done()
-            } else {
-                phrase(
-                    keys::ACTION_POLL_ADDED_ANSWER,
-                    &[("from", from()), ("option", option)],
-                )
-                .done()
-            }
-        }
-        A::PollOptionDeleted { text: option } => {
-            let option = B::default().t(option.as_str());
-            if ctx.actor_is_me() {
-                phrase(keys::ACTION_POLL_DELETED_ANSWER_SELF, &[("option", option)]).done()
-            } else {
-                phrase(
-                    keys::ACTION_POLL_DELETED_ANSWER,
-                    &[("from", from()), ("option", option)],
-                )
-                .done()
-            }
-        }
-        A::SuggestedPostApprovalFailed => text(tr(keys::ACTION_NOT_ENOUGH_FUNDS)),
-        A::SuggestedPostApproved => text(tr(keys::SUGGEST_ACTION_AGREEMENT)),
-        A::SuggestedPostDeclined => text(tr(keys::ACTION_POST_REJECTED)),
+        A::ChecklistAdded { titles } => ctx.by_actor(
+            keys::ACTION_TODO_ADDED_SELF,
+            keys::ACTION_TODO_ADDED,
+            &[("tasks", task_list(titles))],
+        ),
+        A::PollOptionAdded { text: option } => ctx.by_actor(
+            keys::ACTION_POLL_ADDED_ANSWER_SELF,
+            keys::ACTION_POLL_ADDED_ANSWER,
+            &[("option", B::from(option))],
+        ),
+        A::PollOptionDeleted { text: option } => ctx.by_actor(
+            keys::ACTION_POLL_DELETED_ANSWER_SELF,
+            keys::ACTION_POLL_DELETED_ANSWER,
+            &[("option", B::from(option))],
+        ),
+        A::SuggestedPostApprovalFailed => say(keys::ACTION_NOT_ENOUGH_FUNDS),
+        A::SuggestedPostApproved => say(keys::SUGGEST_ACTION_AGREEMENT),
+        A::SuggestedPostDeclined => say(keys::ACTION_POST_REJECTED),
         A::SuggestedPostPaid { stars, grams: g } => {
             if *stars > 0 {
                 phrase_plural(
@@ -625,21 +577,21 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 )
                 .done()
             } else {
-                let text = grams(*g);
-                phrase_plural_count(
+                let shown = grams(*g);
+                phrase_plural_shown(
                     keys::ACTION_SUGGEST_SUCCESS_TON,
-                    gram_form(&text),
-                    &text,
+                    shown.form,
+                    shown.text,
                     &[("from", from())],
                 )
                 .done()
             }
         }
-        A::SuggestedPostRefunded { post_deleted } => text(tr(if *post_deleted {
+        A::SuggestedPostRefunded { post_deleted } => say(if *post_deleted {
             keys::ACTION_SUGGEST_REFUND_ADMIN
         } else {
             keys::ACTION_SUGGEST_REFUND_USER
-        })),
+        }),
         A::ContactRegistered => phrase(keys::ACTION_USER_REGISTERED, &[("from", from())]).done(),
         A::UsersShared { users } => {
             let shared: Vec<B> = users
@@ -661,11 +613,7 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 &[
                     (
                         "users",
-                        join_segments(
-                            &shared,
-                            keys::ACTION_ADD_USERS_AND_ONE,
-                            keys::ACTION_ADD_USERS_AND_LAST,
-                        ),
+                        join_segments(shared, &USERS).unwrap_or_else(|| B::from(someone())),
                     ),
                     ("chat", ctx.chat(ctx.chat_id)),
                 ],
@@ -695,7 +643,7 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 )],
             )
             .done(),
-            BotAccessReason::AttachMenu => text(tr(keys::ACTION_ATTACH_MENU_BOT_ALLOWED)),
+            BotAccessReason::AttachMenu => say(keys::ACTION_ATTACH_MENU_BOT_ALLOWED),
             BotAccessReason::WebApp { title } => {
                 let app = if title.is_empty() {
                     tr(keys::STATUS_BOT_APP)
@@ -704,11 +652,11 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 };
                 line(keys::ACTION_BOT_ALLOWED_FROM_APP, &[("app", app)])
             }
-            BotAccessReason::AcceptedRequest => text(tr(keys::ACTION_WEBAPP_BOT_ALLOWED)),
+            BotAccessReason::AcceptedRequest => say(keys::ACTION_WEBAPP_BOT_ALLOWED),
         },
         A::WebAppDataSent { button } => phrase(
             keys::ACTION_WEBVIEW_DATA_DONE,
-            &[("text", B::default().t(button.as_str()))],
+            &[("text", B::from(button.as_str()))],
         )
         .done(),
         A::WebAppDataReceived { button } => {
@@ -732,18 +680,18 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 keys::ACTION_SECURE_VALUES_SENT,
                 &[
                     ("user", ctx.chat(ctx.chat_id)),
-                    ("documents", B::default().t(names.join(", "))),
+                    ("documents", B::from(names.join(", "))),
                 ],
             )
             .done()
         }
-        A::PassportReceived => text(tr(keys::Q_SERVICE_PASSPORT_RECEIVED)),
+        A::PassportReceived => say(keys::Q_SERVICE_PASSPORT_RECEIVED),
         A::Proximity {
             traveler,
             watcher,
             distance: meters,
         } => {
-            let near = B::default().t(distance(*meters));
+            let near = B::from(distance(*meters));
             let me = |s: &MessageSender| matches!(s, MessageSender::User { user_id } if ctx.is_me_user(*user_id));
             if me(traveler) {
                 phrase(
@@ -779,14 +727,14 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             } else {
                 phrase(
                     keys::ACTION_GROUP_CALL_SCHEDULED_GROUP,
-                    &[("from", from()), ("date", B::default().t(when))],
+                    &[("from", from()), ("date", B::from(when))],
                 )
                 .done()
             }
         }
         A::VideoChatStarted => {
             if ctx.is_channel {
-                text(tr(keys::ACTION_GROUP_CALL_STARTED_CHANNEL))
+                say(keys::ACTION_GROUP_CALL_STARTED_CHANNEL)
             } else {
                 phrase(keys::ACTION_GROUP_CALL_STARTED_GROUP, &[("from", from())]).done()
             }
@@ -798,7 +746,7 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
             } else {
                 phrase(
                     keys::ACTION_GROUP_CALL_FINISHED_GROUP,
-                    &[("from", from()), ("duration", B::default().t(length))],
+                    &[("from", from()), ("duration", B::from(length))],
                 )
                 .done()
             }
@@ -806,10 +754,13 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
         A::VideoChatInvite { users } => {
             let invited = ctx.join_users(
                 users,
-                keys::ACTION_INVITE_USERS_AND_ONE,
-                keys::ACTION_INVITE_USERS_AND_LAST,
+                &ListKeys {
+                    and_one: keys::ACTION_INVITE_USERS_AND_ONE,
+                    and_last: keys::ACTION_INVITE_USERS_AND_LAST,
+                    ..USERS
+                },
             );
-            let chat = B::default().t(tr(keys::ACTION_INVITE_USER_CHAT));
+            let chat = B::from(tr(keys::ACTION_INVITE_USER_CHAT));
             if users.len() > 1 {
                 phrase(
                     keys::ACTION_INVITE_USERS_MANY,
@@ -824,12 +775,12 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 .done()
             }
         }
-        A::Expired(kind) => text(tr(match kind {
+        A::Expired(kind) => say(match kind {
             ExpiredKind::Photo => keys::TTL_PHOTO_EXPIRED,
             ExpiredKind::Video => keys::TTL_VIDEO_EXPIRED,
             ExpiredKind::VideoNote => keys::TTL_ROUND_EXPIRED,
             ExpiredKind::VoiceNote => keys::TTL_VOICE_EXPIRED,
-        })),
+        }),
         A::StakeDice { stake, prize } => {
             let (key, self_key, amount) = if *prize > *stake {
                 (
@@ -850,14 +801,8 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                     None,
                 )
             };
-            match (amount, ctx.actor_is_me()) {
-                (Some(amount), true) => line(self_key, &[("amount", &amount)]),
-                (Some(amount), false) => {
-                    phrase(key, &[("from", from()), ("amount", B::default().t(amount))]).done()
-                }
-                (None, true) => text(tr(self_key)),
-                (None, false) => phrase(key, &[("from", from())]).done(),
-            }
+            let parts: Vec<_> = amount.map(|a| ("amount", B::from(a))).into_iter().collect();
+            ctx.by_actor(self_key, key, &parts)
         }
         // tdesktop `prepareStoryMentionText`: the chat's peer is named.
         A::Story {
@@ -877,10 +822,10 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
                 .done()
             }
         }
-        A::Story { .. } => text(tr(keys::IN_DLG_STORY)),
+        A::Story { .. } => say(keys::IN_DLG_STORY),
         A::PaidMedia { stars, .. } => phrase(
             keys::Q_SERVICE_PAID_MEDIA,
-            &[("stars", B::default().t(stars_cost(*stars)))],
+            &[("stars", B::from(stars_cost(*stars)))],
         )
         .done(),
     }
@@ -888,19 +833,18 @@ pub fn render_action(action: &ServiceAction, ctx: &ServiceCtx<'_>) -> ServiceTex
 
 /// A list of checklist tasks, quoted and joined the way tdesktop does.
 fn task_list(titles: &[String]) -> B {
-    let task =
-        |title: &str| B::default().t(tr_with(keys::ACTION_TODO_TASK_QUOTE, &[("task", title)]));
-    let Some((first, rest)) = titles.split_first() else {
-        return B::default().t(trn(keys::ACTION_TODO_TASKS_FALLBACK, 0));
-    };
-    let mut out = task(first);
-    for (index, title) in rest.iter().enumerate() {
-        let key = if index + 1 == rest.len() {
-            keys::ACTION_TODO_TASKS_AND_LAST
-        } else {
-            keys::ACTION_TODO_TASKS_AND_ONE
-        };
-        out = phrase(key, &[("tasks", out), ("task", task(title))]);
-    }
-    out
+    let tasks = titles
+        .iter()
+        .map(|title| B::from(tr_with(keys::ACTION_TODO_TASK_QUOTE, &[("task", title)])))
+        .collect();
+    join_segments(
+        tasks,
+        &ListKeys {
+            and_one: keys::ACTION_TODO_TASKS_AND_ONE,
+            and_last: keys::ACTION_TODO_TASKS_AND_LAST,
+            accumulated: "tasks",
+            item: "task",
+        },
+    )
+    .unwrap_or_else(|| B::from(trn(keys::ACTION_TODO_TASKS_FALLBACK, 1)))
 }

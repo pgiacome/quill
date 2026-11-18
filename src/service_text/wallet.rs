@@ -8,12 +8,12 @@ use crate::ton_wallet::{SERVICE_NOTIFICATIONS_CHAT_ID, TonWalletTransfer, format
 /// "Dana sent you 5 Grams", "You sent Dana 5 Grams", and in the service
 /// chat "Someone sent you 5 Grams". The name links to the profile.
 pub(super) fn transfer_line(transfer: &TonWalletTransfer, ctx: &ServiceCtx<'_>) -> ServiceText {
-    let amount = B::default().t(gram_amount(&format_gram_amount(transfer.amount)));
+    let amount = B::from(gram_amount(transfer.amount));
     if transfer.is_received() {
         if ctx.chat_id == SERVICE_NOTIFICATIONS_CHAT_ID {
             return phrase(
                 keys::ACTION_GRAM_TRANSFER_RECEIVED,
-                &[("user", B::default().t(someone())), ("amount", amount)],
+                &[("user", B::from(someone())), ("amount", amount)],
             )
             .done();
         }
@@ -29,7 +29,7 @@ pub(super) fn transfer_line(transfer: &TonWalletTransfer, ctx: &ServiceCtx<'_>) 
             conversation_peer(ctx)
         };
         if peer.0.is_empty() {
-            peer = B::default().t(someone());
+            peer = B::from(someone());
         }
         phrase(
             keys::ACTION_GRAM_TRANSFER_RECEIVED,
@@ -86,4 +86,18 @@ fn conversation_peer(ctx: &ServiceCtx<'_>) -> B {
         Some((name, sender)) => B::default().link(name, ServiceLink::Sender(sender)),
         None => B::default(),
     }
+}
+
+/// "1 Gram" / "1,000 Grams" / "2.5 Grams" for an amount in nanograms.
+fn gram_amount(nanos: i64) -> String {
+    let text = format_gram_amount(nanos);
+    let whole = i64::try_from(nanos.unsigned_abs() / 1_000_000_000).unwrap_or(i64::MAX);
+    // The formatter writes a decimal point only when it shows a fraction.
+    let fractional = text.contains('.');
+    let shown = Shown::new(text, whole, fractional);
+    trn_with(
+        keys::ACTION_GRAM_TRANSFER_AMOUNT,
+        shown.form,
+        &[("amount", &shown.text)],
+    )
 }

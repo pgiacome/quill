@@ -7,7 +7,8 @@
 //! chat-list preview use.
 #![deny(clippy::indexing_slicing)]
 
-use crate::lang::{Key, PluralKey, keys, tr, tr_with, trn, trn_with};
+use crate::lang::format::Piece;
+use crate::lang::{Key, PluralKey, keys, tr, tr_pieces, tr_with, trn, trn_pieces, trn_with};
 use crate::local_time::{civil_local, day_label, hhmm};
 use crate::telegram::envelope::{
     BotAccessReason, ExpiredKind, GiftOrigin, MessageContent, MessageSender, Money, PassportKind,
@@ -151,102 +152,112 @@ impl B {
     }
 }
 
-/// A name placeholder inside a sentence: each name gets its own
-/// private-use character, so the pack may put it anywhere in the
-/// sentence and [`sentence`] still finds it.
-fn mark(index: usize) -> String {
-    u32::try_from(index)
-        .ok()
-        .and_then(|index| 0xE000_u32.checked_add(index))
-        .and_then(char::from_u32)
-        .map_or_else(String::new, |ch| ch.to_string())
-}
-
-/// Rebuilds a translated sentence: each [`mark`] becomes the segments of
-/// its name (links kept), in whatever order the translation puts them.
-fn sentence(template: &str, parts: &[B]) -> B {
-    let mut out = B::default();
-    let mut plain = String::new();
-    for ch in template.chars() {
-        let slot = (ch as u32)
-            .checked_sub(0xE000)
-            .and_then(|index| usize::try_from(index).ok())
-            .and_then(|index| parts.get(index));
-        match slot {
-            Some(part) => {
-                if !plain.is_empty() {
-                    out = out.t(std::mem::take(&mut plain));
-                }
-                out = out.extend(part.clone());
-            }
-            None => plain.push(ch),
-        }
+impl From<&str> for B {
+    fn from(text: &str) -> Self {
+        B::default().t(text)
     }
-    if !plain.is_empty() {
-        out = out.t(plain);
+}
+
+impl From<String> for B {
+    fn from(text: String) -> Self {
+        B::default().t(text)
     }
-    out
 }
 
-fn marks(parts: &[(&str, B)]) -> (Vec<String>, Vec<B>) {
-    let marks: Vec<String> = (0..parts.len()).map(mark).collect();
-    let bodies: Vec<B> = parts.iter().map(|(_, body)| body.clone()).collect();
-    (marks, bodies)
+impl From<&String> for B {
+    fn from(text: &String) -> Self {
+        B::default().t(text.as_str())
+    }
 }
 
-/// `key` with its `{tag}` placeholders filled by `parts`, each keeping its
-/// link. A name the translation drops simply disappears.
+/// Builds a sentence from a template's pieces: each `{tag}` becomes the
+/// segments of its part (links kept), wherever the translation puts it. A
+/// tag with no part stays as written; a part the translation drops is gone.
+fn fill(pieces: Vec<Piece<'_>>, parts: &[(&str, B)]) -> B {
+    pieces
+        .into_iter()
+        .fold(B::default(), |out, piece| match piece {
+            Piece::Text(text) => out.t(text),
+            Piece::Tag(name) => match parts.iter().find(|(tag, _)| *tag == name) {
+                Some((_, part)) => out.extend(part.clone()),
+                None => out.t(format!("{{{name}}}")),
+            },
+        })
+}
+
+/// `key` with its `{tag}` placeholders filled by `parts`.
 fn phrase(key: Key, parts: &[(&str, B)]) -> B {
-    let (marks, bodies) = marks(parts);
-    let tags: Vec<(&str, &str)> = parts
-        .iter()
-        .zip(&marks)
-        .map(|((tag, _), mark)| (*tag, mark.as_str()))
-        .collect();
-    sentence(&tr_with(key, &tags), &bodies)
+    fill(tr_pieces(key), parts)
 }
 
 /// [`phrase`] with a plural form chosen by `count` (`{count}` filled in).
 fn phrase_plural(key: PluralKey, count: i64, parts: &[(&str, B)]) -> B {
-    phrase_plural_count(key, count, &count.to_string(), parts)
+    phrase_plural_shown(key, count, count.to_string(), parts)
 }
 
 /// [`phrase_plural`] with `{count}` written as `shown` (a fractional Gram
 /// amount, say) while the form still follows `count`.
-fn phrase_plural_count(key: PluralKey, count: i64, shown: &str, parts: &[(&str, B)]) -> B {
-    let (marks, bodies) = marks(parts);
-    let mut tags: Vec<(&str, &str)> = parts
-        .iter()
-        .zip(&marks)
-        .map(|((tag, _), mark)| (*tag, mark.as_str()))
-        .collect();
-    if !parts.iter().any(|(tag, _)| *tag == "count") {
-        tags.push(("count", shown));
-    }
-    sentence(&trn_with(key, count, &tags), &bodies)
+fn phrase_plural_shown(key: PluralKey, count: i64, shown: impl Into<B>, parts: &[(&str, B)]) -> B {
+    let mut all = parts.to_vec();
+    all.push(("count", shown.into()));
+    fill(trn_pieces(key, count), &all)
 }
 
 /// A text-only `key`, its `{tag}` placeholders filled.
 fn line(key: Key, tags: &[(&str, &str)]) -> ServiceText {
-    B::default().t(tr_with(key, tags)).done()
+    B::from(tr_with(key, tags)).done()
 }
 
-/// "A, B and C": the segments joined with the pack's list words
+/// A text-only `key` with no placeholders.
+fn say(key: Key) -> ServiceText {
+    B::from(tr(key)).done()
+}
+
+/// `parts` with the actor's `{from}` in front.
+fn with_from<'a>(from: B, parts: &[(&'a str, B)]) -> Vec<(&'a str, B)> {
+    let mut all = vec![("from", from)];
+    all.extend_from_slice(parts);
+    all
+}
+
+/// The keys and tag names of a list "A, B and C"
 /// (`lng_action_*_and_one` / `_and_last`).
-fn join_segments(items: &[B], and_one: Key, and_last: Key) -> B {
-    let Some((first, rest)) = items.split_first() else {
-        return B::default().t(someone());
-    };
-    let mut out = first.clone();
-    for (index, item) in rest.iter().enumerate() {
-        let key = if index + 1 == rest.len() {
-            and_last
-        } else {
-            and_one
-        };
-        out = phrase(key, &[("accumulated", out), ("user", item.clone())]);
-    }
-    out
+struct ListKeys {
+    and_one: Key,
+    and_last: Key,
+    /// The tag of the list so far.
+    accumulated: &'static str,
+    /// The tag of the item being added.
+    item: &'static str,
+}
+
+/// tdesktop's user lists (`lng_action_add_users_and_*`).
+const USERS: ListKeys = ListKeys {
+    and_one: keys::ACTION_ADD_USERS_AND_ONE,
+    and_last: keys::ACTION_ADD_USERS_AND_LAST,
+    accumulated: "accumulated",
+    item: "user",
+};
+
+/// "A, B and C": the items joined with the pack's list words. `None` for
+/// an empty list.
+fn join_segments(items: Vec<B>, list: &ListKeys) -> Option<B> {
+    let mut items = items.into_iter();
+    let first = items.next()?;
+    let rest: Vec<B> = items.collect();
+    let last = rest.len();
+    Some(
+        rest.into_iter()
+            .enumerate()
+            .fold(first, |out, (index, item)| {
+                let key = if index + 1 == last {
+                    list.and_last
+                } else {
+                    list.and_one
+                };
+                phrase(key, &[(list.accumulated, out), (list.item, item)])
+            }),
+    )
 }
 
 /// `Ui::FormatTTL`.
@@ -292,45 +303,43 @@ fn call_duration(secs: i32) -> String {
     }
 }
 
-fn grams(cents: i64) -> String {
+/// A number as shown, with the count whose plural form it takes.
+struct Shown {
+    text: String,
+    form: i64,
+}
+
+impl Shown {
+    /// `whole` and, when the shown text has one, a fractional part.
+    /// A fractional count takes the form of 2: `few` in Russian (the
+    /// genitive singular, "2,5 грамма") and `other` in English.
+    fn new(text: String, whole: i64, fractional: bool) -> Self {
+        let form = if fractional { 2 } else { whole };
+        Shown { text, form }
+    }
+
+    /// `{count}` of `key` written as this number, in its form.
+    fn count_of(&self, key: PluralKey) -> String {
+        trn_with(key, self.form, &[("count", &self.text)])
+    }
+}
+
+/// A Gram amount in hundredths: "5", "2.5".
+fn grams(cents: i64) -> Shown {
     let (whole, frac) = (cents / 100, cents % 100);
-    if frac == 0 {
+    let text = if frac == 0 {
         whole.to_string()
     } else {
         format!("{whole}.{frac:02}")
             .trim_end_matches('0')
             .to_string()
-    }
-}
-
-/// The plural form a Gram count already written as text selects. A
-/// fractional count reads as `other`, which the `few` form covers in
-/// Russian and `other` in English.
-fn gram_form(text: &str) -> i64 {
-    if text.contains('.') {
-        2
-    } else {
-        text.parse().unwrap_or(2)
-    }
+    };
+    Shown::new(text, whole, frac != 0)
 }
 
 /// "1 Gram" / "2.5 Grams".
 fn grams_cost(cents: i64) -> String {
-    let text = grams(cents);
-    trn_with(
-        keys::ACTION_GIFT_FOR_TON,
-        gram_form(&text),
-        &[("count", &text)],
-    )
-}
-
-/// "1 Gram" / "2.5 Grams" for a Gram count already formatted as text.
-fn gram_amount(text: &str) -> String {
-    trn_with(
-        keys::ACTION_GRAM_TRANSFER_AMOUNT,
-        gram_form(text),
-        &[("amount", text)],
-    )
+    grams(cents).count_of(keys::ACTION_GIFT_FOR_TON)
 }
 
 fn group_digits(value: i64) -> String {
@@ -352,7 +361,7 @@ fn group_digits(value: i64) -> String {
 fn amount(money: &Money) -> String {
     match money.currency.as_str() {
         "XTR" => format!("\u{2B50}{}", group_digits(money.amount)),
-        "TON" => format!("{} TON", grams(money.amount)),
+        "TON" => format!("{} TON", grams(money.amount).text),
         currency => format_payment_price(currency, money.amount),
     }
 }
@@ -372,14 +381,12 @@ fn stars_cost(stars: i64) -> String {
 
 fn distance(meters: i32) -> String {
     if meters >= 1000 {
-        let km = f64::from(10 * (meters / 10)) / 1000.0;
+        let tens = meters / 10;
+        let km = f64::from(10 * tens) / 1000.0;
         let text = format!("{km:.2}");
-        let text = text.trim_end_matches('0').trim_end_matches('.');
-        trn_with(
-            keys::ACTION_PROXIMITY_DISTANCE_KM,
-            gram_form(text),
-            &[("count", text)],
-        )
+        let text = text.trim_end_matches('0').trim_end_matches('.').to_string();
+        Shown::new(text, i64::from(meters / 1000), tens % 100 != 0)
+            .count_of(keys::ACTION_PROXIMITY_DISTANCE_KM)
     } else {
         trn(keys::ACTION_PROXIMITY_DISTANCE_M, i64::from(meters))
     }
@@ -423,37 +430,59 @@ impl ServiceCtx<'_> {
         }
     }
 
-    /// `{from}`: the acting member.
-    fn from(&self) -> B {
-        match self.actor {
-            Some(actor) => {
-                let mut out = self.peer(actor);
-                if self.actor_is_me()
-                    && let Some(seg) = out.0.first_mut()
-                    && (seg.text == someone() || seg.text == tr(keys::Q_SERVICE_A_CHAT))
-                {
-                    seg.text = tr(keys::FROM_YOU).to_string();
-                }
-                out
-            }
-            None if self.is_outgoing => B::default().t(tr(keys::FROM_YOU)),
-            None => B::default().t(someone()),
+    /// Whether the session knows `sender`'s name (else the wording falls
+    /// back to "Someone" / "a chat").
+    fn knows(&self, sender: MessageSender) -> bool {
+        match sender {
+            MessageSender::User { user_id } => self.names.user_name(user_id).is_some(),
+            MessageSender::Chat { chat_id } => self.names.chat_name(chat_id).is_some(),
         }
     }
 
-    /// A list "A, B and C" of user links, joined the way tdesktop's
-    /// `lng_action_*_users_and_one` / `_and_last` keys say.
-    fn users(&self, ids: &[i64]) -> B {
-        self.join_users(
-            ids,
-            keys::ACTION_ADD_USERS_AND_ONE,
-            keys::ACTION_ADD_USERS_AND_LAST,
-        )
+    /// `{from}`: the acting member. My own unnamed actor reads "You".
+    fn from(&self) -> B {
+        match self.actor {
+            Some(actor) if self.actor_is_me() && !self.knows(actor) => {
+                B::default().link(tr(keys::FROM_YOU), ServiceLink::Sender(actor))
+            }
+            Some(actor) => self.peer(actor),
+            None if self.is_outgoing => B::from(tr(keys::FROM_YOU)),
+            None => B::from(someone()),
+        }
     }
 
-    fn join_users(&self, ids: &[i64], and_one: Key, and_last: Key) -> B {
-        let links: Vec<B> = ids.iter().map(|id| self.user(*id)).collect();
-        join_segments(&links, and_one, and_last)
+    /// `you` when I acted, else `other` with the actor as `{from}`.
+    fn by_actor(&self, you: Key, other: Key, parts: &[(&str, B)]) -> ServiceText {
+        if self.actor_is_me() {
+            phrase(you, parts).done()
+        } else {
+            phrase(other, &with_from(self.from(), parts)).done()
+        }
+    }
+
+    /// [`Self::by_actor`] with plural forms chosen by `count`.
+    fn by_actor_plural(
+        &self,
+        you: PluralKey,
+        other: PluralKey,
+        count: i64,
+        parts: &[(&str, B)],
+    ) -> ServiceText {
+        if self.actor_is_me() {
+            phrase_plural(you, count, parts).done()
+        } else {
+            phrase_plural(other, count, &with_from(self.from(), parts)).done()
+        }
+    }
+
+    /// A list "A, B and C" of user links (`lng_action_add_users_and_*`).
+    fn users(&self, ids: &[i64]) -> B {
+        self.join_users(ids, &USERS)
+    }
+
+    fn join_users(&self, ids: &[i64], list: &ListKeys) -> B {
+        join_segments(ids.iter().map(|id| self.user(*id)).collect(), list)
+            .unwrap_or_else(|| B::from(someone()))
     }
 
     /// The other side of a private chat when the actor is me (the row's
@@ -470,7 +499,7 @@ impl ServiceCtx<'_> {
 
     /// "{user} sent you a gift for {cost}" / "You sent a gift for {cost}".
     fn gift_line(&self, cost: &str) -> ServiceText {
-        let cost = B::default().t(cost);
+        let cost = B::from(cost);
         if self.actor_is_me() {
             phrase(keys::ACTION_GIFT_SENT, &[("cost", cost)]).done()
         } else {
@@ -483,7 +512,7 @@ impl ServiceCtx<'_> {
     }
 
     fn gift_line_between(&self, gifter: i64, cost: &str) -> ServiceText {
-        let cost = B::default().t(cost);
+        let cost = B::from(cost);
         if self.is_me_user(gifter) || self.actor_is_me() {
             phrase(keys::ACTION_GIFT_SENT, &[("cost", cost)]).done()
         } else {
@@ -588,7 +617,7 @@ pub fn render(content: &MessageContent, ctx: &ServiceCtx<'_>) -> Option<ServiceT
         MessageContent::Action(action) => Some(render_action(action, ctx)),
         MessageContent::ChatTtlChanged { secs } => Some(render_ttl(*secs, ctx)),
         MessageContent::ScreenshotTaken => Some(if ctx.actor_is_me() {
-            B::default().t(tr(keys::ACTION_YOU_TOOK_SCREENSHOT)).done()
+            say(keys::ACTION_YOU_TOOK_SCREENSHOT)
         } else {
             phrase(keys::ACTION_TOOK_SCREENSHOT, &[("from", ctx.from())]).done()
         }),
@@ -599,9 +628,9 @@ pub fn render(content: &MessageContent, ctx: &ServiceCtx<'_>) -> Option<ServiceT
 fn render_ttl(secs: i32, ctx: &ServiceCtx<'_>) -> ServiceText {
     if secs <= 0 {
         return if ctx.is_channel {
-            B::default().t(tr(keys::ACTION_TTL_REMOVED_CHANNEL)).done()
+            say(keys::ACTION_TTL_REMOVED_CHANNEL)
         } else if ctx.actor_is_me() {
-            B::default().t(tr(keys::ACTION_TTL_REMOVED_YOU)).done()
+            say(keys::ACTION_TTL_REMOVED_YOU)
         } else {
             phrase(keys::ACTION_TTL_REMOVED, &[("from", ctx.from())]).done()
         };
@@ -618,7 +647,7 @@ fn render_ttl(secs: i32, ctx: &ServiceCtx<'_>) -> ServiceText {
     } else {
         phrase(
             keys::ACTION_TTL_CHANGED,
-            &[("from", ctx.from()), ("duration", B::default().t(duration))],
+            &[("from", ctx.from()), ("duration", B::from(duration))],
         )
         .done()
     }

@@ -8,7 +8,7 @@
 //! [`trn_with`]; the chosen pack is a [`Snapshot`] swapped in by
 //! [`install`].
 
-mod format;
+pub mod format;
 mod intern;
 mod key_table;
 pub mod parse;
@@ -36,6 +36,20 @@ pub fn tr(key: Key) -> &'static str {
 /// A tag the caller does not pass stays as written.
 pub fn tr_with(key: Key, tags: &[(&str, &str)]) -> String {
     format::substitute(tr(key), tags)
+}
+
+/// The text of `key` split at its `{tag}` placeholders, for callers that
+/// fill a tag with more than a string (a link, a styled span).
+pub fn tr_pieces(key: Key) -> Vec<format::Piece<'static>> {
+    format::pieces(tr(key))
+}
+
+/// The form of `key` for `count`, split like [`tr_pieces`]; `{count}` is
+/// left as a tag for the caller to fill.
+pub fn trn_pieces(key: PluralKey, count: i64) -> Vec<format::Piece<'static>> {
+    format::pieces(with_current(|snapshot| {
+        plural_template(snapshot, key, count)
+    }))
 }
 
 /// The form of `key` for `count`, with `{count}` replaced by the number.
