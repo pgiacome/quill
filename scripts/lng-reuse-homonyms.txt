@@ -3,3 +3,4 @@
 # meaning differs, e.g. "qll_door_open adjective (a state); lng_* has the verb".
 # Unlike scripts/lng-reuse-baseline.txt this list may grow, but every entry
 # needs a reason a reviewer can check.
+qll_chat_link_style_invalid style-link toast; the lng_* key is an AI compose tone error

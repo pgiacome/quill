@@ -11,6 +11,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{ErrorKind, FromSample, I24, SampleFormat, SizedSample, Stream, StreamConfig};
 
 use crate::cpal_stream::{MicThread, StreamErrors, downmix_into};
+use crate::lang::{keys, tr, tr_with};
 use crate::resample::Resampler;
 
 /// An open, running input stream on its own thread. Dropping it stops the
@@ -153,20 +154,16 @@ pub(crate) fn friendly(raw: &str) -> String {
     if reads_as_permission(raw) {
         return permission_hint(raw);
     }
-    format!("Couldn't start the microphone: {raw}")
+    tr_with(keys::Q_AV_MIC_ERROR, &[("raw", raw)])
 }
 
 fn permission_hint(raw: &str) -> String {
     if cfg!(windows) {
-        "Quill can't use the microphone. Allow it in Settings › Privacy & security › \
-             Microphone."
-            .into()
+        tr(keys::Q_AV_MIC_PERMISSION_WINDOWS).to_string()
     } else if cfg!(target_os = "macos") {
-        "Quill can't use the microphone. Allow it in System Settings → Privacy & \
-             Security → Microphone."
-            .into()
+        tr(keys::Q_AV_MIC_PERMISSION_MACOS).to_string()
     } else {
-        format!("Quill can't use the microphone: {raw}")
+        tr_with(keys::Q_AV_MIC_ERROR_PERMISSION_LINUX, &[("raw", raw)])
     }
 }
 
