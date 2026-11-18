@@ -339,6 +339,8 @@ fn default_true() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(windows)]
+    use std::fs;
 
     #[test]
     fn window_state_rejects_unusable_geometry_and_clamps_sidebar() {
