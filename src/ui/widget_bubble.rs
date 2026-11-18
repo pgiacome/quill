@@ -97,6 +97,14 @@ impl QuillApp {
             message_id: message.id,
         };
         let width = Self::widget_card_width(content, room);
+        if !self.widgets_allowed() {
+            // Never noted: no runtime starts for a card nobody turned on.
+            return Some(WidgetCard(self.widgets_off_card(
+                message.id.0 as u64,
+                width,
+                cx,
+            )));
+        }
         self.note_widget(key, width);
         let entry = self.widgets.entries.get(&key);
         let id = message.id.0 as u64;

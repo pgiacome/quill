@@ -119,6 +119,7 @@ impl QuillApp {
             ]))
             .children(super::pages::cards([
                 self.privacy_security_section(cx),
+                self.message_widgets_section(cx),
                 self.privacy_payments_section(cx),
             ]))
     }

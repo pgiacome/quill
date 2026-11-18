@@ -7,6 +7,7 @@ use crate::ui::screenshot_demo::{DemoSpec, register_demos};
 use crate::ui::status_note::StatusNote;
 use gpui_kit::*;
 use quill::ids::ChatId;
+use quill::message_widget::Permission;
 use std::sync::atomic::Ordering;
 
 register_demos![
@@ -20,6 +21,10 @@ register_demos![
         "screenshot demo — widget showcase"
     )
     .setup(QuillApp::demo_widgets_showcase),
+    // The same chat with widgets off, as every install starts: each widget
+    // is a notice whose button opens the warning (`widget_consent.rs`).
+    DemoSpec::chats("ready-widgets-off", "screenshot demo — widgets off")
+        .setup(QuillApp::demo_widgets_off),
 ];
 
 /// The demo's widgets: (message id, outgoing, caption, html).
@@ -62,11 +67,18 @@ const SHOWCASE: [(i64, bool, &str, &str); 5] = [
 
 impl QuillApp {
     fn demo_ready_widgets(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+        self.chat_prefs.message_widgets = Permission::On;
         self.demo_widgets(&WIDGETS, "screenshot demo — message widgets");
     }
 
     fn demo_widgets_showcase(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+        self.chat_prefs.message_widgets = Permission::On;
         self.demo_widgets(&SHOWCASE, "screenshot demo — widget showcase");
+    }
+
+    fn demo_widgets_off(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+        self.chat_prefs.message_widgets = Permission::Off;
+        self.demo_widgets(&WIDGETS, "screenshot demo — widgets off");
     }
 
     fn demo_widgets(&mut self, widgets: &[(i64, bool, &str, &str)], note: &'static str) {
